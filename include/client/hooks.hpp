@@ -205,6 +205,12 @@ hook_fsync(unsigned int fd);
 int
 hook_getxattr(const char* path, const char* name, void* value, size_t size);
 
+int
+hook_fallocate(int fd, int mode, off_t offset, off_t len);
+
+int
+hook_fadvise64(int fd, off_t offset, off_t len, int advice);
+
 } // namespace gkfs::hook
 
 #endif

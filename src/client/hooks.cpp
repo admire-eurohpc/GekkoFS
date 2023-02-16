@@ -983,4 +983,28 @@ hook_getxattr(const char* path, const char* name, void* value, size_t size) {
     return syscall_no_intercept_wrapper(SYS_getxattr, path, name, value, size);
 }
 
+
+int
+hook_fallocate(int fd, int mode, off_t offset, off_t len) {
+    LOG(DEBUG, "{}() called with fd '{}' mode '{}' offset '{}' len '{}'",
+        __func__, fd, mode, offset, len);
+
+    if(CTX->file_map()->exist(fd)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_fallocate, fd, mode, offset, len);
+}
+
+int
+hook_fadvise64(int fd, off_t offset, off_t len, int advice) {
+    LOG(DEBUG, "{}() called with fd '{}' offset '{}' len '{}' advice '{}'",
+        __func__, fd, offset, len, advice);
+
+    if(CTX->file_map()->exist(fd)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_fadvise64, fd, offset, len, advice);
+}
+
+
 } // namespace gkfs::hook

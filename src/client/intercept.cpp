@@ -785,6 +785,18 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
                     reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
             break;
 
+        case SYS_fallocate:
+            *result = gkfs::hook::hook_fallocate(
+                    static_cast<int>(arg0), static_cast<int>(arg1),
+                    static_cast<off_t>(arg2), static_cast<off_t>(arg3));
+            break;
+
+        case SYS_fadvise64:
+            *result = gkfs::hook::hook_fadvise64(
+                    static_cast<int>(arg0), static_cast<off_t>(arg1),
+                    static_cast<off_t>(arg2), static_cast<int>(arg4));
+            break;
+
         default:
             // ignore any other syscalls, i.e.: pass them on to the kernel
             // (syscalls forwarded to the kernel that return are logged in
