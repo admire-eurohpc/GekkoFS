@@ -64,6 +64,7 @@ compress_bitset(const std::vector<uint8_t>& bytes);
 std::vector<uint8_t>
 decompress_bitset(const std::string& compressedString);
 
+
 } // namespace gkfs::rpc
 
 #endif // GEKKOFS_COMMON_RPC_UTILS_HPP

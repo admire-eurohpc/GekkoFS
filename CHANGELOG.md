@@ -51,6 +51,10 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
   fixed([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
 
 ## [0.9.2] - 2024-02
+- Replication without using the server. NUM_REPL (0 < NUM_REPL < num_servers) env variable defines the number of 
+replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)).
+- Modified write and reads to use a bitset instead of the traditional hash per chunk in the server.
+- Added reattemp support in get_fs_config to other servers, when the initial server fails.
 
 ### New
 

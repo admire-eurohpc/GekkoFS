@@ -544,6 +544,7 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
+
 const std::shared_ptr<messagepack::ClientMetrics>
 PreloadContext::write_metrics() {
     return write_metrics_;

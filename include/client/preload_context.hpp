@@ -109,10 +109,8 @@ private:
     std::bitset<MAX_USER_FDS> protected_fds_;
     std::string hostname;
     int replicas_;
-
     std::shared_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
     std::shared_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
-
 
 public:
     static PreloadContext*
@@ -241,6 +239,7 @@ public:
 
     const std::shared_ptr<gkfs::messagepack::ClientMetrics>
     read_metrics();
+
 };
 
 } // namespace preload

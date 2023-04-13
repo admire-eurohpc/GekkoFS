@@ -47,6 +47,7 @@ forward_get_fs_config() {
 
     bool found = false;
     size_t idx = 0;
+
     while(!found && idx < CTX->hosts().size()) {
         try {
             LOG(DEBUG, "Retrieving file system configurations from daemon");

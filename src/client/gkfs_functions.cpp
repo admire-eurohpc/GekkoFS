@@ -882,8 +882,10 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
         errno = EISDIR;
         return -1;
     }
+
     auto path = make_unique<string>(file.path());
     auto is_append = file.get_flag(gkfs::filemap::OpenFile_flags::append);
+
     auto write_size = 0;
     auto num_replicas = CTX->get_replicas();
 
@@ -1089,17 +1091,24 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
     std::set<int8_t> failed; // set with failed targets.
     if(CTX->get_replicas() != 0) {
 
+<<<<<<< HEAD
         ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
                                       CTX->get_replicas(), failed);
         while(ret.first == EIO) {
             ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
+=======
+        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count,
+                                      CTX->get_replicas(), failed);
+        while(ret.first == EIO) {
+            ret = gkfs::rpc::forward_read(file->path(), buf, offset, count,
+>>>>>>> 9ff73051 (Changelog change and branch)
                                           CTX->get_replicas(), failed);
             LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
                 ret.first);
         }
 
     } else {
-        ret = gkfs::rpc::forward_read(file.path(), buf, offset, count, 0,
+        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count, 0,
                                       failed);
     }
 

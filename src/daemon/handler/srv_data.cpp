@@ -244,6 +244,9 @@ rpc_srv_write(hg_handle_t handle) {
             GKFS_DATA->stats()->add_write(in.path, chnk_id_file);
         }
 
+#endif
+        GKFS_DATA->spdlogger()->error("{}() Processing at host {} -> {}",
+                                      __func__, host_id, chnk_id_file);
         chnk_ids_host[chnk_id_curr] =
                 chnk_id_file; // save this id to host chunk list
         // offset case. Only relevant in the first iteration of the loop and if
@@ -421,6 +424,7 @@ rpc_srv_read(hg_handle_t handle) {
             in.total_chunk_size, bulk_size, in.offset);
     std::vector<uint8_t> read_bitset_vect =
             gkfs::rpc::decompress_bitset(in.wbitset);
+
 #ifdef GKFS_ENABLE_AGIOS
     int* data;
     ABT_eventual eventual = ABT_EVENTUAL_NULL;
@@ -534,7 +538,6 @@ rpc_srv_read(hg_handle_t handle) {
         if(GKFS_DATA->enable_chunkstats()) {
             GKFS_DATA->stats()->add_read(in.path, chnk_id_file);
         }
-
 
         chnk_ids_host[chnk_id_curr] =
                 chnk_id_file; // save this id to host chunk list

@@ -371,6 +371,10 @@ start_t_micro: [5755,9553,14132,16841]
 total_bytes: 1802366
 total_iops: 4
 ```
+The user can enable the data replication feature by setting the replication environment variable:
+`LIBGKFS_NUM_REPL=<num repl>`.
+The number of replicas should go from 0 to the number of servers-1. 
+The replication environment variable can be set up for each client, independently.
 
 ## Acknowledgment
 
