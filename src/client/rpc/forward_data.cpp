@@ -57,6 +57,7 @@ namespace gkfs::rpc {
  * @param buf
  * @param append_flag
  * @param write_size
+ * @param updated_metadentry_size
  * @param num_copies number of replicas
  * @return pair<error code, written size>
  */

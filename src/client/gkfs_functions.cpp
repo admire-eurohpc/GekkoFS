@@ -917,13 +917,9 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     write_size = ret_write.second;
 
     if(num_replicas > 0) {
+
         auto ret_write_repl = gkfs::rpc::forward_write(*path, buf, offset,
                                                        count, num_replicas);
-
-        if(err and ret_write_repl.first == 0) {
-            // We succesfully write the data to some replica
-            err = ret_write_repl.first;
-            // Write size will be wrong
             write_size = ret_write_repl.second;
         }
     }
