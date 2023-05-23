@@ -82,6 +82,61 @@ SimpleHashDistributor::locate_directory_metadata(const string& path) const {
     return all_hosts_;
 }
 
+
+ECCDistributor::ECCDistributor(host_t localhost, unsigned int hosts_size,
+                               unsigned int ecc_size)
+    : localhost_(localhost), hosts_size_(hosts_size), ecc_size_(ecc_size),
+      all_hosts_(hosts_size) {
+    ::iota(all_hosts_.begin(), all_hosts_.end(), 0);
+}
+
+ECCDistributor::ECCDistributor() {}
+
+host_t
+ECCDistributor::localhost() const {
+    return localhost_;
+}
+
+unsigned int
+ECCDistributor::hosts_size() const {
+    return hosts_size_;
+}
+
+host_t
+ECCDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
+                            const int num_copy) const {
+    if(num_copy == 0) {
+        return (str_hash(path + ::to_string(chnk_id))) %
+               (hosts_size_ - ecc_size_);
+    } else {
+        return (num_copy + (hosts_size_ - ecc_size_));
+    }
+}
+
+host_t
+ECCDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
+                            unsigned int hosts_size, const int num_copy) {
+    if(hosts_size_ != hosts_size) {
+        hosts_size_ = hosts_size;
+        all_hosts_ = std::vector<unsigned int>(hosts_size);
+        ::iota(all_hosts_.begin(), all_hosts_.end(), 0);
+    }
+
+    return (locate_data(path, chnk_id, num_copy));
+}
+
+host_t
+ECCDistributor::locate_file_metadata(const string& path,
+                                     const int num_copy) const {
+    return (str_hash(path) + num_copy) % hosts_size_;
+}
+
+::vector<host_t>
+ECCDistributor::locate_directory_metadata(const string& path) const {
+    return all_hosts_;
+}
+
+
 LocalOnlyDistributor::LocalOnlyDistributor(host_t localhost)
     : localhost_(localhost) {}
 

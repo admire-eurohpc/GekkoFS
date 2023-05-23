@@ -102,6 +102,42 @@ public:
     locate_directory_metadata(const std::string& path) const override;
 };
 
+class ECCDistributor : public Distributor {
+private:
+    host_t localhost_;
+    unsigned int hosts_size_{0};
+    unsigned int ecc_size_{0};
+    std::vector<host_t> all_hosts_;
+    std::hash<std::string> str_hash;
+
+public:
+    ECCDistributor();
+
+    ECCDistributor(host_t localhost, unsigned int hosts_size,
+                   unsigned int ecc_size);
+
+    unsigned int
+    hosts_size() const override;
+
+    host_t
+    localhost() const override;
+
+    host_t
+    locate_data(const std::string& path, const chunkid_t& chnk_id,
+                const int num_copy) const override;
+
+    host_t
+    locate_data(const std::string& path, const chunkid_t& chnk_id,
+                unsigned int host_size, const int num_copy);
+
+    host_t
+    locate_file_metadata(const std::string& path,
+                         const int num_copy) const override;
+
+    std::vector<host_t>
+    locate_directory_metadata(const std::string& path) const override;
+};
+
 class LocalOnlyDistributor : public Distributor {
 private:
     host_t localhost_;
