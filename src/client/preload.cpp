@@ -226,8 +226,11 @@ init_environment() {
     } else {
 
 #ifdef GKFS_USE_GUIDED_DISTRIBUTION
-        auto distributor = std::make_shared<gkfs::rpc::GuidedDistributor>(
-                CTX->local_host_id(), CTX->hosts().size());
+    auto distributor = std::make_shared<gkfs::rpc::GuidedDistributor>(
+            CTX->local_host_id(), CTX->hosts().size());
+#elif GKFS_USE_ECC_DISTRIBUTION
+    auto distributor = std::make_shared<gkfs::rpc::ECCDistributor>(
+            CTX->local_host_id(), CTX->hosts().size(), CTX->get_replicas());
 #else
         auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>(
                 CTX->local_host_id(), CTX->hosts().size());

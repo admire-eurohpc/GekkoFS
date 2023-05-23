@@ -47,6 +47,36 @@ namespace gkfs::rpc {
  * NOTE: No errno is defined here!
  */
 
+#ifdef GKFS_USE_ECC_DISTRIBUTION
+/**
+ * @brief Calculate the chunk start and end that will be affected by the operation.
+ * 
+ * @param path 
+ * @param append_flag 
+ * @param in_offset 
+ * @param write_size 
+ * @param updated_metadentry_size 
+ * @param num_copies 
+ * @return pair<uint64_t, uint64_t> 
+ */
+std::pair<uint64_t, uint64_t>
+calc_op_chunks(const std::string& path, const bool append_flag,
+               const off64_t in_offset, const size_t write_size,
+               const int64_t updated_metadentry_size) {
+    using namespace gkfs::utils::arithmetic;
+    off64_t offset =
+            append_flag ? in_offset : (updated_metadentry_size - write_size);
+
+    auto chnk_start = block_index(offset, gkfs::config::rpc::chunksize);
+    auto chnk_end = block_index((offset + write_size) - 1,
+                                gkfs::config::rpc::chunksize);
+
+
+     return make_pair(chnk_start, chnk_end);
+}
+
+#endif
+
 /**
  * Send an RPC request to write from a buffer.
  * There is a bitset of 1024 chunks to tell the server

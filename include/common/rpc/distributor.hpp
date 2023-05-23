@@ -36,7 +36,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <map>
-
+#define GKFS_USE_ECC_DISTRIBUTION 1
 namespace gkfs::rpc {
 
 using chunkid_t = unsigned int;
