@@ -108,6 +108,8 @@ target_link_libraries(
          hermes
          fmt::fmt
          Threads::Threads
+         Date::TZ
+         Jerasure
 )
 
 install(
