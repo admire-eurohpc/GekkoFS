@@ -25,49 +25,58 @@
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
+# vi: ft=bash
 
-#
-# - Try to find Jerasure library
-# This will define
-# Jerasure_FOUND
-# Jerasure_INCLUDE_DIR
-# Jerasure_LIBRARIES
-#
+################################################################################
+## The installation script must define both a pkg_install function and
+## pkg_check function that, as their name implies, must specify how
+## a dependency package should be installed and tested.  ## ## The following
+## variables can be used in the installation script:
+## - CMAKE: a variable that expands to the cmake binary
+## - SOURCE_DIR: the directory where the sources for the package were
+##               downloaded
+## - INSTALL_DIR: the directory where the package should be installed
+## - CORES: the number of cores to use when building
+## - COMPILER_NAME: the name of the compiler being used (e.g. g++, clang, etc.)
+## - COMPILER_FULL_VERSION: the compiler's full version (e.g. 9.3.0)
+## - COMPILER_MAJOR_VERSION: the compiler's major version (e.g. 9)
+## - PERFORM_TEST: whether tests for the package should be executed
+################################################################################
 
-# - Try to find galois as Jerasure.h is installed in the root include
-find_path(Jerasure_INCLUDE_DIR
-    NAMES jerasure.h
-    )
+pkg_install() {
 
-find_path(Jerasure2_INCLUDE_DIR
-    NAMES galois.h
-    )
+    # if the profile compiles bmi, enable it
+    if [[ -n "${PROFILE_DEP_NAMES['bmi']}" ]]; then
+        USE_BMI="-DNA_USE_BMI:BOOL=ON"
+    else
+        USE_BMI="-DNA_USE_BMI:BOOL=OFF"
+    fi
 
-find_library(Jerasure_LIBRARY
-    NAMES Jerasure
-    )
+    # if the profile provides any flavour of libfabric, enable it
+    if profile_has_dependency "^libfabric.*$"; then
+        USE_OFI="-DNA_USE_OFI:BOOL=ON"
+    else
+        USE_OFI="-DNA_USE_OFI:BOOL=OFF"
+    fi
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args( Jerasure 
-    DEFAULT_MSG 
-    Jerasure_INCLUDE_DIR
-    Jerasure_LIBRARY
-)
+    ID="mercury"
+    CURR="${SOURCE_DIR}/${ID}"
+    prepare_build_dir "${CURR}"
+    cd "${CURR}/build"
+    PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig" $CMAKE \
+        -DCMAKE_PREFIX_PATH=${INSTALL_DIR} \
+        -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DBUILD_TESTING:BOOL=ON \
+        -DMERCURY_USE_CHECKSUMS:BOOL=OFF \
+        -DMERCURY_USE_BOOST_PP:BOOL=ON \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+        ${USE_BMI} ${USE_OFI} \
+        ..
+    make -j"${CORES}"
+    make install
+}
 
-if(Jerasure_FOUND)
-    set(Jerasure_INCLUDE_DIRS ${Jerasure_INCLUDE_DIR})
-    set(Jerasure_LIBRARIES ${Jerasure_LIBRARY})
-
-    if(NOT TARGET Jerasure::Jerasure)
-        add_library(Jerasure::Jerasure UNKNOWN IMPORTED)
-        set_target_properties(Jerasure::Jerasure PROPERTIES
-            IMPORTED_LOCATION "${Jerasure_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${Jerasure_INCLUDE_DIR}"
-        )
-    endif()
-endif()
-
-mark_as_advanced(
-    Jerasure_INCLUDE_DIR
-    Jerasure_LIBRARY
-)
+pkg_check() {
+    :
+}

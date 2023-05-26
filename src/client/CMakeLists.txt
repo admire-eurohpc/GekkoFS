@@ -109,7 +109,8 @@ target_link_libraries(
          fmt::fmt
          Threads::Threads
          Date::TZ
-         Jerasure
+         GF_complete::GF_complete
+         Jerasure::Jerasure
 )
 
 install(

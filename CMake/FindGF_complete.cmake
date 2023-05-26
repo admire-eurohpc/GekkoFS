@@ -27,47 +27,42 @@
 ################################################################################
 
 #
-# - Try to find Jerasure library
+# - Try to find GF_complete library
 # This will define
-# Jerasure_FOUND
-# Jerasure_INCLUDE_DIR
-# Jerasure_LIBRARIES
+# GF_complete_FOUND
+# GF_complete_INCLUDE_DIR
+# GF_complete_LIBRARIES
 #
 
-# - Try to find galois as Jerasure.h is installed in the root include
-find_path(Jerasure_INCLUDE_DIR
-    NAMES jerasure.h
+find_path(GF_complete_INCLUDE_DIR
+    NAMES gf_complete.h
     )
 
-find_path(Jerasure2_INCLUDE_DIR
-    NAMES galois.h
-    )
-
-find_library(Jerasure_LIBRARY
-    NAMES Jerasure
+find_library(GF_complete_LIBRARY
+    NAMES gf_complete
     )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args( Jerasure 
+find_package_handle_standard_args( GF_complete 
     DEFAULT_MSG 
-    Jerasure_INCLUDE_DIR
-    Jerasure_LIBRARY
+    GF_complete_INCLUDE_DIR
+    GF_complete_LIBRARY
 )
 
-if(Jerasure_FOUND)
-    set(Jerasure_INCLUDE_DIRS ${Jerasure_INCLUDE_DIR})
-    set(Jerasure_LIBRARIES ${Jerasure_LIBRARY})
+if(GF_complete_FOUND)
+    set(GF_complete_INCLUDE_DIRS ${GF_complete_INCLUDE_DIR})
+    set(GF_complete_LIBRARIES ${GF_complete_LIBRARY})
 
-    if(NOT TARGET Jerasure::Jerasure)
-        add_library(Jerasure::Jerasure UNKNOWN IMPORTED)
-        set_target_properties(Jerasure::Jerasure PROPERTIES
-            IMPORTED_LOCATION "${Jerasure_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${Jerasure_INCLUDE_DIR}"
+    if(NOT TARGET GF_complete::GF_complete)
+        add_library(GF_complete::GF_complete UNKNOWN IMPORTED)
+        set_target_properties(GF_complete::GF_complete PROPERTIES
+            IMPORTED_LOCATION "${GF_complete_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${GF_complete_INCLUDE_DIR}"
         )
     endif()
 endif()
 
 mark_as_advanced(
-    Jerasure_INCLUDE_DIR
-    Jerasure_LIBRARY
+    GF_complete_INCLUDE_DIR
+    GF_complete_LIBRARY
 )

@@ -50,7 +50,7 @@ extern "C" {
 }
 
 #include <jerasure.h>
-#include <reed_sol.h>
+#include <jerasure/reed_sol.h>
 using namespace std;
 
 /*

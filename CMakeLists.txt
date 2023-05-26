@@ -206,6 +206,8 @@ if(GKFS_ENABLE_PROMETHEUS)
     find_package(prometheus-cpp REQUIRED) # >= 1.0.0
 endif()
 
+find_package(GF_complete)
+find_package(Jerasure)
 ### Other stuff that can be found out using find_package:
 
 # determine the thread library of the system

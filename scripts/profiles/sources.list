@@ -56,6 +56,8 @@ sources=(
     ["ucx"]="https://github.com/openucx/ucx/archive/{{VERSION}}.tar.gz"
     ["libzmq"]="https://github.com/zeromq/libzmq/archive/v{{VERSION}}.tar.gz"
     ["cppzmq"]="https://github.com/zeromq/cppzmq/archive/v{{VERSION}}.tar.gz"
+    ["gf-complete"]="https://github.com/ceph/gf-complete"
+    ["Jerasure"]="https://github.com/tsuraan/Jerasure"
 )
 
 
