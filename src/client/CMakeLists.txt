@@ -109,9 +109,23 @@ target_link_libraries(
          fmt::fmt
          Threads::Threads
          Date::TZ
+)
+
+if(GKFS_ENABLE_EC)
+  target_link_libraries(
+  gkfs_intercept
+  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
+  PUBLIC Syscall_intercept::Syscall_intercept
+         dl
+         Mercury::Mercury
+         hermes
+         fmt::fmt
+         Threads::Threads
+         Date::TZ
          GF_complete::GF_complete
          Jerasure::Jerasure
-)
+    )
+endif()
 
 install(
   TARGETS gkfs_intercept

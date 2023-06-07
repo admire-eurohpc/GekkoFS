@@ -376,6 +376,11 @@ The user can enable the data replication feature by setting the replication envi
 The number of replicas should go from 0 to the number of servers-1. 
 The replication environment variable can be set up for each client, independently.
 
+### Erasure codes
+The user can enable resilience with erasure codes with -DGKFS_ENABLE_EC
+Using `LIBGKFS_NUM_REPL=<num repl>`, the user can define the number of EC servers.
+The total servers available for data will be -> total servervs - num_repl
+
 ## Acknowledgment
 
 This software was partially supported by the EC H2020 funded NEXTGenIO project (Project ID: 671951, www.nextgenio.eu).

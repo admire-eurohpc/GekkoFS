@@ -364,9 +364,19 @@ gkfs_define_option(
 )
 
 ################################################################################
-# MSGPack client metrics
+# Erasure codes
 ################################################################################
 
+gkfs_define_option(
+  GKFS_ENABLE_EC
+  HELP_TEXT "Enable Erasure Code"
+  DEFAULT_VALUE OFF
+  DESCRIPTION "Use Jerasure for erasure codes reliability"
+)
+
+################################################################################
+# MSGPack client metrics
+################################################################################
 gkfs_define_option(
     GKFS_ENABLE_CLIENT_METRICS
     HELP_TEXT "Enable client metrics via MSGPack"

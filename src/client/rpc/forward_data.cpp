@@ -38,6 +38,12 @@
 
 #include <unordered_set>
 
+#define GKFS_ENABLE_EC 1
+#ifdef GKFS_ENABLE_EC
+#include <jerasure.h>
+#include <jerasure/reed_sol.h>
+#endif
+
 using namespace std;
 
 namespace gkfs::rpc {
@@ -47,17 +53,17 @@ namespace gkfs::rpc {
  * NOTE: No errno is defined here!
  */
 
-#ifdef GKFS_USE_ECC_DISTRIBUTION
 /**
- * @brief Calculate the chunk start and end that will be affected by the operation.
- * 
- * @param path 
- * @param append_flag 
- * @param in_offset 
- * @param write_size 
- * @param updated_metadentry_size 
- * @param num_copies 
- * @return pair<uint64_t, uint64_t> 
+ * @brief Calculate the chunk start and end that will be affected by the
+ * operation.
+ *
+ * @param path
+ * @param append_flag
+ * @param in_offset
+ * @param write_size
+ * @param updated_metadentry_size
+ * @param num_copies
+ * @return pair<uint64_t, uint64_t>
  */
 std::pair<uint64_t, uint64_t>
 calc_op_chunks(const std::string& path, const bool append_flag,
@@ -72,10 +78,139 @@ calc_op_chunks(const std::string& path, const bool append_flag,
                                 gkfs::config::rpc::chunksize);
 
 
-     return make_pair(chnk_start, chnk_end);
+    return make_pair(chnk_start, chnk_end);
 }
 
-#endif
+// #ifdef GKFS_ENABLE_EC
+/**
+ * Send an RPC request to write from a buffer.
+ * There is a bitset of 1024 chunks to tell the server
+ * which chunks to process. Exceeding this value will work without
+ * replication. Another way is to leverage mercury segments.
+ * TODO: Decide how to manage a write to a replica that doesn't exist
+ * @param path
+ * @param buf
+ * @param append_flag
+ * @param in_offset
+ * @param write_size
+ * @param updated_metadentry_size
+ * @param num_copies number of replicas
+ * @return pair<error code, written size>
+ */
+pair<int, ssize_t>
+ecc_forward_write(const string& path, const void* buf, const size_t write_size,
+                  const int8_t server) {
+
+    // import pow2-optimized arithmetic functions
+    using namespace gkfs::utils::arithmetic;
+
+    assert(write_size > 0);
+
+    std::vector<uint8_t> write_ops_vect(8);
+    gkfs::rpc::set_bitset(write_ops_vect, 0);
+
+    // some helper variables for async RPC
+    std::vector<hermes::mutable_buffer> bufseq{
+            hermes::mutable_buffer{const_cast<void*>(buf), write_size},
+    };
+
+    // expose user buffers so that they can serve as RDMA data sources
+    // (these are automatically "unexposed" when the destructor is called)
+    hermes::exposed_memory local_buffers;
+
+    try {
+        local_buffers = ld_network_service->expose(
+                bufseq, hermes::access_mode::read_only);
+
+    } catch(const std::exception& ex) {
+        LOG(ERROR, "Failed to expose buffers for RMA");
+        return make_pair(EBUSY, 0);
+    }
+
+    std::vector<hermes::rpc_handle<gkfs::rpc::write_data>> handles;
+
+    // Issue non-blocking RPC requests and wait for the result later
+    //
+    // TODO(amiranda): This could be simplified by adding a vector of inputs
+    // to async_engine::broadcast(). This would allow us to avoid manually
+    // looping over handles as we do below
+    auto target = server;
+
+    // total chunk_size for target
+    auto total_chunk_size = gkfs::config::rpc::chunksize;
+
+    auto endp = CTX->hosts().at(target);
+
+    try {
+        LOG(DEBUG, "Sending RPC ...");
+
+        gkfs::rpc::write_data::input in(
+                path,
+                // first offset in targets is the chunk with
+                // a potential offset
+                0, target, CTX->hosts().size(),
+                // number of chunks handled by that destination
+                gkfs::rpc::compressBitset(write_ops_vect), 1,
+                // chunk start id of this write
+                0,
+                // chunk end id of this write
+                0,
+                // total size to write
+                total_chunk_size, local_buffers);
+
+        // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that
+        // we can retry for RPC_TRIES (see old commits with margo)
+        // TODO(amiranda): hermes will eventually provide a post(endpoint)
+        // returning one result and a broadcast(endpoint_set) returning a
+        // result_set. When that happens we can remove the .at(0) :/
+        handles.emplace_back(
+                ld_network_service->post<gkfs::rpc::write_data>(endp, in));
+
+        LOG(DEBUG, "host: {}, path: \"{}\", size: {}", target, path,
+            total_chunk_size);
+    } catch(const std::exception& ex) {
+        LOG(ERROR,
+            "Unable to send non-blocking rpc for "
+            "path \"{}\" [peer: {}]",
+            path, target);
+
+        return make_pair(EBUSY, 0);
+    }
+
+    auto err = 0;
+    ssize_t out_size = 0;
+    std::size_t idx = 0;
+
+    for(const auto& h : handles) {
+        try {
+            // XXX We might need a timeout here to not wait forever for an
+            // output that never comes?
+            auto out = h.get().at(0);
+
+            if(out.err() != 0) {
+                LOG(ERROR, "Daemon reported error: {}", out.err());
+                err = out.err();
+            } else {
+                out_size += static_cast<size_t>(out.io_size());
+            }
+        } catch(const std::exception& ex) {
+            LOG(ERROR, "Failed to get rpc output for path \"{}\"", path);
+            err = EIO;
+        }
+        idx++;
+    }
+
+    /*
+     * Typically file systems return the size even if only a part of it was
+     * written. In our case, we do not keep track which daemon fully wrote its
+     * workload. Thus, we always return size 0 on error.
+     */
+    if(err)
+        return make_pair(err, 0);
+    else
+        return make_pair(0, out_size);
+}
+// #endif
 
 /**
  * Send an RPC request to write from a buffer.
@@ -313,6 +448,84 @@ forward_write(const string& path, const void* buf, const off64_t offset,
         return make_pair(0, out_size);
 }
 
+
+// To recover a missing chunk, we need to read all the remaining
+// And apply the reconstruction function.
+// This function is similar to the creation function
+bool
+gkfs_ecc_recover(const std::string& path, std::vector<char*> buffer_recover,
+                 uint64_t chunk_candidate, uint64_t failed_server) {
+
+    std::vector<char*> buffers(CTX->hosts().size(),
+                               (char*) malloc(gkfs::config::rpc::chunksize));
+
+    auto data_servers = CTX->hosts().size() - CTX->get_replicas();
+
+    auto initial_row_chunk = (chunk_candidate / data_servers) * data_servers;
+
+
+    // Parity Stored in : parity1 .. parity2, as name =
+    // [PARITY][Path][Initial row chunk]
+
+    // 1 - Read data from the other chunks plus the parity
+
+    LOG(DEBUG, "Operation Size - Range {} - data_servers {} replica_servers {}",
+        initial_row_chunk, data_servers, CTX->get_replicas());
+
+    vector<int> erased(CTX->hosts().size(), 1);
+
+    auto i = initial_row_chunk;
+
+    for(auto j = i; j < i + data_servers; ++j) {
+        std::set<int8_t> failed;
+        LOG(DEBUG, "Reading Chunk {} -> {}, from server {} ", i, j, j - i);
+
+        auto out = gkfs::rpc::forward_read(
+                path, buffers[j - i], j * gkfs::config::rpc::chunksize,
+                gkfs::config::rpc::chunksize, 0, failed);
+        if(out.first != 0) {
+            LOG(ERROR, "Read Parity Error: {}", out.first);
+            erased[j - i] = 0;
+        }
+    }
+
+    std::string ecc_path =
+            path + "_ecc_" + to_string(i) + "_" + to_string(i + data_servers);
+
+    for(auto j = i + data_servers; j < i + CTX->hosts().size(); ++j) {
+        std::set<int8_t> failed;
+        LOG(DEBUG, "Reading EC Chunk {} {} -> {}, from server {} ", ecc_path,
+            i + data_servers, j, j - i + data_servers);
+
+        auto out = gkfs::rpc::forward_read(
+                ecc_path, buffers[j - i + data_servers],
+                j * gkfs::config::rpc::chunksize, gkfs::config::rpc::chunksize,
+                0, failed);
+        if(out.first != 0) {
+            LOG(ERROR, "Read Parity Error: {}", out.first);
+            erased[j - i + data_servers] = 0;
+        }
+    }
+
+
+    // We have all the data to recover the buffer
+    auto matrix = reed_sol_vandermonde_coding_matrix(data_servers,
+                                                     CTX->get_replicas(), 8);
+    jerasure_matrix_decode(data_servers, CTX->get_replicas(), 8, matrix, 0,
+                           erased.data(), buffers.data(),
+                           buffers.data() +
+                                   gkfs::config::rpc::chunksize * data_servers,
+                           gkfs::config::rpc::chunksize);
+
+    memcpy(buffer_recover.data(),
+           buffers.data() + erased.front() * gkfs::config::rpc::chunksize,
+           gkfs::config::rpc::chunksize);
+    LOG(DEBUG, "EC computation finished");
+
+    return true;
+} // namespace gkfs::rpc
+
+
 /**
  * Send an RPC request to read to a buffer.
  * @param path
@@ -359,12 +572,11 @@ forward_read(const string& path, void* buf, const off64_t offset,
                                                          rand() % num_copies);
             }
         }
-
         if(read_bitset_vect.find(target) == read_bitset_vect.end())
             read_bitset_vect[target] =
                     std::vector<uint8_t>(((chnk_total + 7) / 8));
-        read_bitset_vect[target][(chnk_id - chnk_start) / 8] |=
-                1 << ((chnk_id - chnk_start) % 8); // set
+
+        gkfs::rpc::set_bitset(read_bitset_vect[target], chnk_id - chnk_start);
 
         if(target_chnks.count(target) == 0) {
             target_chnks.insert(
@@ -507,6 +719,69 @@ forward_read(const string& path, void* buf, const off64_t offset,
             failed.insert(targets[idx]);
             // Then repeat the read with another peer (We repear the full
             // read, this can be optimised but it is a cornercase)
+
+#ifdef GKFS_ENABLE_EC
+            // We try to recover the missing data from the failed server
+            // obtain the full chunk from all the other servers
+            // Decode the data
+            // Fill the gaps, and then remove the failed server while
+            // keeping the variables consistent.
+            auto failed_server = targets[idx];
+
+            // For all the chunks activated in the bitset, recover and fill the
+            // buffer.
+            for(auto chnk_id_file = chnk_start; chnk_id_file <= chnk_end;
+                chnk_id_file++) {
+                // Continue if chunk does not hash to this host
+                // We only check if we are not using replicas
+
+                if(!(gkfs::rpc::get_bitset(read_bitset_vect[failed_server],
+                                           chnk_id_file - chnk_start))) {
+
+                    continue;
+                }
+
+                // We have a chunk to recover
+                // We don't need to worry about offset etc... just use the chunk
+                // number
+                std::vector<char*> recovered_chunk(
+                        1, (char*) malloc(gkfs::config::rpc::chunksize));
+                gkfs::rpc::gkfs_ecc_recover(path, recovered_chunk, chnk_id_file,
+                                            failed_server);
+
+                // Move recovered_chunk to the buffer, first and last chunk
+                // should substract...
+                auto recover_size = gkfs::config::rpc::chunksize;
+                auto recover_offt = chnk_id_file * gkfs::config::rpc::chunksize;
+                auto recover_offt_chunk = (chnk_id_file - chnk_start) *
+                                          gkfs::config::rpc::chunksize;
+
+                if(chnk_id_file == chnk_start) {
+                    // We may need to move the offset of both buffers and reduce
+                    // the recover size
+                    auto offset_fc =
+                            block_overrun(offset, gkfs::config::rpc::chunksize);
+                    recover_offt += offset_fc;
+                    recover_offt_chunk += offset_fc;
+                    recover_size -= offset_fc;
+                }
+                if(chnk_id_file == chnk_end) {
+                    // We may need to reduce the recover size.
+                    if(!is_aligned(offset + read_size,
+                                   gkfs::config::rpc::chunksize)) {
+                        recover_size -=
+                                block_underrun(offset + read_size,
+                                               gkfs::config::rpc::chunksize);
+                    }
+                }
+                LOG(DEBUG,
+                    "Recovered chunk : Start Offset {}/OffsetChunk {} - Size {}",
+                    recover_offt, recover_offt_chunk, recover_size);
+                memcpy((char*)buf + recover_offt,
+                       recovered_chunk.data() + recover_offt_chunk,
+                       recover_size);
+            }
+#endif
         }
         idx++;
     }

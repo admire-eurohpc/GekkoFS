@@ -206,8 +206,14 @@ if(GKFS_ENABLE_PROMETHEUS)
     find_package(prometheus-cpp REQUIRED) # >= 1.0.0
 endif()
 
-find_package(GF_complete)
-find_package(Jerasure)
+### Jerasure: needed for the calculation of Erasure codes
+if(GKFS_ENABLE_EC)
+    message(STATUS "[${PROJECT_NAME}] Checking for Jerasure")
+    add_compile_definitions(GKFS_ENABLE_EC)
+    find_package(GF_complete REQUIRED)
+    find_package(Jerasure REQUIRED)
+endif()
+
 ### Other stuff that can be found out using find_package:
 
 # determine the thread library of the system

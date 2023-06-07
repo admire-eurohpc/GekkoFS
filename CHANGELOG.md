@@ -55,7 +55,7 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)).
 - Modified write and reads to use a bitset instead of the traditional hash per chunk in the server.
 - Added reattemp support in get_fs_config to other servers, when the initial server fails.
-
+- Added support for Erasure codes ([!1xx])
 ### New
 
 - Support for client-side per process logging, activated

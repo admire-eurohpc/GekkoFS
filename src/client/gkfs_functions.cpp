@@ -48,9 +48,12 @@ extern "C" {
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
 }
-
+#define GKFS_ENABLE_EC 1
+#ifdef GKFS_ENABLE_EC
 #include <jerasure.h>
 #include <jerasure/reed_sol.h>
+#endif
+
 using namespace std;
 
 /*
@@ -864,6 +867,95 @@ gkfs_dup2(const int oldfd, const int newfd) {
     return CTX->file_map()->dup2(oldfd, newfd);
 }
 
+
+bool
+gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
+               off64_t offset, off64_t updated_size) {
+    auto path = make_shared<string>(file->path());
+    auto append_flag = file->get_flag(gkfs::filemap::OpenFile_flags::append);
+    auto chunks = gkfs::rpc::calc_op_chunks(*path, append_flag, offset, count,
+                                            updated_size);
+
+    std::set<uint64_t> chunk_set;
+
+    // For each chunk we will have a set of chunks involved on that calculation
+    // [0] [1] [2] [3] [4] [n-p] [p1] [p2]
+    // [n-p+1] ....
+    // i.e. : [0] -> 1,2,3,4,n-p
+    // i.e : [4] -> 0,1,2,3,n-p
+    // i.e : [n-p+1] ->
+    // 3 data serv
+    // (chunk / data_servers)*data_servers --> Initial row chunk
+    // Involved : From initial to ... initial + data_servers
+    if((uint64_t) updated_size >=
+       (uint64_t) CTX->hosts().size() * gkfs::config::rpc::chunksize) {
+        auto data_servers = CTX->hosts().size() - CTX->get_replicas();
+        for(auto i = chunks.first; i <= chunks.second; ++i) {
+            auto initial_row_chunk = (i / data_servers) * data_servers;
+            chunk_set.insert(initial_row_chunk);
+        }
+        // Parity Stored in : parity1 .. parity2, as name =
+        // [PARITY][Path][Initial row chunk]
+
+        // 1 - Read data from the other chunks
+        std::vector<char*> buffers(
+                data_servers, (char*) malloc(gkfs::config::rpc::chunksize));
+        LOG(DEBUG,
+            "Operation Size {} - Range {}-{} - data_servers {} replica_servers {}",
+            updated_size, chunks.first, chunks.second, data_servers,
+            CTX->get_replicas());
+
+        // TODO : This could be optimised, with a single read loop
+        for(auto i : chunk_set) {
+
+            for(auto j = i; j < i + data_servers; ++j) {
+                std::set<int8_t> failed;
+                LOG(DEBUG, "Reading Chunk {} -> {}", i, j);
+
+                auto out = gkfs::rpc::forward_read(
+                        *path, buffers[j - i], j * gkfs::config::rpc::chunksize,
+                        gkfs::config::rpc::chunksize, 0, failed);
+                if(out.first != 0) {
+                    LOG(ERROR, "Read Parity Error: {}", out.first);
+                }
+            }
+
+            // We have all the data to process a EC
+
+            std::vector<char*> coding(
+                    CTX->get_replicas(),
+                    (char*) malloc(gkfs::config::rpc::chunksize));
+
+            auto matrix = reed_sol_vandermonde_coding_matrix(
+                    data_servers, CTX->get_replicas(), 8);
+            jerasure_matrix_encode(data_servers, CTX->get_replicas(), 8, matrix,
+                                   buffers.data(), coding.data(),
+                                   gkfs::config::rpc::chunksize);
+
+            LOG(DEBUG, "EC computation finished");
+
+            // Write erasure
+            std::string ecc_path = file->path() + "_ecc_" + to_string(i) + "_" +
+                                   to_string(i + data_servers);
+            for(int i = 0; i < CTX->get_replicas(); i++) {
+                auto ecc_write = gkfs::rpc::ecc_forward_write(
+                        ecc_path, coding[i], gkfs::config::rpc::chunksize,
+                        i + data_servers);
+                if(ecc_write.first != 0) {
+                    LOG(ERROR, "write Parity Error: {}", ecc_write.first);
+                    return false;
+                } else {
+                    LOG(DEBUG, "write Parity OK: {}", ecc_path);
+                }
+            }
+        }
+    } else {
+        LOG(DEBUG, "No EC in small files");
+        return false;
+    }
+    return true;
+}
+
 /**
  * Actual write function for all gkfs write operations
  * errno may be set
@@ -917,80 +1009,9 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     auto ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
     err = ret_write.first;
     write_size = ret_write.second;
-#define GKFS_USE_ECC_DISTRIBUTION 1
-#ifdef GKFS_USE_ECC_DISTRIBUTION
-    // Process ECC calculation
 
-    // 0 - Involved chunks:
-
-    auto chunks = gkfs::rpc::calc_op_chunks(*path, append_flag, offset, count,
-                                            updated_size);
-
-    std::set<uint64_t> chunk_set;
-
-    // For each chunk we will have a set of chunks involved on that calculation
-    // [0] [1] [2] [3] [4] [n-p] [p1] [p2]
-    // [n-p+1] ....
-    // i.e. : [0] -> 1,2,3,4,n-p
-    // i.e : [4] -> 0,1,2,3,n-p
-    // i.e : [n-p+1] ->
-    // 3 data serv
-    // (chunk / data_servers)*data_servers --> Initial row chunk
-    // Involved : From initial to ... initial + data_servers
-    if((uint64_t) updated_size >=
-       (uint64_t) CTX->hosts().size() * gkfs::config::rpc::chunksize) {
-        auto data_servers = CTX->hosts().size() - CTX->get_replicas();
-        for(auto i = chunks.first; i <= chunks.second; ++i) {
-            auto initial_row_chunk = (i / data_servers) * data_servers;
-            chunk_set.insert(initial_row_chunk);
-        }
-        // Parity Stored in : parity1 .. parity2, as name =
-        // [PARITY][Path][Initial row chunk]
-
-        // 1 - Read data from the other chunks
-        std::vector<char*> buffers(
-                CTX->hosts().size(),
-                (char*) malloc(gkfs::config::rpc::chunksize));
-        std::cout << "OPERATION "
-                  << " --- Size : " << updated_size
-                  << " Chunks Range:" << chunks.first << " -- " << chunks.second
-                  << " Data + Repliscas " << data_servers << " -- "
-                  << CTX->get_replicas() << std::endl;
-        // TODO : This could be optimised, with a single read loop
-        for(auto i : chunk_set) {
-            std::cout << i << " --- Size : " << updated_size << std::endl;
-            for(auto j = i; j < i + data_servers; ++j) {
-                std::set<int8_t> failed;
-                std::cout << " Reading chunk "
-                          << " [" << i << "] --> " << j << std::endl;
-                auto out = gkfs::rpc::forward_read(
-                        *path, buffers[j - i], j * gkfs::config::rpc::chunksize,
-                        gkfs::config::rpc::chunksize, 0, failed);
-                std::cout << " Read Success " << out.first << " -- "
-                          << out.second << std::endl;
-            }
-
-            // We have all the data to process a EC
-
-            std::vector<char*> coding(
-                    CTX->get_replicas(),
-                    (char*) malloc(gkfs::config::rpc::chunksize));
-
-            auto matrix = reed_sol_vandermonde_coding_matrix(
-                    data_servers, CTX->get_replicas(), 8);
-            jerasure_matrix_encode(data_servers, CTX->get_replicas(), 8, matrix,
-                                   buffers.data(), coding.data(),
-                                   gkfs::config::rpc::chunksize);
-
-            std::cout << " Parity computation done " << std::endl;
-        }
-    } else {
-        std::cout << "No EC in small files" << std::endl;
-    }
-    // 2 - Calc Erasure codes
-
-    // 3 - Write erasure codes
-
+#ifdef GKFS_ENABLE_EC
+    gkfs_ecc_write(file, count, offset, updated_size);
 
 #else
     if(num_replicas > 0) {
@@ -1155,8 +1176,8 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
         return -1;
     }
 
-    // Zeroing buffer before read is only relevant for sparse files. Otherwise
-    // sparse regions contain invalid data.
+    // Zeroing buffer before read is only relevant for sparse files.
+    // Otherwise sparse regions contain invalid data.
     if constexpr(gkfs::config::io::zero_buffer_before_read) {
         memset(buf, 0, sizeof(char) * count);
     }
@@ -1167,10 +1188,14 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
         ret = gkfs::rpc::forward_read(file->path(), buf, offset, count, 0,
                                       failed);
         while(ret.first == EIO) {
+#ifdef GKFS_ENABLE_EC
+            LOG (WARNING,"failed to read");
+#else
             ret = gkfs::rpc::forward_read(file->path(), buf, offset, count,
                                           CTX->get_replicas(), failed);
             LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
                 ret.first);
+#endif
         }
 
     } else {
@@ -1408,11 +1433,11 @@ gkfs_getdents(unsigned int fd, struct linux_dirent* dirp, unsigned int count) {
          * Calculate the total dentry size within the kernel struct
          * `linux_dirent` depending on the file name size. The size is then
          * aligned to the size of `long` boundary. This line was originally
-         * defined in the linux kernel: fs/readdir.c in function filldir(): int
-         * reclen = ALIGN(offsetof(struct linux_dirent, d_name) + namlen + 2,
-         * sizeof(long)); However, since d_name is null-terminated and
-         * de.name().size() does not include space for the null-terminator, we
-         * add 1. Thus, + 3 in total.
+         * defined in the linux kernel: fs/readdir.c in function filldir():
+         * int reclen = ALIGN(offsetof(struct linux_dirent, d_name) + namlen
+         * + 2, sizeof(long)); However, since d_name is null-terminated and
+         * de.name().size() does not include space for the null-terminator,
+         * we add 1. Thus, + 3 in total.
          */
         auto total_size = ALIGN(offsetof(struct linux_dirent, d_name) +
                                         de.name().size() + 3,
@@ -1479,13 +1504,14 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
          * `linux_dirent` depending on the file name size. The size is then
          * aligned to the size of `long` boundary.
          *
-         * This line was originally defined in the linux kernel: fs/readdir.c in
-         * function filldir64(): int reclen = ALIGN(offsetof(struct
-         * linux_dirent64, d_name) + namlen + 1, sizeof(u64)); We keep + 1
-         * because: Since d_name is null-terminated and de.name().size() does
-         * not include space for the null-terminator, we add 1. Since d_name in
-         * our `struct linux_dirent64` definition is not a zero-size array (as
-         * opposed to the kernel version), we subtract 1. Thus, it stays + 1.
+         * This line was originally defined in the linux kernel:
+         * fs/readdir.c in function filldir64(): int reclen =
+         * ALIGN(offsetof(struct linux_dirent64, d_name) + namlen + 1,
+         * sizeof(u64)); We keep + 1 because: Since d_name is
+         * null-terminated and de.name().size() does not include space for
+         * the null-terminator, we add 1. Since d_name in our `struct
+         * linux_dirent64` definition is not a zero-size array (as opposed
+         * to the kernel version), we subtract 1. Thus, it stays + 1.
          */
         auto total_size = ALIGN(offsetof(struct linux_dirent64, d_name) +
                                         de.name().size() + 1,
