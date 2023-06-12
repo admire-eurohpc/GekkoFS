@@ -453,7 +453,7 @@ forward_write(const string& path, const void* buf, const off64_t offset,
 // And apply the reconstruction function.
 // This function is similar to the creation function
 bool
-gkfs_ecc_recover(const std::string& path, std::vector<char*> buffer_recover,
+gkfs_ecc_recover(const std::string& path, void* buffer_recover,
                  uint64_t chunk_candidate, uint64_t failed_server) {
 
     std::vector<char*> buffers(CTX->hosts().size(),
@@ -506,7 +506,8 @@ gkfs_ecc_recover(const std::string& path, std::vector<char*> buffer_recover,
             erased[j - i + data_servers] = 0;
         }
     }
-
+    // We force a failure
+    erased[failed_server] = 1;
 
     // We have all the data to recover the buffer
     auto matrix = reed_sol_vandermonde_coding_matrix(data_servers,
@@ -517,7 +518,7 @@ gkfs_ecc_recover(const std::string& path, std::vector<char*> buffer_recover,
                                    gkfs::config::rpc::chunksize * data_servers,
                            gkfs::config::rpc::chunksize);
 
-    memcpy(buffer_recover.data(),
+    memcpy(buffer_recover,
            buffers.data() + erased.front() * gkfs::config::rpc::chunksize,
            gkfs::config::rpc::chunksize);
     LOG(DEBUG, "EC computation finished");
@@ -708,7 +709,9 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 LOG(ERROR, "Daemon reported error: {}", out.err());
                 err = out.err();
             }
-
+            if(rand() % 2 == 0) {
+                throw std::exception();
+            }
             out_size += static_cast<size_t>(out.io_size());
 
         } catch(const std::exception& ex) {
@@ -744,8 +747,7 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 // We have a chunk to recover
                 // We don't need to worry about offset etc... just use the chunk
                 // number
-                std::vector<char*> recovered_chunk(
-                        1, (char*) malloc(gkfs::config::rpc::chunksize));
+                void* recovered_chunk = malloc(gkfs::config::rpc::chunksize);
                 gkfs::rpc::gkfs_ecc_recover(path, recovered_chunk, chnk_id_file,
                                             failed_server);
 
@@ -777,8 +779,8 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 LOG(DEBUG,
                     "Recovered chunk : Start Offset {}/OffsetChunk {} - Size {}",
                     recover_offt, recover_offt_chunk, recover_size);
-                memcpy((char*)buf + recover_offt,
-                       recovered_chunk.data() + recover_offt_chunk,
+                memcpy((char*) buf + recover_offt,
+                       (char*) recovered_chunk + recover_offt_chunk,
                        recover_size);
             }
 #endif
