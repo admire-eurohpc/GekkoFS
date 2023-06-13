@@ -34,13 +34,8 @@
 # Jerasure_LIBRARIES
 #
 
-# - Try to find galois as Jerasure.h is installed in the root include
 find_path(Jerasure_INCLUDE_DIR
-    NAMES jerasure.h
-    )
-
-find_path(Jerasure2_INCLUDE_DIR
-    NAMES galois.h
+    NAMES jerasure/jerasure.h
     )
 
 find_library(Jerasure_LIBRARY
@@ -48,7 +43,7 @@ find_library(Jerasure_LIBRARY
     )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args( Jerasure 
+find_package_handle_standard_args(Jerasure 
     DEFAULT_MSG 
     Jerasure_INCLUDE_DIR
     Jerasure_LIBRARY

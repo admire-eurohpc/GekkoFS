@@ -43,10 +43,15 @@ struct ChunkStat {
 
 // TODO once we have LEAF, remove all the error code returns and throw them as
 // an exception.
+
 std::pair<int, ssize_t>
-ecc_forward_write(const std::string& path, const void* buf, const size_t write_size,
-               const int8_t server);
-               
+ecc_forward_read(const std::string& path, void* buf, const size_t read_size,
+                 const int8_t server);
+
+std::pair<int, ssize_t>
+ecc_forward_write(const std::string& path, const void* buf,
+                  const size_t write_size, const int8_t server);
+
 std::pair<int, ssize_t>
 forward_write(const std::string& path, const void* buf, off64_t offset,
               size_t write_size, const int8_t num_copy = 0);

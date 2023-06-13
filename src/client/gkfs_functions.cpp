@@ -50,7 +50,7 @@ extern "C" {
 }
 #define GKFS_ENABLE_EC 1
 #ifdef GKFS_ENABLE_EC
-#include <jerasure.h>
+#include <jerasure/jerasure.h>
 #include <jerasure/reed_sol.h>
 #endif
 
@@ -936,7 +936,7 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
 
             // Write erasure
             std::string ecc_path = file->path() + "_ecc_" + to_string(i) + "_" +
-                                   to_string(i + data_servers);
+                                   to_string(i + data_servers - 1);
             for(int i = 0; i < CTX->get_replicas(); i++) {
                 auto ecc_write = gkfs::rpc::ecc_forward_write(
                         ecc_path, coding[i], gkfs::config::rpc::chunksize,
@@ -1185,11 +1185,11 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
     std::set<int8_t> failed; // set with failed targets.
     if(CTX->get_replicas() != 0) {
 
-        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count, 0,
+        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count, CTX->get_replicas(),
                                       failed);
         while(ret.first == EIO) {
 #ifdef GKFS_ENABLE_EC
-            LOG (WARNING,"failed to read");
+            LOG(WARNING, "failed to read");
 #else
             ret = gkfs::rpc::forward_read(file->path(), buf, offset, count,
                                           CTX->get_replicas(), failed);
