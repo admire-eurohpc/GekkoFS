@@ -51,6 +51,8 @@ clonedeps=(
     ["date"]="e7e1482087f58913b80a20b04d5c58d9d6d90155"
     ["agios"]="c26a6544200f823ebb8f890dd94e653d148bf226@development"
     ["parallax"]="ffdea6e820f5c4c2d33e60d9a4b15ef9e6bbcfdd"
+    ["gf-complete"]="a6862d10c9db467148f20eef2c6445ac9afd94d8"
+    ["Jerasure"]="414c96ef2b9934953b6facb31d803d79b1dd1405"    
     )
 
 # Extra arguments for git clone
@@ -66,7 +68,7 @@ clonedeps_patches=(
 # Ordering that MUST be followed when downloading
 order=(
     "libfabric" "mercury" "argobots" "margo" "rocksdb" "syscall_intercept"
-    "date" "agios" "parallax" "prometheus-cpp" 
+    "date" "agios" "parallax" "prometheus-cpp" "gf-complete" "Jerasure"
 )
 
 # Extra arguments passed to the installation script. As such, they can

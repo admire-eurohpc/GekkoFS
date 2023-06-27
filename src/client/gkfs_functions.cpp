@@ -868,6 +868,24 @@ gkfs_dup2(const int oldfd, const int newfd) {
 }
 
 #ifdef GKFS_ENABLE_EC
+/**
+ * @brief Compute and store the erasure codes of a chunk line, smaller files are
+ ignored. The ec are stored in [path]ecc_chunkstart_chunkend files
+ *
+ * @param file
+ * @param count
+ * @param offset
+ * @param updated_size
+ * @return true if the computation was successful
+ * @return false if the computation was not successful
+ *
+ *  For each chunk we will have a set of chunks involved on that calculation
+    [0] [1] [2] [3] [4] [n-p] [p1] [p2]
+     [n-p+1] ....
+     i.e. : [0] -> 1,2,3,4,n-p
+     i.e : [4] -> 0,1,2,3,n-p
+     i.e : [n-p+1]
+*/
 bool
 gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
                off64_t offset, off64_t updated_size) {
@@ -878,15 +896,7 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
 
     std::set<uint64_t> chunk_set;
 
-    // For each chunk we will have a set of chunks involved on that calculation
-    // [0] [1] [2] [3] [4] [n-p] [p1] [p2]
-    // [n-p+1] ....
-    // i.e. : [0] -> 1,2,3,4,n-p
-    // i.e : [4] -> 0,1,2,3,n-p
-    // i.e : [n-p+1] ->
-    // 3 data serv
-    // (chunk / data_servers)*data_servers --> Initial row chunk
-    // Involved : From initial to ... initial + data_servers
+
     if((uint64_t) updated_size >=
        (uint64_t) CTX->hosts().size() * gkfs::config::rpc::chunksize) {
         auto data_servers = CTX->hosts().size() - CTX->get_replicas();
@@ -894,12 +904,21 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
             auto initial_row_chunk = (i / data_servers) * data_servers;
             chunk_set.insert(initial_row_chunk);
         }
-        // Parity Stored in : parity1 .. parity2, as name =
-        // [PARITY][Path][Initial row chunk]
 
         // 1 - Read data from the other chunks
-        std::vector<char*> buffers(
-                data_servers, (char*) malloc(gkfs::config::rpc::chunksize));
+
+        char** data = (char**) malloc(sizeof(char*) * data_servers);
+        char** coding = (char**) malloc(sizeof(char*) * CTX->get_replicas());
+
+        for(unsigned int i = 0; i < data_servers; ++i) {
+            data[i] = (char*) malloc(gkfs::config::rpc::chunksize);
+            // memset(data[i], 0, gkfs::config::rpc::chunksize);
+        }
+        for(auto i = 0; i < CTX->get_replicas(); ++i) {
+            coding[i] = (char*) malloc(gkfs::config::rpc::chunksize);
+            // memset(coding[i], 0, gkfs::config::rpc::chunksize);
+        }
+
         LOG(DEBUG,
             "Operation Size {} - Range {}-{} - data_servers {} replica_servers {}",
             updated_size, chunks.first, chunks.second, data_servers,
@@ -913,7 +932,7 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
                 LOG(DEBUG, "Reading Chunk {} -> {}", i, j);
 
                 auto out = gkfs::rpc::forward_read(
-                        *path, buffers[j - i], j * gkfs::config::rpc::chunksize,
+                        *path, data[j - i], j * gkfs::config::rpc::chunksize,
                         gkfs::config::rpc::chunksize, 0, failed);
                 if(out.first != 0) {
                     LOG(ERROR, "Read Parity Error: {}", out.first);
@@ -922,15 +941,10 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
 
             // We have all the data to process a EC
 
-            std::vector<char*> coding(
-                    CTX->get_replicas(),
-                    (char*) malloc(gkfs::config::rpc::chunksize));
-
             auto matrix = reed_sol_vandermonde_coding_matrix(
                     data_servers, CTX->get_replicas(), 8);
             jerasure_matrix_encode(data_servers, CTX->get_replicas(), 8, matrix,
-                                   buffers.data(), coding.data(),
-                                   gkfs::config::rpc::chunksize);
+                                   data, coding, gkfs::config::rpc::chunksize);
 
             LOG(DEBUG, "EC computation finished");
 
@@ -949,6 +963,8 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
                 }
             }
         }
+        free(coding);
+        free(data);
     } else {
         LOG(DEBUG, "No EC in small files");
         return false;
@@ -1011,7 +1027,10 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     write_size = ret_write.second;
 
 #ifdef GKFS_ENABLE_EC
-    gkfs_ecc_write(file, count, offset, updated_size);
+    auto res = gkfs_ecc_write(file, count, offset, updated_size);
+    if(res) {
+        LOG(ERROR, "erasure code writing failed");
+    }
 
 #else
     if(num_replicas > 0) {

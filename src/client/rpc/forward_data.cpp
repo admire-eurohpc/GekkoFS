@@ -82,18 +82,11 @@ calc_op_chunks(const std::string& path, const bool append_flag,
 
 // #ifdef GKFS_ENABLE_EC
 /**
- * Send an RPC request to write from a buffer.
- * There is a bitset of 1024 chunks to tell the server
- * which chunks to process. Exceeding this value will work without
- * replication. Another way is to leverage mercury segments.
- * TODO: Decide how to manage a write to a replica that doesn't exist
+ * Send an RPC request to write a single chunk of data to a given server
  * @param path
  * @param buf
- * @param append_flag
- * @param in_offset
  * @param write_size
- * @param updated_metadentry_size
- * @param num_copies number of replicas
+ * @param server destination server
  * @return pair<error code, written size>
  */
 pair<int, ssize_t>
@@ -572,9 +565,18 @@ forward_write(const string& path, const void* buf, const off64_t offset,
 }
 
 #ifdef GKFS_ENABLE_EC
-// To recover a missing chunk, we need to read all the remaining
-// And apply the reconstruction function.
-// This function is similar to the creation function
+/**
+ * @brief process a chunk line to recover a missing server chunk, can be used
+ * for multiple failures
+ *
+ * @param path
+ * @param buffer_recover
+ * @param chunk_candidate
+ * @param failed_server hint to indicate whether the server chunk was corrupted
+ * (not necessarily)
+ * @return true
+ * @return false
+ */
 bool
 gkfs_ecc_recover(const std::string& path, void* buffer_recover,
                  uint64_t chunk_candidate, uint64_t failed_server) {
@@ -587,18 +589,17 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
 
     for(unsigned int i = 0; i < data_servers; ++i) {
         data[i] = (char*) malloc(gkfs::config::rpc::chunksize);
+        memset(data[i], 0, gkfs::config::rpc::chunksize);
     }
     for(auto i = 0; i < CTX->get_replicas(); ++i) {
         coding[i] = (char*) malloc(gkfs::config::rpc::chunksize);
+        memset(coding[i], 0, gkfs::config::rpc::chunksize);
     }
 
     auto initial_row_chunk = (chunk_candidate / data_servers) * data_servers;
 
 
-    // Parity Stored in : parity1 .. parity2, as name =
-    // [PARITY][Path][Initial row chunk]
-
-    // 1 - Read data from the other chunks plus the parity
+    // 1 - Read data from the other chunks (failures allowed)
 
     LOG(DEBUG, "Operation Size - Range {} - data_servers {} replica_servers {}",
         initial_row_chunk, data_servers, CTX->get_replicas());
@@ -619,16 +620,9 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
             erased.push_back(j);
         }
     }
-    {
-        uint64_t md5 = 0;
-        for(auto k = 0; k < gkfs::config::rpc::chunksize; k++) {
-            md5 += data[failed_server][k];
-        }
-        std::cout << "Content of the failed server? " << failed_server
-                  << " --> " << md5 << std::endl;
-    }
 
-    // memset(data[failed_server], 3, gkfs::config::rpc::chunksize);
+    // Read ec codes,  TODO: Delete this file once the original is gone or the
+    // file shrinks
     std::string ecc_path = path + "_ecc_" + to_string(i) + "_" +
                            to_string(i + data_servers - 1);
 
@@ -659,32 +653,16 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
                                                      CTX->get_replicas(), 8);
 
     res = jerasure_matrix_decode(data_servers, CTX->get_replicas(), 8, matrix,
-                                 1, erased.data(), data, coding,
+                                 0, erased.data(), data, coding,
                                  gkfs::config::rpc::chunksize);
 
-    std::cout << "recovered? Fails? " << failed_server << " -- " << res
-              << std::endl;
-
-    {
-        uint64_t md5 = 0;
-        for(auto k = 0; k < gkfs::config::rpc::chunksize; k++) {
-            md5 += data[failed_server][k];
-        }
-        std::cout << "Content of the recovered server? " << failed_server
-                  << " --> " << md5 << std::endl;
-    }
-
+    LOG(DEBUG, "EC recovered {}, with result {}", failed_server, res);
     memcpy(buffer_recover, data[failed_server], gkfs::config::rpc::chunksize);
 
-    {
-        uint64_t md5 = 0;
-        for(auto i = 0; i < gkfs::config::rpc::chunksize; i++) {
-            md5 += ((char*) buffer_recover)[i];
-        }
-        std::cout << "md5 recovered? " << md5 << std::endl;
-    }
     LOG(DEBUG, "EC computation finished");
 
+    free(data);
+    free(coding);
     return true;
 }
 #endif
@@ -871,9 +849,11 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 LOG(ERROR, "Daemon reported error: {}", out.err());
                 err = out.err();
             }
+#ifdef GKFS_ENABLE_READ_ERRORS
             if(rand() % 2 == 0 and num_copies > 0) {
                 throw std::exception();
             }
+#endif // GKFS_ENABLE_READ_ERRORS
             out_size += static_cast<size_t>(out.io_size());
 
         } catch(const std::exception& ex) {
@@ -909,17 +889,17 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 // We have a chunk to recover
                 // We don't need to worry about offset etc... just use the chunk
                 // number
-                char* recovered_chunk =
-                        (char*) malloc(gkfs::config::rpc::chunksize);
-                gkfs::rpc::gkfs_ecc_recover(path, recovered_chunk, chnk_id_file,
-                                            failed_server);
+                void* recovered_chunk = malloc(gkfs::config::rpc::chunksize);
+                auto recovered = gkfs::rpc::gkfs_ecc_recover(
+                        path, recovered_chunk, chnk_id_file, failed_server);
+                LOG(DEBUG, "Recovered server: {} Result {}", failed_server,
+                    recovered);
 
                 // Move recovered_chunk to the buffer, first and last chunk
                 // should substract...
                 auto recover_size = gkfs::config::rpc::chunksize;
                 auto recover_offt = chnk_id_file * gkfs::config::rpc::chunksize;
-                auto recover_offt_chunk = (chnk_id_file - chnk_start) *
-                                          gkfs::config::rpc::chunksize;
+                auto recover_offt_chunk = 0;
 
                 if(chnk_id_file == chnk_start) {
                     // We may need to move the offset of both buffers and reduce
@@ -942,12 +922,16 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 LOG(DEBUG,
                     "Recovered chunk : Start Offset {}/OffsetChunk {} - Size {}",
                     recover_offt, recover_offt_chunk, recover_size);
-                std::cout << "Recovered " << recover_offt << " -- "
-                          << recover_offt_chunk << " --- size " << recover_size
-                          << std::endl;
+
+                if(recovered) {
+                    err = 0;
+                    out_size += static_cast<size_t>(recover_size);
+                }
+
                 memcpy((char*) buf + recover_offt,
                        (char*) recovered_chunk + recover_offt_chunk,
                        recover_size);
+
                 free(recovered_chunk);
             }
 
@@ -955,7 +939,6 @@ forward_read(const string& path, void* buf, const off64_t offset,
         }
         idx++;
     }
-
 
     /*
      * Typically file systems return the size even if only a part of it was

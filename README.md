@@ -377,9 +377,12 @@ The number of replicas should go from 0 to the number of servers-1.
 The replication environment variable can be set up for each client, independently.
 
 ### Erasure codes
-The user can enable resilience with erasure codes with -DGKFS_ENABLE_EC
+The user can enable resilience with erasure codes with `-DGKFS_ENABLE_EC`
 Using `LIBGKFS_NUM_REPL=<num repl>`, the user can define the number of EC servers.
 The total servers available for data will be -> total servervs - num_repl
+
+Additionaly the user can enable the `-DGKFS_ENABLE_READ_ERRORS` to inject a  
+50% of read errors into the workflow.
 
 ## Acknowledgment
 

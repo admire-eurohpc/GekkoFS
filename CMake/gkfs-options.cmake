@@ -374,6 +374,13 @@ gkfs_define_option(
   DESCRIPTION "Use Jerasure for erasure codes reliability"
 )
 
+gkfs_define_option(
+  GKFS_ENABLE_READ_ERRORS
+  HELP_TEXT "Enable Read Errors using replication"
+  DEFAULT_VALUE OFF
+  DESCRIPTION "Inject read errors"
+)
+
 ################################################################################
 # MSGPack client metrics
 ################################################################################
@@ -383,3 +390,4 @@ gkfs_define_option(
     DEFAULT_VALUE OFF
     DESCRIPTION "If GKFS_ENABLE_CLIENT_METRICS is ON, use MSGPack to dump client read/write metrics"
 )
+
