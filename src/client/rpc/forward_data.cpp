@@ -38,7 +38,6 @@
 
 #include <unordered_set>
 
-#define GKFS_ENABLE_EC 1
 #ifdef GKFS_ENABLE_EC
 #include <jerasure/jerasure.h>
 #include <jerasure/reed_sol.h>
@@ -572,7 +571,7 @@ forward_write(const string& path, const void* buf, const off64_t offset,
         return make_pair(0, out_size);
 }
 
-
+#ifdef GKFS_ENABLE_EC
 // To recover a missing chunk, we need to read all the remaining
 // And apply the reconstruction function.
 // This function is similar to the creation function
@@ -586,7 +585,7 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
     char** data = (char**) malloc(sizeof(char*) * data_servers);
     char** coding = (char**) malloc(sizeof(char*) * CTX->get_replicas());
 
-    for(auto i = 0; i < data_servers; ++i) {
+    for(unsigned int i = 0; i < data_servers; ++i) {
         data[i] = (char*) malloc(gkfs::config::rpc::chunksize);
     }
     for(auto i = 0; i < CTX->get_replicas(); ++i) {
@@ -625,11 +624,11 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
         for(auto k = 0; k < gkfs::config::rpc::chunksize; k++) {
             md5 += data[failed_server][k];
         }
-        std::cout << "Content of the failed server? " << failed_server << " --> "
-                  << md5 << std::endl;
+        std::cout << "Content of the failed server? " << failed_server
+                  << " --> " << md5 << std::endl;
     }
 
-   // memset(data[failed_server], 3, gkfs::config::rpc::chunksize);
+    // memset(data[failed_server], 3, gkfs::config::rpc::chunksize);
     std::string ecc_path = path + "_ecc_" + to_string(i) + "_" +
                            to_string(i + data_servers - 1);
 
@@ -666,13 +665,13 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
     std::cout << "recovered? Fails? " << failed_server << " -- " << res
               << std::endl;
 
-{
+    {
         uint64_t md5 = 0;
         for(auto k = 0; k < gkfs::config::rpc::chunksize; k++) {
             md5 += data[failed_server][k];
         }
-        std::cout << "Content of the recovered server? " << failed_server << " --> "
-                  << md5 << std::endl;
+        std::cout << "Content of the recovered server? " << failed_server
+                  << " --> " << md5 << std::endl;
     }
 
     memcpy(buffer_recover, data[failed_server], gkfs::config::rpc::chunksize);
@@ -687,8 +686,8 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
     LOG(DEBUG, "EC computation finished");
 
     return true;
-} // namespace gkfs::rpc
-
+}
+#endif
 
 /**
  * Send an RPC request to read to a buffer.

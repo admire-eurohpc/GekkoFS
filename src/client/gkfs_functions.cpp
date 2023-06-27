@@ -48,7 +48,7 @@ extern "C" {
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
 }
-#define GKFS_ENABLE_EC 1
+
 #ifdef GKFS_ENABLE_EC
 #include <jerasure/jerasure.h>
 #include <jerasure/reed_sol.h>
@@ -867,7 +867,7 @@ gkfs_dup2(const int oldfd, const int newfd) {
     return CTX->file_map()->dup2(oldfd, newfd);
 }
 
-
+#ifdef GKFS_ENABLE_EC
 bool
 gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
                off64_t offset, off64_t updated_size) {
@@ -955,7 +955,7 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
     }
     return true;
 }
-
+#endif
 /**
  * Actual write function for all gkfs write operations
  * errno may be set
@@ -1185,8 +1185,8 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
     std::set<int8_t> failed; // set with failed targets.
     if(CTX->get_replicas() != 0) {
 
-        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count, CTX->get_replicas(),
-                                      failed);
+        ret = gkfs::rpc::forward_read(file->path(), buf, offset, count,
+                                      CTX->get_replicas(), failed);
         while(ret.first == EIO) {
 #ifdef GKFS_ENABLE_EC
             LOG(WARNING, "failed to read");
