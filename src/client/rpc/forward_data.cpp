@@ -904,7 +904,8 @@ forward_read(const string& path, void* buf, const off64_t offset,
                 // Move recovered_chunk to the buffer, first and last chunk
                 // should substract...
                 auto recover_size = gkfs::config::rpc::chunksize;
-                auto recover_offt = chnk_id_file * gkfs::config::rpc::chunksize;
+                auto recover_offt = (chnk_id_file - chnk_start) *
+                                    gkfs::config::rpc::chunksize;
                 auto recover_offt_chunk = 0;
 
                 if(chnk_id_file == chnk_start) {
