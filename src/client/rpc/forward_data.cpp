@@ -649,18 +649,24 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
     int res = 0;
 
     // We have all the data to recover the buffer
-    auto matrix = reed_sol_vandermonde_coding_matrix(data_servers,
+    int* matrix = reed_sol_vandermonde_coding_matrix(data_servers,
                                                      CTX->get_replicas(), 8);
 
     res = jerasure_matrix_decode(data_servers, CTX->get_replicas(), 8, matrix,
                                  0, erased.data(), data, coding,
                                  gkfs::config::rpc::chunksize);
 
+    free(matrix);
     LOG(DEBUG, "EC recovered {}, with result {}", failed_server, res);
     memcpy(buffer_recover, data[failed_server], gkfs::config::rpc::chunksize);
 
     LOG(DEBUG, "EC computation finished");
-
+    for(unsigned int i = 0; i < data_servers; ++i) {
+        free(data[i]);
+    }
+    for(auto i = 0; i < CTX->get_replicas(); ++i) {
+        free(coding[i]);
+    }
     free(data);
     free(coding);
     return true;

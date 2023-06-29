@@ -941,13 +941,13 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
 
             // We have all the data to process a EC
 
-            auto matrix = reed_sol_vandermonde_coding_matrix(
+            int* matrix = reed_sol_vandermonde_coding_matrix(
                     data_servers, CTX->get_replicas(), 8);
             jerasure_matrix_encode(data_servers, CTX->get_replicas(), 8, matrix,
                                    data, coding, gkfs::config::rpc::chunksize);
 
             LOG(DEBUG, "EC computation finished");
-
+            free(matrix);
             // Write erasure
             std::string ecc_path = file->path() + "_ecc_" + to_string(i) + "_" +
                                    to_string(i + data_servers - 1);
@@ -963,6 +963,13 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
                 }
             }
         }
+        for(unsigned int i = 0; i < data_servers; ++i) {
+            free(data[i]);
+        }
+        for(auto i = 0; i < CTX->get_replicas(); ++i) {
+            free(coding[i]);
+        }
+
         free(coding);
         free(data);
     } else {

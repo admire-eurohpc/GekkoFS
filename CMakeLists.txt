@@ -214,6 +214,10 @@ if(GKFS_ENABLE_EC)
     find_package(Jerasure REQUIRED)
 endif()
 
+if(GKFS_ENABLE_READ_ERRORS)
+    add_compile_definitions(GKFS_ENABLE_READ_ERRORS)
+endif()
+
 ### Other stuff that can be found out using find_package:
 
 # determine the thread library of the system
