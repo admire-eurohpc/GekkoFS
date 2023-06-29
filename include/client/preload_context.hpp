@@ -111,6 +111,7 @@ private:
     int replicas_;
     std::shared_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
     std::shared_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
+    bool ec_ondemand_;
 
 public:
     static PreloadContext*
@@ -240,6 +241,11 @@ public:
     const std::shared_ptr<gkfs::messagepack::ClientMetrics>
     read_metrics();
 
+    bool
+    get_ec_ondemand();
+
+    void
+    set_ec_ondemand(const bool ec_ondemand);
 };
 
 } // namespace preload

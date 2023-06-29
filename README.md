@@ -384,6 +384,10 @@ The total servers available for data will be -> total servervs - num_repl
 Additionaly the user can enable the `-DGKFS_ENABLE_READ_ERRORS` to inject a  
 50% of read errors into the workflow.
 
+We also included a function to call the EC calculation on demand over a open file:
+`gkfs_ec_ondemand(int fd)`, to use it requires the environment variable `LIBGKFS_EC_ONDEMAND=1`
+
+The function is useful to calculate the ec only when the file is completed, like checkpoints.
 ## Acknowledgment
 
 This software was partially supported by the EC H2020 funded NEXTGenIO project (Project ID: 671951, www.nextgenio.eu).

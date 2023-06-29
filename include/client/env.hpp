@@ -59,6 +59,9 @@ static constexpr auto METRICS_IP_PORT = ADD_PREFIX("METRICS_IP_PORT");
 #endif
 
 static constexpr auto NUM_REPL = ADD_PREFIX("NUM_REPL");
+static constexpr auto EC_ONDEMAND = ADD_PREFIX("EC_ONDEMAND");
+
+
 } // namespace gkfs::env
 
 #undef ADD_PREFIX

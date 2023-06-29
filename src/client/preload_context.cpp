@@ -76,6 +76,9 @@ PreloadContext::PreloadContext()
     hostname = host;
     PreloadContext::set_replicas(
             std::stoi(gkfs::env::get_var(gkfs::env::NUM_REPL, "0")));
+
+    PreloadContext::set_ec_ondemand(
+            std::stoi(gkfs::env::get_var(gkfs::env::EC_ONDEMAND, "0")) == 1);
 }
 
 // Destructor set here to allow unique_ptr of forward declared classes in the
@@ -544,6 +547,7 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
+<<<<<<< HEAD
 
 const std::shared_ptr<messagepack::ClientMetrics>
 PreloadContext::write_metrics() {
@@ -555,5 +559,18 @@ PreloadContext::read_metrics() {
     return read_metrics_;
 }
 
+=======
+void
+PreloadContext::set_ec_ondemand(const bool ec_ondemand) {
+    ec_ondemand_ = ec_ondemand;
+}
+
+bool
+PreloadContext::get_ec_ondemand() {
+    return ec_ondemand_;
+}
+
+
+>>>>>>> 801361a3 (Added ondemand calculation)
 } // namespace preload
 } // namespace gkfs

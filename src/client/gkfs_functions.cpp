@@ -1027,11 +1027,14 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     write_size = ret_write.second;
 
 #ifdef GKFS_ENABLE_EC
-    auto res = gkfs_ecc_write(file, count, offset, updated_size);
-    if(res) {
-        LOG(ERROR, "erasure code writing failed");
+    // Only compute Erasure codes if we do not have enabled the ondemand
+    // environment variable
+    if(CTX->get_ec_ondemand() == false) {
+        auto res = gkfs_ecc_write(file, count, offset, updated_size);
+        if(res) {
+            LOG(ERROR, "erasure code writing failed");
+        }
     }
-
 #else
     if(num_replicas > 0) {
 
@@ -1752,3 +1755,29 @@ gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
     }
     return written;
 }
+
+#ifdef GKFS_ENABLE_EC
+/**
+ * This function defines an extension to calculate the erasure codes of a file
+ * Returns 0 on success, -1 on failure
+ */
+extern "C" int
+gkfs_ec_ondemand(const unsigned int fd) {
+    if(CTX->file_map()->exist(fd)) {
+        auto path = CTX->file_map()->get(fd)->path();
+        auto file = CTX->file_map()->get(fd);
+        auto md = gkfs::utils::get_metadata(path);
+        if(!md) {
+            return -1;
+        }
+        auto count = md->size();
+        auto res = gkfs::syscall::gkfs_ecc_write(file, count, 0, count);
+        if(!res) {
+            return -1;
+        }
+
+        return 0;
+    }
+    return -1;
+}
+#endif

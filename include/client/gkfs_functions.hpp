@@ -175,4 +175,10 @@ extern "C" int
 gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
                         unsigned int count, int server);
 
+
+#ifdef GKFS_ENABLE_EC
+extern "C" int
+gkfs_ec_ondemand(const unsigned int fd);
+#endif
+
 #endif // GEKKOFS_GKFS_FUNCTIONS_HPP
