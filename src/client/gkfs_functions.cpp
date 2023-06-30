@@ -912,11 +912,9 @@ gkfs_ecc_write(std::shared_ptr<gkfs::filemap::OpenFile> file, size_t count,
 
         for(unsigned int i = 0; i < data_servers; ++i) {
             data[i] = (char*) malloc(gkfs::config::rpc::chunksize);
-            // memset(data[i], 0, gkfs::config::rpc::chunksize);
         }
         for(auto i = 0; i < CTX->get_replicas(); ++i) {
             coding[i] = (char*) malloc(gkfs::config::rpc::chunksize);
-            // memset(coding[i], 0, gkfs::config::rpc::chunksize);
         }
 
         LOG(DEBUG,

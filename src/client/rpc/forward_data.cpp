@@ -589,11 +589,9 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
 
     for(unsigned int i = 0; i < data_servers; ++i) {
         data[i] = (char*) malloc(gkfs::config::rpc::chunksize);
-        memset(data[i], 0, gkfs::config::rpc::chunksize);
     }
     for(auto i = 0; i < CTX->get_replicas(); ++i) {
         coding[i] = (char*) malloc(gkfs::config::rpc::chunksize);
-        memset(coding[i], 0, gkfs::config::rpc::chunksize);
     }
 
     auto initial_row_chunk = (chunk_candidate / data_servers) * data_servers;
@@ -611,7 +609,8 @@ gkfs_ecc_recover(const std::string& path, void* buffer_recover,
     for(uint64_t j = 0; j < data_servers; ++j) {
         std::set<int8_t> failed;
         LOG(DEBUG, "Reading Chunk {} -> {}, from server {}", i, i + j, j);
-
+        // We set num_replicas to 0, to avoid recursion issues
+        // We only want to read, no recover and we could do it without loop...
         auto out = gkfs::rpc::forward_read(
                 path, data[j], (j + i) * gkfs::config::rpc::chunksize,
                 gkfs::config::rpc::chunksize, 0, failed);
@@ -877,69 +876,77 @@ forward_read(const string& path, void* buf, const off64_t offset,
             // Decode the data
             // Fill the gaps, and then remove the failed server while
             // keeping the variables consistent.
-            auto failed_server = targets[idx];
+            if(num_copies > 0) {
+                auto failed_server = targets[idx];
 
-            // For all the chunks activated in the bitset, recover and fill the
-            // buffer.
-            for(auto chnk_id_file = chnk_start; chnk_id_file <= chnk_end;
-                chnk_id_file++) {
-                // Continue if chunk does not hash to this host
-                // We only check if we are not using replicas
+                // For all the chunks activated in the bitset, recover and fill
+                // the buffer.
+                for(auto chnk_id_file = chnk_start; chnk_id_file <= chnk_end;
+                    chnk_id_file++) {
+                    // Continue if chunk does not hash to this host
+                    // We only check if we are not using replicas
 
-                if(!(gkfs::rpc::get_bitset(read_bitset_vect[failed_server],
-                                           chnk_id_file - chnk_start))) {
+                    if(!(gkfs::rpc::get_bitset(read_bitset_vect[failed_server],
+                                               chnk_id_file - chnk_start))) {
 
-                    continue;
-                }
-
-                // We have a chunk to recover
-                // We don't need to worry about offset etc... just use the chunk
-                // number
-                void* recovered_chunk = malloc(gkfs::config::rpc::chunksize);
-                auto recovered = gkfs::rpc::gkfs_ecc_recover(
-                        path, recovered_chunk, chnk_id_file, failed_server);
-                LOG(DEBUG, "Recovered server: {} Result {}", failed_server,
-                    recovered);
-
-                // Move recovered_chunk to the buffer, first and last chunk
-                // should substract...
-                auto recover_size = gkfs::config::rpc::chunksize;
-                auto recover_offt = (chnk_id_file - chnk_start) *
-                                    gkfs::config::rpc::chunksize;
-                auto recover_offt_chunk = 0;
-
-                if(chnk_id_file == chnk_start) {
-                    // We may need to move the offset of both buffers and reduce
-                    // the recover size
-                    auto offset_fc =
-                            block_overrun(offset, gkfs::config::rpc::chunksize);
-                    recover_offt += offset_fc;
-                    recover_offt_chunk += offset_fc;
-                    recover_size -= offset_fc;
-                }
-                if(chnk_id_file == chnk_end) {
-                    // We may need to reduce the recover size.
-                    if(!is_aligned(offset + read_size,
-                                   gkfs::config::rpc::chunksize)) {
-                        recover_size -=
-                                block_underrun(offset + read_size,
-                                               gkfs::config::rpc::chunksize);
+                        continue;
                     }
+
+                    // We have a chunk to recover
+                    // We don't need to worry about offset etc... just use the
+                    // chunk number
+                    void* recovered_chunk =
+                            malloc(gkfs::config::rpc::chunksize);
+                    auto recovered = gkfs::rpc::gkfs_ecc_recover(
+                            path, recovered_chunk, chnk_id_file, failed_server);
+                    LOG(DEBUG, "Recovered server: {} Result {}", failed_server,
+                        recovered);
+
+                    // Move recovered_chunk to the buffer, first and last chunk
+                    // should substract...
+                    auto recover_size = gkfs::config::rpc::chunksize;
+                    auto recover_offt = (chnk_id_file - chnk_start) *
+                                        gkfs::config::rpc::chunksize;
+                    auto recover_offt_chunk = 0;
+
+                    if(chnk_id_file == chnk_start) {
+                        // We may need to move the offset of both buffers and
+                        // reduce the recover size
+                        auto offset_fc = block_overrun(
+                                offset, gkfs::config::rpc::chunksize);
+                        recover_offt += offset_fc;
+                        recover_offt_chunk += offset_fc;
+                        recover_size -= offset_fc;
+                    }
+                    if(chnk_id_file == chnk_end) {
+                        // We may need to reduce the recover size.
+                        if(!is_aligned(offset + read_size,
+                                       gkfs::config::rpc::chunksize)) {
+                            recover_size -= block_underrun(
+                                    offset + read_size,
+                                    gkfs::config::rpc::chunksize);
+                        }
+                    }
+                    LOG(DEBUG,
+                        "Recovered chunk : Start Offset {}/OffsetChunk {} - Size {}",
+                        recover_offt, recover_offt_chunk, recover_size);
+
+                    if(recovered) {
+                        err = 0;
+                        out_size += static_cast<size_t>(recover_size);
+                    } else {
+                        err = EIO;
+                        out_size = -1;
+                        LOG(ERROR, "Can't recover error with ec");
+                    }
+
+
+                    memcpy((char*) buf + recover_offt,
+                           (char*) recovered_chunk + recover_offt_chunk,
+                           recover_size);
+
+                    free(recovered_chunk);
                 }
-                LOG(DEBUG,
-                    "Recovered chunk : Start Offset {}/OffsetChunk {} - Size {}",
-                    recover_offt, recover_offt_chunk, recover_size);
-
-                if(recovered) {
-                    err = 0;
-                    out_size += static_cast<size_t>(recover_size);
-                }
-
-                memcpy((char*) buf + recover_offt,
-                       (char*) recovered_chunk + recover_offt_chunk,
-                       recover_size);
-
-                free(recovered_chunk);
             }
 
 #endif
