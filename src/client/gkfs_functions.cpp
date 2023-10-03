@@ -1035,7 +1035,7 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     // Only compute Erasure codes if we do not have enabled the ondemand
     // environment variable
     if(CTX->get_ec_ondemand() == false) {
-        auto res = gkfs_ecc_write(file, count, offset, updated_size);
+        auto res = gkfs_ecc_write(file, count, offset, write_size);
         if(res) {
             LOG(ERROR, "erasure code writing failed");
         }
@@ -1045,9 +1045,9 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
 
         auto ret_write_repl = gkfs::rpc::forward_write(*path, buf, offset,
                                                        count, num_replicas);
-            write_size = ret_write_repl.second;
-        }
+        write_size = ret_write_repl.second;
     }
+}
 #endif
     if(err) {
         LOG(WARNING, "gkfs::rpc::forward_write() failed with err '{}'", err);
