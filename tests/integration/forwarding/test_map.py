@@ -165,7 +165,7 @@ def test_two_io_nodes_remap(gkfwd_daemon_factory, gkfwd_client_factory):
         lines = f.readlines()
 
         for line in lines:
-            if 'Forward to' in line:
+            if 'forwarding_mapper() Forward to' in line:
                 ion = line.split()[-1]
 
                 assert ion == '0'
@@ -190,15 +190,16 @@ def test_two_io_nodes_remap(gkfwd_daemon_factory, gkfwd_client_factory):
     ret = c00.write(file, buf, len(buf))
 
     assert ret.retval == len(buf) # Return the number of read bytes
-
+    
+    # log line should go to the end of the file
     with open(c00.log) as f:
         lines = f.readlines()
-
+        ion = 0
         for line in lines:
-            if 'Forward to' in line:
+            if 'forwarding_mapper() Forward to' in line:
                 ion = line.split()[-1]
 
-                assert ion == '1'
+        assert ion == '1'
 
 def test_two_io_nodes_operations(gkfwd_daemon_factory, gkfwd_client_factory):
     """Write files from one client and read in the other using two daemons"""
