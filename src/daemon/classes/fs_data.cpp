@@ -257,6 +257,15 @@ FsData::enable_chunkstats(bool enable_chunkstats) {
 }
 
 bool
+FsData::enable_forwarding() const {
+    return enable_forwarding_;
+}
+
+void
+FsData::enable_forwarding(bool enable_forwarding) {
+    FsData::enable_forwarding_ = enable_forwarding;
+}
+bool
 FsData::enable_prometheus() const {
     return enable_prometheus_;
 }

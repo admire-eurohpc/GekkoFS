@@ -261,25 +261,6 @@ init_environment() {
         throw;
     }
 
-    GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ", __func__);
-    try {
-#ifdef GKFS_USE_GUIDED_DISTRIBUTION
-        auto distributor = std::make_shared<gkfs::rpc::GuidedDistributor>();
-#else
-        auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>();
-#endif
-        RPC_DATA->distributor(distributor);
-    } catch(const std::exception& e) {
-        GKFS_DATA->spdlogger()->error(
-                "{}() Failed to initialize Distributor: {}", __func__,
-                e.what());
-        throw;
-    }
-
-#ifdef GKFS_ENABLE_FORWARDING
-    GKFS_DATA->spdlogger()->debug("{}() Enable I/O forwarding mode", __func__);
-#endif
-
 #ifdef GKFS_ENABLE_AGIOS
     // Initialize AGIOS scheduler
     GKFS_DATA->spdlogger()->debug("{}() Initializing AGIOS scheduler: '{}'",
@@ -552,10 +533,6 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
     assert(desc.count("--rootdir"));
     auto rootdir = opts.rootdir;
 
-#ifdef GKFS_ENABLE_FORWARDING
-    // In forwarding mode, the backend is shared
-    auto rootdir_path = fs::path(rootdir);
-#else
     auto rootdir_path = fs::path(rootdir);
     if(desc.count("--rootdir-suffix")) {
         if(opts.rootdir_suffix == gkfs::config::data::chunk_dir ||
@@ -570,7 +547,6 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
         rootdir_path /= opts.rootdir_suffix;
         GKFS_DATA->rootdir_suffix(opts.rootdir_suffix);
     }
-#endif
 
     if(desc.count("--clean-rootdir")) {
         // may throw exception (caught in main)
@@ -589,14 +565,23 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
     fs::create_directories(rootdir_path);
     GKFS_DATA->rootdir(rootdir_path.native());
 
+    if(desc.count("--enable-forwarding")) {
+        GKFS_DATA->enable_forwarding(true);
+        GKFS_DATA->spdlogger()->info("{}() Forwarding mode enabled", __func__);
+    }
+
     if(desc.count("--metadir")) {
         auto metadir = opts.metadir;
 
-#ifdef GKFS_ENABLE_FORWARDING
-        auto metadir_path = fs::path(metadir) / fmt::format_int(getpid()).str();
-#else
+
         auto metadir_path = fs::path(metadir);
-#endif
+        if(GKFS_DATA->enable_forwarding()) {
+            // As we store normally he metadata to the pfs, we need to put each
+            // daemon in a separate directory.
+            metadir_path = fs::path(metadir) / fmt::format_int(getpid()).str();
+        }
+
+
         if(desc.count("--clean-rootdir")) {
             // may throw exception (caught in main)
             GKFS_DATA->spdlogger()->debug("{}() Cleaning metadir '{}' ...",
@@ -613,13 +598,16 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
         // use rootdir as metadata dir
         auto metadir = opts.rootdir;
 
-#ifdef GKFS_ENABLE_FORWARDING
-        auto metadir_path = fs::path(metadir) / fmt::format_int(getpid()).str();
-        fs::create_directories(metadir_path);
-        GKFS_DATA->metadir(fs::canonical(metadir_path).native());
-#else
-        GKFS_DATA->metadir(GKFS_DATA->rootdir());
-#endif
+
+        if(GKFS_DATA->enable_forwarding()) {
+            // As we store normally he metadata to the pfs, we need to put each
+            // daemon in a separate directory.
+            auto metadir_path =
+                    fs::path(metadir) / fmt::format_int(getpid()).str();
+            fs::create_directories(metadir_path);
+            GKFS_DATA->metadir(fs::canonical(metadir_path).native());
+        } else
+            GKFS_DATA->metadir(GKFS_DATA->rootdir());
     }
 
     if(desc.count("--dbbackend")) {
@@ -787,6 +775,9 @@ main(int argc, const char* argv[]) {
     desc.add_option(
                 "--output-stats", opts.stats_file,
                 "Creates a thread that outputs the server stats each 10s to the specified file.");
+    desc.add_flag(
+                "--enable-forwarding",
+                "Enables forwarding mode, so the metadata is stored in a separate directory (pid).");
     #ifdef GKFS_ENABLE_PROMETHEUS
     desc.add_flag(
                 "--enable-prometheus",

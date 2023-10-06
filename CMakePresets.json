@@ -28,14 +28,6 @@
       }
     },
     {
-      "name": "forwarding",
-      "inherits": "default",
-      "hidden": true,
-      "cacheVariables": {
-        "GKFS_ENABLE_FORWARDING": true
-      }
-    },
-    {
       "name": "release",
       "hidden": true,
       "cacheVariables": {
@@ -114,30 +106,6 @@
       ]
     },
     {
-      "name": "forwarding-debug",
-      "displayName": "Forwarding gekkofs (debug)",
-      "inherits": [
-        "forwarding",
-        "debug"
-      ]
-    },
-    {
-      "name": "forwarding-coverage",
-      "displayName": "Forwarding gekkofs (coverage)",
-      "inherits": [
-        "forwarding",
-        "coverage"
-      ]
-    },
-    {
-      "name": "forwarding-release",
-      "displayName": "Forwarding gekkofs (release)",
-      "inherits": [
-        "forwarding",
-        "release"
-      ]
-    },
-    {
       "name": "ci-debug",
       "displayName": "Default gekkofs (debug, CI flags)",
       "inherits": [
@@ -169,33 +137,6 @@
       "inherits": [
         "ci",
         "default",
-        "release"
-      ]
-    },
-    {
-      "name": "ci-forwarding-debug",
-      "displayName": "Forwarding gekkofs (debug, CI flags)",
-      "inherits": [
-        "ci",
-        "forwarding",
-        "debug"
-      ]
-    },
-    {
-      "name": "ci-forwarding-coverage",
-      "displayName": "Forwarding gekkofs (coverage, CI flags)",
-      "inherits": [
-        "ci",
-        "forwarding",
-        "coverage"
-      ]
-    },
-    {
-      "name": "ci-forwarding-release",
-      "displayName": "Forwarding gekkofs (release, CI flags)",
-      "inherits": [
-        "ci",
-        "forwarding",
         "release"
       ]
     }

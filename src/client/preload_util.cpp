@@ -286,7 +286,6 @@ metadata_to_stat(const std::string& path, const gkfs::metadata::Metadata& md,
     return 0;
 }
 
-#ifdef GKFS_ENABLE_FORWARDING
 map<string, uint64_t>
 load_forwarding_map_file(const std::string& lfpath) {
 
@@ -320,9 +319,7 @@ load_forwarding_map_file(const std::string& lfpath) {
     }
     return forwarding_map;
 }
-#endif
 
-#ifdef GKFS_ENABLE_FORWARDING
 void
 load_forwarding_map() {
     string forwarding_map_file;
@@ -359,7 +356,6 @@ load_forwarding_map() {
 
     CTX->fwd_host_id(forwarding_map[local_hostname]);
 }
-#endif
 
 vector<pair<string, string>>
 read_hosts_file() {

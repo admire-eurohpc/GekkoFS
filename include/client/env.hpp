@@ -49,9 +49,8 @@ static constexpr auto LOG_PER_PROCESS = ADD_PREFIX("LOG_PER_PROCESS");
 static constexpr auto LOG_OUTPUT_TRUNC = ADD_PREFIX("LOG_OUTPUT_TRUNC");
 static constexpr auto CWD = ADD_PREFIX("CWD");
 static constexpr auto HOSTS_FILE = ADD_PREFIX("HOSTS_FILE");
-#ifdef GKFS_ENABLE_FORWARDING
 static constexpr auto FORWARDING_MAP_FILE = ADD_PREFIX("FORWARDING_MAP_FILE");
-#endif
+
 static constexpr auto NUM_REPL = ADD_PREFIX("NUM_REPL");
 } // namespace gkfs::env
 
