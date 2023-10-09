@@ -203,7 +203,8 @@ init_environment() {
     /* Setup distributor */
     auto forwarding_map_file = gkfs::env::get_var(
             gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
-    if(forwarding_map_file.empty()) {
+
+    if(!forwarding_map_file.empty()) {
         try {
             gkfs::utils::load_forwarding_map();
 
@@ -288,7 +289,7 @@ init_preload() {
 
     auto forwarding_map_file = gkfs::env::get_var(
             gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
-    if(forwarding_map_file.empty()) {
+    if(!forwarding_map_file.empty()) {
         init_forwarding_mapper();
     }
 
@@ -304,7 +305,7 @@ void
 destroy_preload() {
     auto forwarding_map_file = gkfs::env::get_var(
             gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
-    if(forwarding_map_file.empty()) {
+    if(!forwarding_map_file.empty()) {
         destroy_forwarding_mapper();
     }
     CTX->clear_hosts();

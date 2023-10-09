@@ -521,7 +521,8 @@ class ShellClient:
             'LD_PRELOAD'           : str(self._preload_library),
             'LIBGKFS_HOSTS_FILE'   : str(self.cwd / gkfs_hosts_file),
             'LIBGKFS_LOG'          : gkfs_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'   : str(self._workspace.logdir / gkfs_client_log_file)
+            'LIBGKFS_LOG_OUTPUT'   : str(self._workspace.logdir / gkfs_client_log_file),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)
@@ -908,7 +909,8 @@ class FwdClient:
             'LIBGKFS_HOSTS_FILE'            : str(self.cwd / gkfwd_hosts_file),
             'LIBGKFS_FORWARDING_MAP_FILE'   : str(self.cwd / gkfwd_forwarding_map_file_local),
             'LIBGKFS_LOG'                   : gkfs_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file_local)
+            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file_local),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)
@@ -998,7 +1000,8 @@ class ShellFwdClient:
             'LIBGKFS_HOSTS_FILE'            : str(self.cwd / gkfwd_hosts_file),
             'LIBGKFS_FORWARDING_MAP_FILE'   : str(self.cwd / gkfwd_forwarding_map_file),
             'LIBGKFS_LOG'                   : gkfwd_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file)
+            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)
