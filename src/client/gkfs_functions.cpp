@@ -1394,6 +1394,27 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
     return written;
 }
 
+/**
+ * @brief Closes an fd. To be used externally
+ * 
+ * @param fd 
+ * @return int 
+ */
+int gkfs_close(unsigned int fd) {
+    if(CTX->file_map()->exist(fd)) {
+        // No call to the daemon is required
+        CTX->file_map()->remove(fd);
+        return 0;
+    }
+
+    if(CTX->is_internal_fd(fd)) {
+        // the client application (for some reason) is trying to close an
+        // internal fd: ignore it
+        return 0;
+    }
+    
+    return -1;
+}
 
 #ifdef HAS_SYMLINKS
 #ifdef GKFS_ENABLE_UNUSED_FUNCTIONS

@@ -28,9 +28,17 @@
 
 set (CMAKE_CXX_STANDARD 14)
 add_executable(sfind sfind.cpp)
+add_executable(gkfs_lib_example gkfs_lib_example.cpp)
+
+target_link_libraries(gkfs_lib_example
+  PRIVATE gkfs_intercept
+)
 
 if(GKFS_INSTALL_TESTS)
     install(TARGETS sfind 
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+    install(TARGETS gkfs_lib_example
         DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()

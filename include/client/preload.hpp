@@ -47,5 +47,10 @@ init_preload() __attribute__((constructor));
 void
 destroy_preload() __attribute__((destructor));
 
+extern "C" int
+gkfs_init();
+
+extern "C" int
+gkfs_end();
 
 #endif // IOINTERCEPT_PRELOAD_HPP

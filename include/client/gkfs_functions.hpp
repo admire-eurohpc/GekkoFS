@@ -149,6 +149,9 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
 int
 gkfs_rmdir(const std::string& path);
 
+int
+gkfs_close(unsigned int fd);
+
 #ifdef HAS_RENAME
 int
 gkfs_rename(const std::string& old_path, const std::string& new_path);
