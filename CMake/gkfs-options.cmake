@@ -348,14 +348,6 @@ gkfs_define_option(
 # I/O forwarding
 ################################################################################
 
-## Forwarding support
-gkfs_define_option(
-  GKFS_ENABLE_FORWARDING
-  HELP_TEXT "Enable I/O forwarding mode"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Use ${PROJECT_NAME} as an I/O forwarding layer"
-)
-
 ## Scheduling in I/O forwarding mode
 gkfs_define_option(
   GKFS_ENABLE_AGIOS

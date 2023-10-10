@@ -52,6 +52,11 @@ target_sources(
           syscalls/detail/syscall_info.c
 )
 
+
+  if(GKFS_ENABLE_AGIOS)
+    target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
+  endif()
+
 target_link_libraries(
   gkfs_intercept
   PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
@@ -71,54 +76,3 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
 )
 
-# ##############################################################################
-# This builds the `libgkfwd_intercept.so` library: the client for GekkoFS'
-# forwarding mode based on syscall interception.
-# ##############################################################################
-
-if(GKFS_ENABLE_FORWARDING)
-  add_library(gkfwd_intercept SHARED)
-
-  target_sources(
-    gkfwd_intercept
-    PRIVATE gkfs_functions.cpp
-            hooks.cpp
-            intercept.cpp
-            logging.cpp
-            open_file_map.cpp
-            open_dir.cpp
-            path.cpp
-            preload.cpp
-            preload_context.cpp
-            preload_util.cpp
-            rpc/rpc_types.cpp
-            rpc/forward_data.cpp
-            rpc/forward_management.cpp
-            rpc/forward_metadata.cpp
-            syscalls/detail/syscall_info.c
-  )
-  target_compile_definitions(gkfwd_intercept PUBLIC GKFS_ENABLE_FORWARDING)
-
-  if(GKFS_ENABLE_AGIOS)
-    target_compile_definitions(gkfwd_intercept PUBLIC GKFS_ENABLE_AGIOS)
-  endif()
-
-  target_link_libraries(
-    gkfwd_intercept
-    PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
-    PUBLIC Syscall_intercept::Syscall_intercept
-           dl
-           Mercury::Mercury
-           hermes
-           fmt::fmt
-           Threads::Threads
-           Date::TZ
-  )
-
-  install(
-    TARGETS gkfwd_intercept
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
-  )
-endif()

@@ -38,21 +38,6 @@ target_sources(
          handler/rpc_util.hpp
 )
 
-if(GKFS_ENABLE_FORWARDING)
-  target_sources(
-    gkfwd_daemon
-    PUBLIC daemon.hpp
-           util.hpp
-           ops/data.hpp
-           ops/metadentry.hpp
-           classes/fs_data.hpp
-           classes/rpc_data.hpp
-           handler/rpc_defs.hpp
-           handler/rpc_util.hpp
-  )
-
-  if(GKFS_ENABLE_AGIOS)
-    target_sources(gkfwd_daemon PUBLIC scheduler/agios.hpp)
-  endif()
-
+if(GKFS_ENABLE_AGIOS)
+  target_sources(gkfwd_daemon PUBLIC scheduler/agios.hpp)
 endif()
