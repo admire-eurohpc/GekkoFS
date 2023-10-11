@@ -38,7 +38,7 @@ project(
 enable_testing()
 
 #if (NOT CMAKE_COMPILER_IS_GNUCC)
- #   message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
+#   message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
 #endif ()
 #if (NOT CMAKE_COMPILER_IS_GNUCXX)
 #    message(FATAL_ERROR "The choosen C++ compiler is not g++ and is not supported")

@@ -163,4 +163,5 @@ gkfs_rename(const std::string& old_path, const std::string& new_path);
 extern "C" int
 gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
                         unsigned int count, int server);
+
 #endif // GEKKOFS_GKFS_FUNCTIONS_HPP

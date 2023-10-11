@@ -41,22 +41,9 @@
 #include <unistd.h>
 #include <limits>
 #include <cstdint>
-#include <client/gkfs_functions.hpp>
+#include <client/user_functions.hpp>
 
 using namespace std;
-
-/* Function exported from GekkoFS LD_PRELOAD, code needs to be compiled with
- * -fPIC */
-extern "C" int
-gkfs_init() __attribute__((weak));
-
-extern "C" int
-gkfs_end() __attribute__((weak));
-
-void
-init_preload(){};
-void
-destroy_preload(){};
 
 void
 write_file(std::string filename) {
@@ -64,12 +51,16 @@ write_file(std::string filename) {
     int fd = gkfs::syscall::gkfs_open(filename, S_IRWXU, O_RDWR | O_CREAT);
 
     cout << "FD open  " << fd << endl;
-    char* buf = "testing";
 
-    int size = gkfs::syscall::gkfs_write(fd, buf, 7);
+    char* bufwrite = (char*) malloc(10);
+    strncpy(bufwrite, "testing", 7);
 
-    cout << "FD size" << size << endl;
 
+    int size = gkfs::syscall::gkfs_write(fd, bufwrite, 7);
+
+    cout << "Writting size " << size << endl;
+
+    free(bufwrite);
     gkfs::syscall::gkfs_close(fd);
 }
 
@@ -82,10 +73,12 @@ read_file(std::string filename) {
     char* bufread = (char*) malloc(10);
     int sizeread = gkfs::syscall::gkfs_read(fdread, bufread, 7);
 
-    cout << "Reading : " << sizeread << " --> " << bufread << endl;
+    cout << "Reading Size: " << sizeread << " Content: " << bufread << endl;
 
+    free(bufread);
     gkfs::syscall::gkfs_close(fdread);
 }
+
 int
 main(int argc, char** argv) {
     cout << "GekkoFS Client library test" << endl;

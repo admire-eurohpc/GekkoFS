@@ -106,6 +106,13 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
 )
 
+
+set_target_properties(gkfs_user_lib 
+	PROPERTIES
+	PUBLIC_HEADER "../../include/client/void_syscall_intercept.hpp"
+)
+
+
 install(
   TARGETS gkfs_user_lib
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

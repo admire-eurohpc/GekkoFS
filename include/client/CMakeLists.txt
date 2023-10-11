@@ -79,4 +79,5 @@ target_sources(
          syscalls/syscall.hpp
          syscalls/detail/syscall_info.h
          void_syscall_intercept.hpp
+         user_functions.hpp
 )

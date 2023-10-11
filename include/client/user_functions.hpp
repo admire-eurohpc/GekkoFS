@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2022, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2022, Johannes Gutenberg Universitaet Mainz, Germany
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -27,26 +27,41 @@
   SPDX-License-Identifier: LGPL-3.0-or-later
 */
 
-#ifndef IOINTERCEPT_PRELOAD_HPP
-#define IOINTERCEPT_PRELOAD_HPP
+#ifndef GEKKOFS_USER_FUNCTIONS_HPP
+#define GEKKOFS_USER_FUNCTIONS_HPP
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string>
+#include <cstdint>
 
-#include <client/preload_context.hpp>
-#include <common/env_util.hpp>
-#include <client/env.hpp>
-#define EUNKNOWN (-1)
+namespace gkfs::syscall {
 
-#define CTX gkfs::preload::PreloadContext::getInstance()
-namespace gkfs::preload {
-void
-init_ld_env_if_needed();
-} // namespace gkfs::preload
+int
+gkfs_open(const std::string& path, mode_t mode, int flags);
 
-#ifndef BYPASS_SYSCALL
-void
-init_preload() __attribute__((constructor));
+int
+gkfs_remove(const std::string& path);
 
-void
-destroy_preload() __attribute__((destructor));
-#endif
 
-#endif // IOINTERCEPT_PRELOAD_HPP
+ssize_t
+gkfs_write(int fd, const void* buf, size_t count);
+
+
+ssize_t
+gkfs_read(int fd, void* buf, size_t count);
+
+
+int
+gkfs_close(unsigned int fd);
+
+
+} // namespace gkfs::syscall
+
+
+extern "C" int
+gkfs_init();
+
+extern "C" int
+gkfs_end();
+
+#endif // GEKKOFS_USER_FUNCTIONS_HPP

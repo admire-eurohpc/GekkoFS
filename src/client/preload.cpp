@@ -333,10 +333,13 @@ destroy_preload() {
 extern "C" int
 gkfs_init() {
     CTX->init_logging();
+
     // from here ownwards it is safe to print messages
     LOG(DEBUG, "Logging subsystem initialized");
+
     gkfs::preload::init_environment();
-    return 4;
+
+    return 0;
 }
 
 
@@ -349,5 +352,6 @@ gkfs_end() {
     LOG(DEBUG, "RPC subsystem shut down");
 
     LOG(INFO, "All subsystems shut down. Client shutdown complete.");
-    return 4;
+
+    return 0;
 }
