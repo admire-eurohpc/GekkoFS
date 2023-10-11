@@ -32,16 +32,17 @@ cmake_minimum_required(VERSION 3.13)
 project(
     GekkoFS
     VERSION 0.9.2
+    LANGUAGES ASM CXX C
 )
 
 enable_testing()
 
-if (NOT CMAKE_COMPILER_IS_GNUCC)
-    message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
-endif ()
-if (NOT CMAKE_COMPILER_IS_GNUCXX)
-    message(FATAL_ERROR "The choosen C++ compiler is not g++ and is not supported")
-endif ()
+#if (NOT CMAKE_COMPILER_IS_GNUCC)
+ #   message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
+#endif ()
+#if (NOT CMAKE_COMPILER_IS_GNUCXX)
+#    message(FATAL_ERROR "The choosen C++ compiler is not g++ and is not supported")
+#endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

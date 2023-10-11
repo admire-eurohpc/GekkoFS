@@ -26,24 +26,20 @@
 
   SPDX-License-Identifier: LGPL-3.0-or-later
 */
-extern "C" {
-int (*intercept_hook_point)(long syscall_number,
-			long arg0, long arg1,
-			long arg2, long arg3,
-			long arg4, long arg5,
-			long *result) {};
-void (*intercept_hook_point_clone_child)(
-			unsigned long flags, void *child_stack,
-			int *ptid, int *ctid, long newtls) {};
-void (*intercept_hook_point_clone_parent)(
-			unsigned long flags, void *child_stack,
-			int *ptid, int *ctid, long newtls,
-			long returned_pid) {};
- void (*intercept_hook_point_post_kernel)(long syscall_number,
-			long arg0, long arg1,
-			long arg2, long arg3,
-			long arg4, long arg5,
-			long result) {};
+#ifndef SYSCALL_BYPASS_HPP
+#define SYSCALL_BYPASS_HPP
 
-long syscall_no_intercept(long syscall_number, ...) { return 0};
+static inline int
+syscall_error_code(long result) {
+    if(result < 0 && result >= -0x1000)
+        return (int) -result;
+
+    return 0;
 }
+
+extern "C" {
+long
+syscall_no_intercept(long syscall_number, ...);
+}
+
+#endif

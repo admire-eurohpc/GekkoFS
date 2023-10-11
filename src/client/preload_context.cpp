@@ -37,13 +37,17 @@
 #include <common/env_util.hpp>
 #include <common/path_util.hpp>
 #include <config.hpp>
-
 #include <hermes.hpp>
 
 #include <cassert>
 
-extern "C" {
+#ifndef BYPASS_SYSCALL
 #include <libsyscall_intercept_hook_point.h>
+#else
+#include <client/void_syscall_intercept.hpp>
+#endif
+
+extern "C" {
 #include <syscall.h>
 }
 

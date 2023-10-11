@@ -92,8 +92,8 @@ hook_close(int fd) {
     LOG(DEBUG, "{}() called with fd: {}", __func__, fd);
 
     auto ret = gkfs::syscall::gkfs_close(fd);
-    
-    if (ret == 0) 
+
+    if(ret == 0)
         return 0;
 
     return syscall_no_intercept_wrapper(SYS_close, fd);

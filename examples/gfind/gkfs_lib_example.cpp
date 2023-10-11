@@ -47,54 +47,58 @@ using namespace std;
 
 /* Function exported from GekkoFS LD_PRELOAD, code needs to be compiled with
  * -fPIC */
-extern "C" int gkfs_init()
-    __attribute__((weak));
+extern "C" int
+gkfs_init() __attribute__((weak));
 
-extern "C" int gkfs_end()
-    __attribute__((weak));
+extern "C" int
+gkfs_end() __attribute__((weak));
 
-void init_preload() {};
-void destroy_preload() {};
+void
+init_preload(){};
+void
+destroy_preload(){};
 
-void write_file(std::string filename){
-  // Opem File
-  int fd = gkfs::syscall::gkfs_open(filename,S_IRWXU,O_RDWR|O_CREAT);
+void
+write_file(std::string filename) {
+    // Open File
+    int fd = gkfs::syscall::gkfs_open(filename, S_IRWXU, O_RDWR | O_CREAT);
 
-  cout << "FD open  " << fd << endl;
-  char *buf = "testing";
-  
-  // int size = gkfs::syscall::gkfs_write(fd, buf, 7);
+    cout << "FD open  " << fd << endl;
+    char* buf = "testing";
 
- //  cout << "FD size" << size << endl;
+    int size = gkfs::syscall::gkfs_write(fd, buf, 7);
 
-  gkfs::syscall::gkfs_close(fd);
+    cout << "FD size" << size << endl;
 
+    gkfs::syscall::gkfs_close(fd);
 }
 
 
-void read_file(std::string filename){
-  int fdread = gkfs::syscall::gkfs_open(filename,S_IRWXU,O_RDONLY);
-  char *bufread = "TESTING\0";
-  int sizeread = gkfs::syscall::gkfs_read(fdread, bufread, 7);
+void
+read_file(std::string filename) {
+    int fdread = gkfs::syscall::gkfs_open(filename, S_IRWXU, O_RDONLY);
+    if(fdread == -1)
+        return;
+    char* bufread = (char*) malloc(10);
+    int sizeread = gkfs::syscall::gkfs_read(fdread, bufread, 7);
 
-  cout << "Reading : "  << sizeread << " --> " << bufread << endl;
+    cout << "Reading : " << sizeread << " --> " << bufread << endl;
 
-  gkfs::syscall::gkfs_close(fdread);
-
+    gkfs::syscall::gkfs_close(fdread);
 }
-int main(int argc, char **argv) {
-  cout << "GekkoFS Client library test" << endl;
+int
+main(int argc, char** argv) {
+    cout << "GekkoFS Client library test" << endl;
 
-  auto res = gkfs_init();
+    auto res = gkfs_init();
 
-  cout << "Init result " << res << endl;
+    cout << "Init result " << res << endl;
 
-  //write_file ("/test.tmp"); 
-  
-  read_file("/test.tmp");
+    write_file("/test.tmp");
 
-  res = gkfs_end();
+    read_file("/test.tmp");
 
-  cout << "End result " << res << endl;
+    res = gkfs_end();
 
+    cout << "End result " << res << endl;
 }

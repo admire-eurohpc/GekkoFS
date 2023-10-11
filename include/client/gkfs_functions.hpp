@@ -156,6 +156,7 @@ gkfs_close(unsigned int fd);
 int
 gkfs_rename(const std::string& old_path, const std::string& new_path);
 #endif // HAS_RENAME
+
 } // namespace gkfs::syscall
 
 // gkfs_getsingleserverdir is using extern "C" to demangle it for C usage
