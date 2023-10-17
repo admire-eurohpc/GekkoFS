@@ -490,7 +490,7 @@ logger::log_syscall(syscall::info info, const long syscall_number,
 
 print_syscall:
 
-    static_buffer buffer;
+    fmt::basic_memory_buffer<char, max_buffer_size> buffer;
 
     detail::format_timestamp_to(buffer, timezone_);
     detail::format_syscall_info_to(buffer, info);
@@ -501,7 +501,7 @@ print_syscall:
         syscall::decode(buffer, syscall_number, args);
     }
 
-    fmt::format_to(buffer, "\n");
+    fmt::format_to(std::back_inserter(buffer), "\n");
 
     ::syscall_no_intercept(SYS_write, log_fd_, buffer.data(), buffer.size());
 }

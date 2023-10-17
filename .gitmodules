@@ -1,6 +1,7 @@
 [submodule "external/hermes"]
 	path = external/hermes
 	url = https://github.com/bsc-ssrg/hermes.git
+	commit = 9f17ff97fd0b6aa44227cc164e099f25f3e5c333
 [submodule "tests/scripts/bats"]
 	path = tests/scripts/bats
 	url = https://github.com/bats-core/bats-core.git

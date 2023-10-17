@@ -114,7 +114,7 @@ forwarding_mapper(void* p) {
         try {
             gkfs::utils::load_forwarding_map();
 
-            if(previous != CTX->fwd_host_id()) {
+            if(previous != (int64_t) CTX->fwd_host_id()) {
                 LOG(INFO, "{}() Forward to {}", __func__, CTX->fwd_host_id());
 
                 previous = CTX->fwd_host_id();

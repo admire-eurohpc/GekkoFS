@@ -213,12 +213,15 @@ format_timestamp_to(Buffer&& buffer,
             std::chrono::microseconds{tv.tv_usec}};
 
     if(!timezone) {
-        fmt::format_to(buffer, "[{}] ", now.time_since_epoch().count());
+        fmt::format_to(std::back_inserter(buffer), "[{}] ",
+                       now.time_since_epoch().count());
         return;
     }
 
-    fmt::format_to(buffer, "[{}] ",
-                   date::zoned_time<std::chrono::microseconds>{timezone, now});
+    std::stringstream tmp;
+    tmp << date::zoned_time<std::chrono::microseconds>{timezone, now};
+
+    fmt::format_to(std::back_inserter(buffer), "[{}] ", tmp.str());
 }
 
 template <typename Buffer>
@@ -226,7 +229,7 @@ static inline void
 format_syscall_info_to(Buffer&& buffer, gkfs::syscall::info info) {
 
     const auto ttid = syscall_no_intercept(SYS_gettid);
-    fmt::format_to(buffer, "[{}] [syscall] ", ttid);
+    fmt::format_to(std::back_inserter(buffer), "[{}] [syscall] ", ttid);
 
     char o;
     char t;
@@ -256,20 +259,15 @@ format_syscall_info_to(Buffer&& buffer, gkfs::syscall::info info) {
     }
 
     const std::array<char, 5> tmp = {'[', o, t, ']', ' '};
-    fmt::format_to(buffer, fmt::string_view(tmp.data(), tmp.size()));
+    fmt::format_to(std::back_inserter(buffer),
+                   fmt::string_view(tmp.data(), tmp.size()));
 }
 
 } // namespace detail
 
 enum { max_buffer_size = LIBGKFS_LOG_MESSAGE_SIZE };
 
-struct static_buffer : public fmt::basic_memory_buffer<char, max_buffer_size> {
-
-protected:
-    void
-    grow(std::size_t size) override final;
-};
-
+using static_buffer = fmt::basic_memory_buffer<char, max_buffer_size>;
 
 struct logger {
 
@@ -294,15 +292,16 @@ struct logger {
 
         static_buffer buffer;
         detail::format_timestamp_to(buffer, timezone_);
-        fmt::format_to(buffer, "[{}] [{}] ", log_process_id_,
-                       lookup_level_name(level));
+        fmt::format_to(std::back_inserter(buffer), "[{}] [{}] ", ,
+                       log_process_id_, lookup_level_name(level));
 
         if(!!(level & log::debug)) {
-            fmt::format_to(buffer, "<{}():{}> ", func, lineno);
+            fmt::format_to(std::back_inserter(buffer), "<{}():{}> ", func,
+                           lineno);
         }
 
-        fmt::format_to(buffer, std::forward<Args>(args)...);
-        fmt::format_to(buffer, "\n");
+        fmt::format_to(std::back_inserter(buffer), std::forward<Args>(args)...);
+        fmt::format_to(std::back_inserter(buffer), "\n");
         detail::log_buffer(log_fd_, buffer);
     }
 
@@ -337,8 +336,8 @@ struct logger {
 
         static_buffer prefix;
         detail::format_timestamp_to(prefix);
-        fmt::format_to(prefix, "[{}] [{}] ", log_process_id_,
-                       lookup_level_name(level));
+        fmt::format_to(std::back_inserter(prefix), "[{}] [{}] ",
+                       log_process_id_, lookup_level_name(level));
 
         char buffer[max_buffer_size];
         const int n = vsnprintf(buffer, sizeof(buffer), fmt, ap);
@@ -387,8 +386,8 @@ struct logger {
         }
 
         static_buffer buffer;
-        fmt::format_to(buffer, std::forward<Args>(args)...);
-        fmt::format_to(buffer, "\n");
+        fmt::format_to(std::back_inserter(buffer), std::forward<Args>(args)...);
+        fmt::format_to(std::back_inserter(buffer), "\n");
         detail::log_buffer(fd, buffer);
     }
 
@@ -438,23 +437,6 @@ get_global_logger() {
 static inline void
 destroy_global_logger() {
     logger::global_logger().reset();
-}
-
-inline void
-static_buffer::grow(std::size_t size) {
-
-    const auto logger = get_global_logger();
-
-    if(logger) {
-        logger->log_mask_ &= ~(syscall | syscall_at_entry);
-    }
-
-    std::fprintf(
-            stderr,
-            "FATAL: message too long for gkfs::log::static_buffer, increase the size of\n"
-            "LIBGKFS_LOG_MESSAGE_SIZE in CMake or reduce the length of the offending "
-            "message.\n");
-    abort();
 }
 
 } // namespace gkfs::log

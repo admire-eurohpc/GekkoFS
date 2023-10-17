@@ -225,7 +225,7 @@ include_from_source(fmt
   MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
   SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG f94b7364b9409f05207c3af3fa4666730e11a854 # v6.1.2
+  GIT_TAG e57ca2e3685b160617d3d95fcd9e789c4e06ca88 # v10.1.0
 )
 
 # ensure that fmt is linked as PIC

@@ -178,13 +178,10 @@ template <>
 struct adl_serializer<struct ::statfs> {
     static void
     to_json(json& j, const struct ::statfs opt) {
-        j = json{{"f_type", opt.f_type},
-        {"f_bsize", opt.f_bsize},
-        {"f_blocks", opt.f_blocks},
-        {"f_bfree", opt.f_bfree},
-        {"f_bavail", opt.f_bavail},
-        {"f_files", opt.f_files},
-        {"f_ffree", opt.f_ffree}};
+        j = json{{"f_type", opt.f_type},     {"f_bsize", opt.f_bsize},
+                 {"f_blocks", opt.f_blocks}, {"f_bfree", opt.f_bfree},
+                 {"f_bavail", opt.f_bavail}, {"f_files", opt.f_files},
+                 {"f_ffree", opt.f_ffree}};
     }
 };
 
@@ -253,7 +250,8 @@ struct formatter<struct ::dirent> {
 
     template <typename FormatContext>
     auto
-    format(const struct ::dirent& dirent, FormatContext& ctx) {
+    format(const struct ::dirent& dirent, FormatContext& ctx) const
+            -> format_context::iterator {
         return format_to(ctx.out(),
                          "struct dirent {{\n"
                          "   d_ino = {};\n"
