@@ -48,7 +48,7 @@ namespace {
 
 thread_local bool reentrance_guard_flag;
 thread_local gkfs::syscall::info saved_syscall_info;
-
+thread_local bool avoid_logging;
 constexpr void
 save_current_syscall_info(gkfs::syscall::info info) {
     saved_syscall_info = info;
@@ -84,15 +84,14 @@ hook_internal(long syscall_number, long arg0, long arg1, long arg2, long arg3,
                                                 arg3, arg4, arg5};
 #endif
 
-    // We avoid logging sched_getaffinity to use tz.h
-    if(syscall_number == SYS_sched_getaffinity) {
-        return gkfs::syscall::forward_to_kernel;
+    if(!avoid_logging) {
+        avoid_logging = true;
+        LOG(SYSCALL,
+            gkfs::syscall::from_internal_code | gkfs::syscall::to_hook |
+                    gkfs::syscall::not_executed,
+            syscall_number, args);
+        avoid_logging = false;
     }
-
-    LOG(SYSCALL,
-        gkfs::syscall::from_internal_code | gkfs::syscall::to_hook |
-                gkfs::syscall::not_executed,
-        syscall_number, args);
 
     switch(syscall_number) {
 #ifdef SYS_open
@@ -428,17 +427,14 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
                                                 arg3, arg4, arg5};
 #endif
 
-    // We avoid logging sched_getaffinity to use tz.h
-    if(syscall_number == SYS_sched_getaffinity) {
-        return gkfs::syscall::forward_to_kernel;
+    if(!avoid_logging) {
+        avoid_logging = true;
+        LOG(SYSCALL,
+            gkfs::syscall::from_external_code | gkfs::syscall::to_hook |
+                    gkfs::syscall::not_executed,
+            syscall_number, args);
+        avoid_logging = false;
     }
-
-
-    LOG(SYSCALL,
-        gkfs::syscall::from_external_code | gkfs::syscall::to_hook |
-                gkfs::syscall::not_executed,
-        syscall_number, args);
-
     switch(syscall_number) {
 
         case SYS_execve:
@@ -856,13 +852,13 @@ hook_forwarded_syscall(long syscall_number, long arg0, long arg1, long arg2,
     const long args[gkfs::syscall::MAX_ARGS] = {arg0, arg1, arg2,
                                                 arg3, arg4, arg5};
 #endif
-    if(syscall_number == SYS_sched_getaffinity) {
-        return;
+
+    if(!avoid_logging) {
+        avoid_logging = true;
+        LOG(SYSCALL, ::get_current_syscall_info() | gkfs::syscall::executed,
+            syscall_number, args, result);
+        avoid_logging = false;
     }
-
-    LOG(SYSCALL, ::get_current_syscall_info() | gkfs::syscall::executed,
-        syscall_number, args, result);
-
     ::reset_current_syscall_info();
 }
 
