@@ -84,6 +84,11 @@ hook_internal(long syscall_number, long arg0, long arg1, long arg2, long arg3,
                                                 arg3, arg4, arg5};
 #endif
 
+    // We avoid logging sched_getaffinity to use tz.h
+    if(syscall_number == SYS_sched_getaffinity) {
+        return gkfs::syscall::forward_to_kernel;
+    }
+
     LOG(SYSCALL,
         gkfs::syscall::from_internal_code | gkfs::syscall::to_hook |
                 gkfs::syscall::not_executed,
@@ -422,6 +427,12 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
     const long args[gkfs::syscall::MAX_ARGS] = {arg0, arg1, arg2,
                                                 arg3, arg4, arg5};
 #endif
+
+    // We avoid logging sched_getaffinity to use tz.h
+    if(syscall_number == SYS_sched_getaffinity) {
+        return gkfs::syscall::forward_to_kernel;
+    }
+
 
     LOG(SYSCALL,
         gkfs::syscall::from_external_code | gkfs::syscall::to_hook |
@@ -845,6 +856,9 @@ hook_forwarded_syscall(long syscall_number, long arg0, long arg1, long arg2,
     const long args[gkfs::syscall::MAX_ARGS] = {arg0, arg1, arg2,
                                                 arg3, arg4, arg5};
 #endif
+    if(syscall_number == SYS_sched_getaffinity) {
+        return;
+    }
 
     LOG(SYSCALL, ::get_current_syscall_info() | gkfs::syscall::executed,
         syscall_number, args, result);

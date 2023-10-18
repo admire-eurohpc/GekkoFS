@@ -218,10 +218,9 @@ format_timestamp_to(Buffer&& buffer,
         return;
     }
 
-    std::stringstream tmp;
-    tmp << date::zoned_time<std::chrono::microseconds>{timezone, now};
-
-    fmt::format_to(std::back_inserter(buffer), "[{}] ", tmp.str());
+    auto str = format("%F %T", date::zoned_time<std::chrono::microseconds>{timezone, now});
+    
+    fmt::format_to(std::back_inserter(buffer), "[{}] ", str);
 }
 
 template <typename Buffer>

@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2022, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2022, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -25,44 +25,40 @@
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
+# vi: ft=bash
 
-find_path(DATE_INCLUDE_DIR
-    NAMES date/date.h
-)
+################################################################################
+## The installation script must define both a pkg_install function and
+## pkg_check function that, as their name implies, must specify how
+## a dependency package should be installed and tested.  ## ## The following
+## variables can be used in the installation script:
+## - CMAKE: a variable that expands to the cmake binary
+## - SOURCE_DIR: the directory where the sources for the package were
+##               downloaded
+## - INSTALL_DIR: the directory where the package should be installed
+## - CORES: the number of cores to use when building
+## - PERFORM_TEST: whether tests for the package should be executed
+################################################################################
 
-find_path(TZ_INCLUDE_DIR
-    NAMES date/tz.h
-)
+pkg_install() {
 
-find_library(TZ_LIBRARY
-    NAMES date-tz
-)
+    CURR="${SOURCE_DIR}/parallax"
+    # sed -i -e 's/KEY_SIZE (256)/KEY_SIZE (4096)/g' ${CURR}/lib/btree/conf.h
+    prepare_build_dir "${CURR}"
+    cd "${CURR}/build"
+    PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig" $CMAKE \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DCMAKE_CXX_FLAGS_RELEASE="-Wno-error=unused-result" \
+	    -DDISABLE_LOGGING:BOOL=ON \
+        ..
+    make -j"${CORES}"
+    make install
+    # We need to copy this file as it is not installed 
+    cp ${CURR}/lib/include/parallax/structures.h ${INSTALL_DIR}/include/ 
+}
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args( Date 
-    DEFAULT_MSG 
-    DATE_INCLUDE_DIR
-    TZ_INCLUDE_DIR
-    TZ_LIBRARY
-)
-
-if(Date_FOUND)
-    set(DATE_INCLUDE_DIRS ${DATE_INCLUDE_DIR})
-    set(TZ_INCLUDE_DIRS ${TZ_INCLUDE_DIR})
-    set(TZ_LIBRARIES ${TZ_LIBRARY})
-
-    if(NOT TARGET Date::TZ)
-        add_library(Date::TZ UNKNOWN IMPORTED)
-        set_target_properties(Date::TZ PROPERTIES
-            IMPORTED_LOCATION "${TZ_LIBRARY}"
-            INTERFACE_COMPILE_DEFINITIONS "USE_OS_TZDB=1"
-            INTERFACE_INCLUDE_DIRECTORIES "${TZ_INCLUDE_DIR}"
-        )
-    endif()
-endif()
-
-mark_as_advanced(
-    DATE_INCLUDE_DIR
-    TZ_INCLUDE_DIR
-    TZ_LIBRARY
-)
+pkg_check() {
+    :
+}

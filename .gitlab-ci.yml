@@ -24,14 +24,14 @@ variables:
   GIT_SUBMODULE_STRATEGY:       recursive
 
 # base image
-image: gekkofs/core:0.9.2
+image: gekkofs/core:0.9.3
 
 ################################################################################
 ## Validating
 ################################################################################
 check format:
   stage: lint
-  image: gekkofs/linter:0.9.2
+  image: gekkofs/linter:0.9.3
   needs: []
   script:
     - ${SCRIPTS_DIR}/check_format.sh
@@ -45,7 +45,7 @@ check format:
 ################################################################################
 gkfs:
   stage: build
-  image: gekkofs/deps:0.9.2
+  image: gekkofs/deps:0.9.3
   interruptible: true
   needs: []
   script:
@@ -72,7 +72,7 @@ gkfs:
 ## == tests for scripts ====================
 scripts:
   stage: test
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
   needs: []
   script:
     - mkdir -p ${BUILD_PATH}/tests/scripts
@@ -88,7 +88,7 @@ scripts:
 ## == integration tests for gkfs ===========
 gkfs:integration:
   stage: test
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
   interruptible: true
   needs: ['gkfs']
   parallel:
@@ -137,7 +137,7 @@ gkfs:integration:
 ## == integration tests for gkfwd ==========
 gkfwd:integration:
   stage: test
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
   interruptible: true
   needs: ['gkfs']
   parallel:
@@ -187,7 +187,7 @@ gkfwd:integration:
 ## == unit tests for gkfs ==================
 gkfs:unit:
   stage: test
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
   needs: ['gkfs']
   script:
     ## Add path to mkfs.kreon
@@ -225,7 +225,7 @@ gkfs:unit:
 ################################################################################
 documentation:
   stage: docs
-  image: gekkofs/docs:0.9.2
+  image: gekkofs/docs:0.9.3
   needs: []
   rules:
     # we only build the documentation automatically if we are on the
@@ -255,7 +255,7 @@ documentation:
 ## == coverage baseline ====================
 coverage:baseline:
   stage: report
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
   interruptible: true
   needs: ['gkfs']
 
@@ -281,7 +281,7 @@ coverage:baseline:
 
 coverage:
   stage: report
-  image: gekkofs/testing:0.9.2
+  image: gekkofs/testing:0.9.3
 #  needs: [ 'coverage:baseline', 'gkfs:integration', 'gkfwd:integration',
 #           'gkfs:unit' ]
   needs: [ 'coverage:baseline', 'gkfs:integration', 'gkfs:unit', 'gkfwd:integration']

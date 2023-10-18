@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2021, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2021, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -26,43 +26,58 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-find_path(DATE_INCLUDE_DIR
-    NAMES date/date.h
+# vi: ft=bash
+
+# Variables to be imported into the scripts
+declare -A wgetdeps clonedeps clonedeps_args clonedeps_patches extra_install_args
+declare -a order
+
+# Comment that should be displayed when printing the profile
+comment="Dependencies for NEXTGenIO prototype cluster"
+
+# Dependencies that must be downloaded directly
+wgetdeps=(
+    ["lz4"]="1.9.3"
+    ["capstone"]="4.0.2"
+    ["argobots"]="1.1"
+    ["rocksdb"]="8.6.7"
+    ["psm2"]="11.2.185"
+    ["json-c"]="0.15-20200726"
 )
 
-find_path(TZ_INCLUDE_DIR
-    NAMES date/tz.h
+# Dependencies that must be cloned
+clonedeps=(
+    ["libfabric"]="HEAD@v1.13.2"
+    ["mercury"]="v2.1.0"
+    ["margo"]="v0.9.6"
+    ["syscall_intercept"]="2c8765fa292bc9c28a22624c528580d54658813d"
+    ["date"]="6e921e1b1d21e84a5c82416ba7ecd98e33a436d0"
+    ["parallax"]="c130decd7a71c60c20b98d6a23924f05f754c3cd"
 )
 
-find_library(TZ_LIBRARY
-    NAMES date-tz
+# Extra arguments for git clone
+clonedeps_args=(
+    ["mercury"]="--recurse-submodules"
 )
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args( Date 
-    DEFAULT_MSG 
-    DATE_INCLUDE_DIR
-    TZ_INCLUDE_DIR
-    TZ_LIBRARY
+# Patches that should be applied post-clone
+clonedeps_patches=(
+    ["syscall_intercept"]="syscall_intercept.patch"
 )
 
-if(Date_FOUND)
-    set(DATE_INCLUDE_DIRS ${DATE_INCLUDE_DIR})
-    set(TZ_INCLUDE_DIRS ${TZ_INCLUDE_DIR})
-    set(TZ_LIBRARIES ${TZ_LIBRARY})
+# Ordering that MUST be followed when downloading
+order=(
+    "lz4" "capstone" "json-c" "psm2" "libfabric" "mercury" "argobots" "margo" "rocksdb" "syscall_intercept" "date" "parallax"
+)
 
-    if(NOT TARGET Date::TZ)
-        add_library(Date::TZ UNKNOWN IMPORTED)
-        set_target_properties(Date::TZ PROPERTIES
-            IMPORTED_LOCATION "${TZ_LIBRARY}"
-            INTERFACE_COMPILE_DEFINITIONS "USE_OS_TZDB=1"
-            INTERFACE_INCLUDE_DIRECTORIES "${TZ_INCLUDE_DIR}"
-        )
-    endif()
-endif()
-
-mark_as_advanced(
-    DATE_INCLUDE_DIR
-    TZ_INCLUDE_DIR
-    TZ_LIBRARY
+# Extra arguments passed to the installation script. As such, they can
+# reference the following variables:
+#  - CMAKE: a variable that expands to the cmake binary
+#  - SOURCE_DIR: the directory where the sources for the package were
+#               downloaded
+#  - INSTALL_DIR: the directory where the package should be installed
+#  - CORES: the number of cores to use when building
+#  - PERFORM_TEST: whether tests for the package should be executed
+extra_install_args=(
+    ["libfabric"]="--enable-psm2=yes --with-psm2-src=${SOURCE_DIR}/psm2"
 )
