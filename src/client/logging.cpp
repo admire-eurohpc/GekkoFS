@@ -47,6 +47,9 @@ extern "C" {
 namespace fs = std::filesystem;
 
 namespace {
+[[maybe_unused]] thread_local bool avoid_logging;
+}
+namespace {
 enum class split_str_mode {
     is_any_of,
     is_exactly_of // not used at the moment
@@ -490,6 +493,10 @@ logger::log_syscall(syscall::info info, const long syscall_number,
 
 print_syscall:
 
+    if(::avoid_logging) {
+        return;
+    }
+    ::avoid_logging = true;
     fmt::basic_memory_buffer<char, max_buffer_size> buffer;
 
     detail::format_timestamp_to(buffer, timezone_);
@@ -504,6 +511,7 @@ print_syscall:
     fmt::format_to(std::back_inserter(buffer), "\n");
 
     ::syscall_no_intercept(SYS_write, log_fd_, buffer.data(), buffer.size());
+    ::avoid_logging = false;
 }
 
 } // namespace gkfs::log
