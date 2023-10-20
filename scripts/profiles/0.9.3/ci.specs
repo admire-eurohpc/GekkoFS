@@ -48,7 +48,6 @@ clonedeps=(
     ["mercury"]="v2.1.0"
     ["margo"]="v0.9.6"
     ["syscall_intercept"]="2c8765fa292bc9c28a22624c528580d54658813d"
-    ["date"]="6e921e1b1d21e84a5c82416ba7ecd98e33a436d0"
     ["agios"]="c26a6544200f823ebb8f890dd94e653d148bf226@development"
     ["parallax"]="ffdea6e820f5c4c2d33e60d9a4b15ef9e6bbcfdd"
     )
@@ -66,7 +65,7 @@ clonedeps_patches=(
 # Ordering that MUST be followed when downloading
 order=(
     "libfabric" "mercury" "argobots" "margo" "rocksdb" "syscall_intercept"
-    "date" "agios" "parallax" "prometheus-cpp" 
+    "agios" "parallax" "prometheus-cpp" 
 )
 
 # Extra arguments passed to the installation script. As such, they can

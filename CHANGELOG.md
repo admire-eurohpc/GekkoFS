@@ -12,6 +12,7 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 - Added reattemp support in get_fs_config to other servers, when the initial server fails.
 - Fused GekkoFWD and GekkoFS. GekkoFWD is enabled with the `--enable-following` in the server configuration and the ENV variable
 `LIBGKFS_FORWARDING_MAP_FILE` in the clients. ([!170](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/170)).
+- FMT10 and date removal, several dependencies updated. ([!172](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/172)).
 
 ### New
 ### Changed
