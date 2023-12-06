@@ -51,13 +51,13 @@ public:
     std::string hostname_;
     int pid_;
 
-    // in milliseconds
-    std::vector<double> start_t_{};
-    std::vector<double> end_t_{};
-    // in bytes per second
-    std::vector<double> avg_{};
+    // in microseconds
+    std::vector<uint32_t> start_t_{};
+    std::vector<uint32_t> end_t_{};
+    // in bytes
+    std::vector<uint32_t> req_size_{};
 
-    uint64_t total_bytes_{};
+    uint32_t total_bytes_{};
     int total_iops_{0};
 
     bool is_enabled_{false};
@@ -71,7 +71,7 @@ public:
     template <class T>
     void
     pack(T& pack) {
-        pack(init_t_, hostname_, pid_, start_t_, end_t_, avg_, total_iops_,
+        pack(init_t_, hostname_, pid_, start_t_, end_t_, req_size_, total_iops_,
              total_bytes_);
     }
 

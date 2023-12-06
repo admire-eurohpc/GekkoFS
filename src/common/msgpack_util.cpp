@@ -55,25 +55,18 @@ ClientMetrics::add_event(
     auto end = std::chrono::system_clock::now();
 
     auto start_offset =
-            std::chrono::duration<double, std::milli>(start - init_t_);
-    auto end_offset = std::chrono::duration<double, std::milli>(end - init_t_);
-    auto duration = std::chrono::duration<double, std::milli>(end_offset -
+            std::chrono::duration<double, std::micro>(start - init_t_);
+    auto end_offset = std::chrono::duration<double, std::micro>(end - init_t_);
+    auto duration = std::chrono::duration<double, std::micro>(end_offset -
                                                               start_offset);
 
     total_bytes_ += size;
-    //    cout << "duration size bytes: " << size << endl;
-    size /= (1024 * 1024); // in MiB
-                           //    cout << "duration size MiB: " << size << endl;
-    auto duration_s =
-            duration.count() /
-            1000; // in seconds
-                  //    cout << "start: " << start_offset.count() << endl;
-                  //    cout << "duration millisecond: " << duration.count() <<
-                  //    endl; cout << "duration second: " << duration_s << endl;
-                  //    cout << "end: " << end_offset.count() << endl;
-    start_t_.emplace_back(start_offset.count());
-    end_t_.emplace_back(end_offset.count());
-    avg_.emplace_back((size / duration_s));
+    //    auto size_mib = size / (1024 * 1024);      // in MiB
+    //    auto duration_s = duration.count() / 1000; // in seconds
+    // throw away decimals
+    start_t_.emplace_back(static_cast<size_t>(start_offset.count()));
+    end_t_.emplace_back(static_cast<size_t>(end_offset.count()));
+    req_size_.emplace_back(size);
     total_iops_ += 1;
 }
 
