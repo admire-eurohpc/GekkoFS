@@ -323,13 +323,10 @@ format_timeval(struct timeval* tv, char* buf, size_t sz) {
  * one thread exactly, and we pass it as an argument whenever we need to
  * format a timestamp. If no timezone is provided, we just format the epoch.
  *
- * NOTE: we use the date C++ library to query the timezone database and
- * to format the timestamps.
  */
 template <typename Buffer>
 static inline void
-format_timestamp_to(Buffer&& buffer,
-                    const date::time_zone* const timezone = nullptr) {
+format_timestamp_to(Buffer&& buffer) {
 
     struct ::timeval tv;
 
@@ -413,7 +410,7 @@ struct logger {
         }
 
         static_buffer buffer;
-        detail::format_timestamp_to(buffer, timezone_);
+        detail::format_timestamp_to(buffer);
         fmt::format_to(std::back_inserter(buffer), "[{}] [{}] ", ,
                        log_process_id_, lookup_level_name(level));
 
@@ -531,8 +528,6 @@ struct logger {
     std::bitset<512> filtered_syscalls_;
     int debug_verbosity_;
 #endif
-
-    const date::time_zone* timezone_;
 };
 
 // the following static functions can be used to interact

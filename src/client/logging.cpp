@@ -285,8 +285,7 @@ logger::logger(const std::string& opts, const std::string& path,
                ,
                const std::string& filter, int verbosity
 #endif
-               )
-    : timezone_(nullptr) {
+) {
 
     /* use stderr by default */
     log_fd_ = 2;
@@ -460,7 +459,7 @@ print_syscall:
 
     fmt::basic_memory_buffer<char, max_buffer_size> buffer;
 
-    detail::format_timestamp_to(buffer, timezone_);
+    detail::format_timestamp_to(buffer);
     detail::format_syscall_info_to(buffer, info);
 
     if(result) {
