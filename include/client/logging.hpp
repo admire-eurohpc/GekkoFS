@@ -38,7 +38,6 @@
 #include <optional>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <date/tz.h>
 #include <hermes.hpp>
 
 #ifdef GKFS_DEBUG_BUILD
