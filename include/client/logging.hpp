@@ -411,7 +411,7 @@ struct logger {
 
         static_buffer buffer;
         detail::format_timestamp_to(buffer);
-        fmt::format_to(std::back_inserter(buffer), "[{}] [{}] ", ,
+        fmt::format_to(std::back_inserter(buffer), "[{}] [{}] ",
                        log_process_id_, lookup_level_name(level));
 
         if(!!(level & log::debug)) {
