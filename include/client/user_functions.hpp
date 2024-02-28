@@ -34,6 +34,8 @@
 #include <string>
 #include <cstdint>
 
+struct linux_dirent64;
+
 namespace gkfs::syscall {
 
 int
@@ -62,6 +64,9 @@ gkfs_pwrite_ws(int fd, const void* buf, size_t count, off64_t offset);
 
 ssize_t
 gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
+
+int
+gkfs_stat(const std::string& path, struct stat* buf, bool follow_links = true);
 
 } // namespace gkfs::syscall
 
