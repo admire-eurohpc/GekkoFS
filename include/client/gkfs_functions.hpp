@@ -152,6 +152,9 @@ gkfs_rmdir(const std::string& path);
 int
 gkfs_close(unsigned int fd);
 
+std::vector<std::string>
+gkfs_get_file_list(const std::string& path);
+
 #ifdef HAS_RENAME
 int
 gkfs_rename(const std::string& old_path, const std::string& new_path);

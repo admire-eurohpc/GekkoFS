@@ -91,6 +91,24 @@ main(int argc, char** argv) {
 
     read_file("/test.tmp");
 
+
+    write_file("/secondfile.tmp");
+
+    auto f_list = gkfs::syscall::gkfs_get_file_list("/");
+
+    for(auto f : f_list) {
+        cout << "File: " << f << endl;
+        struct stat buf;
+        memset(&buf, 0, sizeof(struct stat));
+
+        gkfs::syscall::gkfs_stat("/" + f, &buf, true);
+
+        cout << "Size: " << buf.st_size << " Mode: " << buf.st_mode << endl;
+        cout << "Atime: " << buf.st_atime << " Mtime: " << buf.st_mtime
+             << " Ctime: " << buf.st_ctime << endl
+             << " ****** " << endl;
+    }
+
     res = gkfs_end();
 
     cout << "End result " << res << endl;

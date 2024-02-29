@@ -68,6 +68,11 @@ gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
 int
 gkfs_stat(const std::string& path, struct stat* buf, bool follow_links = true);
 
+int
+gkfs_remove(const std::string& path);
+
+std::vector<std::string>
+gkfs_get_file_list(const std::string& path);
 } // namespace gkfs::syscall
 
 

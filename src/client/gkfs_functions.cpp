@@ -1504,6 +1504,28 @@ gkfs_readlink(const std::string& path, char* buf, int bufsize) {
 #endif
 #endif
 
+
+std::vector<std::string>
+gkfs_get_file_list(const std::string& path) {
+    auto ret = gkfs::rpc::forward_get_dirents(path);
+    auto err = ret.first;
+    if(err) {
+        errno = err;
+        return {};
+    }
+
+    auto open_dir = ret.second;
+
+    std::vector<std::string> file_list;
+    unsigned int pos = 0;
+
+    while(pos < open_dir->size()) {
+        auto de = open_dir->getdent(pos++);
+        file_list.push_back(de.name());
+    }
+    return file_list;
+}
+
 } // namespace gkfs::syscall
 
 
