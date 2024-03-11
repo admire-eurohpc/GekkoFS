@@ -36,6 +36,9 @@ unsigned int
 match_components(const std::string& path, unsigned int& path_components,
                  const std::vector<std::string>& components);
 
+std::pair<bool, std::string>
+resolve_new(const std::string& path, std::string mountdir);
+
 bool
 resolve(const std::string& path, std::string& resolved,
         bool resolve_last_link = true);

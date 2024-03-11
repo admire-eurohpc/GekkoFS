@@ -34,6 +34,8 @@
 
 #include <common/path_util.hpp>
 
+#include <stack>
+#include <utility>
 #include <vector>
 #include <string>
 #include <cassert>
@@ -98,6 +100,77 @@ match_components(const string& path, unsigned int& path_components,
     }
     path_components = processed_components;
     return matched;
+}
+
+string
+follow_symlinks(const string& path) {
+    struct stat st {};
+    if(lstat(path.c_str(), &st) < 0) {
+        LOG(DEBUG, "path \"{}\" does not exist", path);
+        return path;
+    }
+    if(S_ISLNK(st.st_mode)) {
+        auto link_resolved = ::unique_ptr<char[]>(new char[PATH_MAX]);
+        if(realpath(path.c_str(), link_resolved.get()) == nullptr) {
+
+            LOG(ERROR,
+                "Failed to get realpath for link \"{}\". "
+                "Error: {}",
+                path, ::strerror(errno));
+            return path;
+        }
+        // substituute resolved with new link path
+        return link_resolved.get();
+    }
+    return path;
+}
+
+pair<bool, string>
+resolve_new(const string& path, string mountdir) {
+    LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, mountdir);
+    string resolved = "";
+    stack<size_t> last_component_pos;
+
+    for(size_t start = 0; start < path.size(); start++) {
+        size_t end = path.find(path::separator, start);
+        size_t comp_size = end - start;
+        if(comp_size == 1 && path.at(start) == path::separator) {
+            // should I use same while loop as in the original here?
+            continue;
+        }
+        if(comp_size == 1 && path.at(start) == '.') {
+            // component is '.', we skip it
+            continue;
+        }
+        if(comp_size == 2 && path.at(start) == '.' &&
+           path.at(start + 1) == '.') {
+            // component is '..', we skip it
+            assert(!last_component_pos.empty());
+            resolved.erase(last_component_pos.top());
+            last_component_pos.pop();
+            continue;
+        }
+        // add `/<component>` to the reresolved path
+        resolved.push_back(path::separator);
+        last_component_pos.push(resolved.size() - 1);
+        resolved.append(path, start, comp_size);
+
+#ifdef GKFS_FOLLOW_SYMLINKS // HAS_SYMLINKS ???
+        resolved = follow_symlinks(resolved);
+#endif
+    }
+
+    if(resolved.substr(0, mountdir.size()) == mountdir) {
+        resolved.erase(1, CTX->mountdir().size());
+        LOG(DEBUG, "internal: \"{}\"", resolved);
+        return make_pair(true, resolved);
+    }
+
+    if(resolved.empty()) {
+        resolved.push_back(path::separator);
+    }
+    LOG(DEBUG, "external: \"{}\"", resolved);
+    return make_pair(false, resolved);
 }
 
 /** Resolve path to its canonical representation
