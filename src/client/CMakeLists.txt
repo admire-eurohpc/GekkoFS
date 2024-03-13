@@ -66,7 +66,17 @@ target_link_libraries(
          hermes
          fmt::fmt
          Threads::Threads
-         Date::TZ
+         Syscall_intercept::Syscall_intercept
+)
+
+target_link_libraries(
+  gkfs_user_lib
+  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
+  PUBLIC dl
+         Mercury::Mercury
+         hermes
+         fmt::fmt
+         Threads::Threads
 )
 
 install(
