@@ -69,16 +69,6 @@ target_link_libraries(
          Syscall_intercept::Syscall_intercept
 )
 
-target_link_libraries(
-  gkfs_user_lib
-  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
-  PUBLIC dl
-         Mercury::Mercury
-         hermes
-         fmt::fmt
-         Threads::Threads
-)
-
 install(
   TARGETS gkfs_intercept
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
