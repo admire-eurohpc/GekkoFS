@@ -31,7 +31,7 @@ add_executable(sfind sfind.cpp)
 add_executable(gkfs_lib_example gkfs_lib_example.cpp)
 
 target_link_libraries(gkfs_lib_example
-  PRIVATE gkfs_intercept
+  PRIVATE gkfs_user_lib
 )
 
 if(GKFS_INSTALL_TESTS)

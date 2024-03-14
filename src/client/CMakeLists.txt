@@ -32,6 +32,7 @@
 # based on syscall interception.
 # ##############################################################################
 add_library(gkfs_intercept SHARED)
+add_library (gkfs_user_lib SHARED)
 
 target_sources(
   gkfs_intercept
@@ -52,6 +53,25 @@ target_sources(
           syscalls/detail/syscall_info.c
 )
 
+target_sources(
+  gkfs_user_lib
+  PRIVATE void_syscall_intercept.cpp
+          gkfs_functions.cpp
+          hooks.cpp
+          intercept.cpp
+          logging.cpp
+          open_file_map.cpp
+          open_dir.cpp
+          path.cpp
+          preload.cpp
+          preload_context.cpp
+          preload_util.cpp
+          rpc/rpc_types.cpp
+          rpc/forward_data.cpp
+          rpc/forward_management.cpp
+          rpc/forward_metadata.cpp
+          syscalls/detail/syscall_info.c
+)
 
   if(GKFS_ENABLE_AGIOS)
     target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
@@ -69,8 +89,26 @@ target_link_libraries(
          Syscall_intercept::Syscall_intercept
 )
 
+target_link_libraries(
+  gkfs_user_lib
+  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
+  PUBLIC dl
+         Mercury::Mercury
+         hermes
+         fmt::fmt
+         Threads::Threads
+)
+
 install(
   TARGETS gkfs_intercept
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
+)
+
+
+install(
+  TARGETS gkfs_user_lib
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs

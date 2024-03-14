@@ -56,8 +56,6 @@ extern "C" int gkfs_end()
 void init_preload() {};
 void destroy_preload() {};
 
-
-
 void write_file(std::string filename){
   // Opem File
   int fd = gkfs::syscall::gkfs_open(filename,S_IRWXU,O_RDWR|O_CREAT);
