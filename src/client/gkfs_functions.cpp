@@ -937,7 +937,6 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off6
             "gkfs::rpc::forward_write() wrote '{}' bytes instead of '{}'",
             write_size, count);
     }
-    CTX->write_metrics().add_event(write_size, start_t);
     return write_size; // return written size
 }
 

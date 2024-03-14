@@ -99,6 +99,7 @@ target_link_libraries(
          hermes
          fmt::fmt
          Threads::Threads
+         msgpack_util
 )
 
 install(
