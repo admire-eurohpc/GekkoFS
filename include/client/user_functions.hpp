@@ -40,20 +40,28 @@ int
 gkfs_open(const std::string& path, mode_t mode, int flags);
 
 int
-gkfs_remove(const std::string& path);
+gkfs_create(const std::string& path, mode_t mode);
 
+int
+gkfs_remove(const std::string& path);
 
 ssize_t
 gkfs_write(int fd, const void* buf, size_t count);
 
-
 ssize_t
 gkfs_read(int fd, void* buf, size_t count);
-
 
 int
 gkfs_close(unsigned int fd);
 
+off64_t
+gkfs_lseek(unsigned int fd, off64_t offset, unsigned int whence);
+
+ssize_t
+gkfs_pwrite_ws(int fd, const void* buf, size_t count, off64_t offset);
+
+ssize_t
+gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
 
 } // namespace gkfs::syscall
 

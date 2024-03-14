@@ -110,6 +110,7 @@ install(
 set_target_properties(gkfs_user_lib 
 	PROPERTIES
 	PUBLIC_HEADER "../../include/client/void_syscall_intercept.hpp"
+	PUBLIC_HEADER "../../include/client/user_functions.hpp"
 )
 
 
