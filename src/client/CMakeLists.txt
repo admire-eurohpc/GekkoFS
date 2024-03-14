@@ -88,6 +88,7 @@ target_link_libraries(
          fmt::fmt
          Threads::Threads
          Syscall_intercept::Syscall_intercept
+         msgpack_util
 )
 
 target_link_libraries(

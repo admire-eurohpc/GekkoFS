@@ -244,6 +244,13 @@ include_from_source(cli11
   GIT_TAG v2.2.0
   )
 
+### MessagePack: used for monitoring information on the client
+include_from_source(MessagePack
+    MESSAGE "[${PROJECT_NAME}] Searching for MessagePackCPP"
+    SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/MessagePack
+    GIT_REPOSITORY https://github.com/GekkoFS/MessagePackCPP
+    GIT_TAG 51655ec8f2b8fed84f685e3bcf8f226b139a263b # latest HEAD
+)
 
 ################################################################################
 ## Check configured variables/options and act accordingly

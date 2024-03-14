@@ -37,6 +37,7 @@
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
+#include <common/msgpack_util.hpp>
 
 extern "C" {
 #include <dirent.h> // used for file types in the getdents{,64}() functions
@@ -872,6 +873,7 @@ gkfs_dup2(const int oldfd, const int newfd) {
 ssize_t
 gkfs_pwrite(std::shared_ptr<gkfs::filemap::OpenFile> file, const char* buf,
             size_t count, off64_t offset, bool update_pos) {
+    gkfs::msgpack::test_msgpack();
     if(file->type() != gkfs::filemap::FileType::regular) {
         assert(file->type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot write to directory");
