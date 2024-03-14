@@ -119,8 +119,8 @@ set_target_properties(msgpack_util PROPERTIES LINKER_LANGUAGE CXX)
 target_sources(msgpack_util
     PUBLIC
     ${INCLUDE_DIR}/common/msgpack_util.hpp
-#    PRIVATE
-#    ${CMAKE_CURRENT_LIST_DIR}/msgpack.cpp
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/msgpack_util.cpp
     )
 target_link_libraries(msgpack_util
     PUBLIC

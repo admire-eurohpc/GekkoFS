@@ -309,6 +309,7 @@ set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 include_directories(
     ${INCLUDE_DIR}
     ${CMAKE_BINARY_DIR}/include
+    /usr/include
 )
 
 add_subdirectory(src)

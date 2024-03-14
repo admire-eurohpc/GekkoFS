@@ -33,6 +33,7 @@
 #include <hermes.hpp>
 #include <map>
 #include <mercury.h>
+#include <common/msgpack_util.hpp>
 #include <memory>
 #include <vector>
 #include <string>
@@ -106,6 +107,9 @@ private:
     std::bitset<MAX_USER_FDS> protected_fds_;
     std::string hostname;
     int replicas_;
+
+    gkfs::messagepack::ClientMetrics write_metrics_{};
+    gkfs::messagepack::ClientMetrics read_metrics_{};
 
 public:
     static PreloadContext*
@@ -223,6 +227,12 @@ public:
 
     int
     get_replicas();
+
+    messagepack::ClientMetrics&
+    write_metrics();
+
+    messagepack::ClientMetrics&
+    read_metrics();
 };
 
 } // namespace preload

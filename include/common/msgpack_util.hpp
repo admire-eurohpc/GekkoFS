@@ -32,27 +32,52 @@
 #include <msgpack/msgpack.hpp>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <csignal>
+#include <thread>
 
 
-namespace gkfs::msgpack {
+namespace gkfs::messagepack {
 
-struct client_metrics {
-    uint64_t total_bytes_read;
-    uint64_t total_bytes_written;
+enum class client_metric_type { write, read };
+
+class ClientMetrics {
+
+public:
+    //    std::thread thread_{};
+
+    std::chrono::time_point<std::chrono::system_clock> init_t_;
+    std::string hostname_;
+    int pid_;
+
+    // in milliseconds
+    std::vector<double> start_t_{};
+    std::vector<double> end_t_{};
+    // in bytes per second
+    std::vector<double> avg_{};
+
+    uint64_t total_bytes_{};
+    int total_iops_{0};
 
 
-    std::string name;
-    int age;
-    std::vector<std::string> aliases;
+    // public:
+    ClientMetrics();
 
-    template<class T>
-    void msgpack(T &pack) {
-        pack(name, age, aliases);
+    void
+    add_event(size_t size,
+              std::chrono::time_point<std::chrono::system_clock> start);
+
+    void
+    flush_msgpack(std::string path);
+
+    template <class T>
+    void
+    pack(T& pack) {
+        pack(init_t_, hostname_, pid_, start_t_, end_t_, avg_, total_iops_,
+             total_bytes_);
     }
 };
 
-void test_msgpack(){}
-
-}
+} // namespace gkfs::messagepack
 
 #endif // GKFS_COMMON_MSGPACK_HPP

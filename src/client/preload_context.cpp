@@ -452,7 +452,6 @@ PreloadContext::unprotect_user_fds() {
     internal_fds_must_relocate_ = true;
 }
 
-
 std::string
 PreloadContext::get_hostname() {
     return hostname;
@@ -466,6 +465,16 @@ PreloadContext::set_replicas(const int repl) {
 int
 PreloadContext::get_replicas() {
     return replicas_;
+}
+
+messagepack::ClientMetrics&
+PreloadContext::write_metrics() {
+    return write_metrics_;
+}
+
+messagepack::ClientMetrics&
+PreloadContext::read_metrics() {
+    return read_metrics_;
 }
 
 } // namespace preload

@@ -37,7 +37,6 @@
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
-#include <common/msgpack_util.hpp>
 
 extern "C" {
 #include <dirent.h> // used for file types in the getdents{,64}() functions
@@ -873,7 +872,7 @@ gkfs_dup2(const int oldfd, const int newfd) {
 ssize_t
 gkfs_pwrite(std::shared_ptr<gkfs::filemap::OpenFile> file, const char* buf,
             size_t count, off64_t offset, bool update_pos) {
-    gkfs::msgpack::test_msgpack();
+    auto start_t = std::chrono::high_resolution_clock::now();
     if(file->type() != gkfs::filemap::FileType::regular) {
         assert(file->type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot write to directory");
@@ -938,6 +937,7 @@ gkfs_pwrite(std::shared_ptr<gkfs::filemap::OpenFile> file, const char* buf,
             "gkfs::rpc::forward_write() wrote '{}' bytes instead of '{}'",
             write_size, count);
     }
+    CTX->write_metrics().add_event(write_size, start_t);
     return write_size; // return written size
 }
 
@@ -1046,6 +1046,7 @@ gkfs_writev(int fd, const struct iovec* iov, int iovcnt) {
 ssize_t
 gkfs_pread(std::shared_ptr<gkfs::filemap::OpenFile> file, char* buf,
            size_t count, off64_t offset) {
+    auto start_t = std::chrono::high_resolution_clock::now();
     if(file->type() != gkfs::filemap::FileType::regular) {
         assert(file->type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot read from directory");
@@ -1082,6 +1083,7 @@ gkfs_pread(std::shared_ptr<gkfs::filemap::OpenFile> file, char* buf,
         errno = err;
         return -1;
     }
+    CTX->read_metrics().add_event(ret.second, start_t);
     // XXX check that we don't try to read past end of the file
     return ret.second; // return read size
 }
