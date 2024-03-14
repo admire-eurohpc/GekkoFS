@@ -235,7 +235,7 @@ hook_pread(unsigned int fd, char* buf, size_t count, loff_t pos) {
         fd, fmt::ptr(buf), count, pos);
 
     if(CTX->file_map()->exist(fd)) {
-        return with_errno(gkfs::syscall::gkfs_pread_ws(fd, buf, count, pos));
+        return with_errno(gkfs::syscall::gkfs_pread(fd, buf, count, pos));
     }
     /* Since kernel 2.6: pread() became pread64(), and pwrite() became
      * pwrite64(). */
@@ -289,7 +289,7 @@ hook_pwrite(unsigned int fd, const char* buf, size_t count, loff_t pos) {
         fd, fmt::ptr(buf), count, pos);
 
     if(CTX->file_map()->exist(fd)) {
-        return with_errno(gkfs::syscall::gkfs_pwrite_ws(fd, buf, count, pos));
+        return with_errno(gkfs::syscall::gkfs_pwrite(fd, buf, count, pos));
     }
     /* Since kernel 2.6: pread() became pread64(), and pwrite() became
      * pwrite64(). */
