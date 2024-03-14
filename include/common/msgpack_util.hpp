@@ -35,7 +35,7 @@
 #include <chrono>
 #include <csignal>
 #include <thread>
-
+#include <mutex>
 
 namespace gkfs::messagepack {
 
@@ -44,6 +44,7 @@ enum class client_metric_type { write, read };
 class ClientMetrics {
 
 public:
+    std::mutex mtx_{};
     //    std::thread thread_{};
 
     std::chrono::time_point<std::chrono::system_clock> init_t_;
@@ -59,18 +60,13 @@ public:
     uint64_t total_bytes_{};
     int total_iops_{0};
 
+    bool is_enabled_{false};
+    std::string path_{};
 
     // public:
     ClientMetrics();
 
     ~ClientMetrics() = default;
-
-    void
-    add_event(size_t size,
-              std::chrono::time_point<std::chrono::system_clock> start);
-
-    void
-    flush_msgpack(std::string path);
 
     template <class T>
     void
@@ -78,6 +74,25 @@ public:
         pack(init_t_, hostname_, pid_, start_t_, end_t_, avg_, total_iops_,
              total_bytes_);
     }
+
+    void
+    add_event(size_t size,
+              std::chrono::time_point<std::chrono::system_clock> start);
+
+    void
+    flush_msgpack();
+
+    void
+    enable();
+
+    void
+    disable();
+
+    [[nodiscard]] const std::string&
+    path() const;
+
+    void
+    path(const std::string& path, const std::string& prefix = "");
 };
 
 } // namespace gkfs::messagepack

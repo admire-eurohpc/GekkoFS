@@ -41,6 +41,7 @@
 #include <hermes.hpp>
 
 #include <cassert>
+#include <filesystem>
 
 #ifndef BYPASS_SYSCALL
 #include <libsyscall_intercept_hook_point.h>
@@ -114,6 +115,28 @@ PreloadContext::init_logging() {
                                     log_filter, log_verbosity
 #endif
     );
+}
+
+void
+PreloadContext::init_metrics() {
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+    write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>();
+    read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>();
+    if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
+        LOG(INFO, "Client metrics enabled. Initializing...");
+        write_metrics_->enable();
+        read_metrics_->enable();
+        auto metrics_path =
+                gkfs::env::get_var(gkfs::env::METRICS_PATH,
+                                   gkfs::config::metrics::client_metrics_path);
+        std::filesystem::create_directories(metrics_path);
+        write_metrics_->path(metrics_path);
+        LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
+        read_metrics_->path(metrics_path);
+        LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
+        // TODO metrics interval
+    }
+#endif
 }
 
 void
@@ -472,15 +495,15 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
- gkfs::messagepack::ClientMetrics&
- PreloadContext::write_metrics() {
-     return *write_metrics_;
- }
+gkfs::messagepack::ClientMetrics&
+PreloadContext::write_metrics() {
+    return *write_metrics_;
+}
 
- gkfs::messagepack::ClientMetrics&
- PreloadContext::read_metrics() {
-     return *read_metrics_;
- }
+gkfs::messagepack::ClientMetrics&
+PreloadContext::read_metrics() {
+    return *read_metrics_;
+}
 
 } // namespace preload
 } // namespace gkfs

@@ -959,8 +959,9 @@ gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off6
     auto written = gkfs_do_write(file, buf, count, offset, update_pos);
     CTX->write_metrics().add_event(written, start_t);
     return written;
-#endif
+#else
     return gkfs_do_write(file, buf, count, offset, update_pos);
+#endif
 }
 
 /**
@@ -1122,7 +1123,7 @@ gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count, off64
     auto start_t = std::chrono::high_resolution_clock::now();
     auto read = gkfs_do_read(file, buf, count, offset);
     CTX->read_metrics().add_event(read, start_t);
-    return written;
+    return read;
 #else
     return gkfs_do_read(file, buf, count, offset);
 #endif

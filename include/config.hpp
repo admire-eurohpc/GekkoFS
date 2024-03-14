@@ -41,7 +41,12 @@ namespace gkfs::config {
 constexpr auto hostfile_path = "./gkfs_hosts.txt";
 // We do not default this, ENV variable always required.
 constexpr auto forwarding_file_path = "";
+
+namespace metrics {
+// Default directory where client metrics are stored. Can be set via
+// LIBGKFS_METRICS_PATH. Filename consists of starting time, pid, and hostname
 constexpr auto client_metrics_path = "/tmp/gkfs_client_metrics";
+} // namespace metrics
 
 namespace io {
 /*

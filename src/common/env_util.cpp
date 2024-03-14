@@ -32,8 +32,18 @@
 
 using namespace std;
 
+namespace gkfs::env {
+
 string
-gkfs::env::get_var(const string& name, const string& default_value) {
+get_var(const string& name, const string& default_value) {
     const char* const val = ::secure_getenv(name.c_str());
     return val != nullptr ? string(val) : default_value;
 }
+
+bool
+var_is_set(const string& name) {
+    const char* const val = ::secure_getenv(name.c_str());
+    return val != nullptr;
+}
+
+} // namespace gkfs::env

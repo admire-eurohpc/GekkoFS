@@ -134,6 +134,9 @@ public:
     init_logging();
 
     void
+    init_metrics();
+
+    void
     mountdir(const std::string& path);
 
     const std::string&

@@ -36,6 +36,7 @@
 
 #include <common/rpc/distributor.hpp>
 #include <common/common_defs.hpp>
+#include <common/msgpack_util.hpp>
 
 #include <ctime>
 #include <cstdlib>
@@ -294,6 +295,9 @@ init_preload() {
     if(!forwarding_map_file.empty()) {
         init_forwarding_mapper();
     }
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+    CTX->init_metrics();
+#endif
 
     gkfs::preload::start_interception();
     errno = oerrno;
@@ -311,14 +315,8 @@ destroy_preload() {
         destroy_forwarding_mapper();
     }
 #ifdef GKFS_ENABLE_CLIENT_METRICS
-    if(CTX->write_metrics().total_iops_ > 0) {
-        CTX->write_metrics().flush_msgpack(
-                "/tmp/gkfs_client_write_metrics.msgpack");
-    }
-    if(CTX->read_metrics().total_iops_ > 0) {
-        CTX->read_metrics().flush_msgpack(
-                "/tmp/gkfs_client_read_metrics.msgpack");
-    }
+//    CTX->write_metrics().flush_msgpack();
+//    CTX->read_metrics().flush_msgpack();
 #endif
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");

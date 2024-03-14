@@ -28,7 +28,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 #include <common/msgpack_util.hpp>
+#include <common/rpc/rpc_util.hpp>
 #include <iostream>
+#include <iomanip>
 
 extern "C" {
 #include <fcntl.h>
@@ -36,34 +38,19 @@ extern "C" {
 
 using namespace std;
 
-std::string
-get_my_hostname(bool short_hostname) {
-    char hostname[1024];
-    auto ret = gethostname(hostname, 1024);
-    if(ret == 0) {
-        std::string hostname_s(hostname);
-        if(!short_hostname)
-            return hostname_s;
-        // get short hostname
-        auto pos = hostname_s.find("."s);
-        if(pos != std::string::npos)
-            hostname_s = hostname_s.substr(0, pos);
-        return hostname_s;
-    } else
-        return ""s;
-}
-
 namespace gkfs::messagepack {
 
 ClientMetrics::ClientMetrics() {
     init_t_ = std::chrono::system_clock::now();
-    hostname_ = get_my_hostname(true);
+    hostname_ = gkfs::rpc::get_my_hostname(true);
     pid_ = getpid();
 }
 
 void
 ClientMetrics::add_event(
         size_t size, std::chrono::time_point<std::chrono::system_clock> start) {
+    if(!is_enabled_)
+        return;
     auto end = std::chrono::system_clock::now();
 
     auto start_offset =
@@ -88,10 +75,13 @@ ClientMetrics::add_event(
     avg_.emplace_back((size / duration_s));
     total_iops_ += 1;
 }
+
 void
-ClientMetrics::flush_msgpack(std::string path) {
+ClientMetrics::flush_msgpack() {
+    if(!is_enabled_)
+        return;
     auto data = msgpack::pack(*this);
-    auto fd = open(path.c_str(), O_CREAT | O_WRONLY, 0666);
+    auto fd = open(path_.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0666);
     if(fd < 0) {
         //        cout << "error open" << endl;
         exit(1);
@@ -100,6 +90,29 @@ ClientMetrics::flush_msgpack(std::string path) {
     //    auto written = write(fd, data.data(), data.size());
     //    cout << "written: " << written << endl;
     close(fd);
+}
+
+void
+ClientMetrics::enable() {
+    is_enabled_ = true;
+}
+
+void
+ClientMetrics::disable() {
+    is_enabled_ = false;
+}
+
+const string&
+ClientMetrics::path() const {
+    return path_;
+}
+void
+ClientMetrics::path(const string& path, const string& prefix) {
+    const std::time_t t = std::chrono::system_clock::to_time_t(init_t_);
+    std::stringstream init_t_stream;
+    init_t_stream << std::put_time(std::localtime(&t), "%F_%T");
+    path_ = path + "/" + prefix + "_" + init_t_stream.str() + "_" + hostname_ +
+            "_" + to_string(pid_) + ".msgpack";
 }
 
 } // namespace gkfs::messagepack
