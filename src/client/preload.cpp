@@ -310,6 +310,7 @@ destroy_preload() {
     if(!forwarding_map_file.empty()) {
         destroy_forwarding_mapper();
     }
+#ifdef GKFS_ENABLE_CLIENT_METRICS
     if(CTX->write_metrics().total_iops_ > 0) {
         CTX->write_metrics().flush_msgpack(
                 "/tmp/gkfs_client_write_metrics.msgpack");
@@ -318,6 +319,7 @@ destroy_preload() {
         CTX->read_metrics().flush_msgpack(
                 "/tmp/gkfs_client_read_metrics.msgpack");
     }
+#endif
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");
 

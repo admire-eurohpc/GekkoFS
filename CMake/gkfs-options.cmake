@@ -356,4 +356,13 @@ gkfs_define_option(
   DESCRIPTION "If GKFS_ENABLE_FORWARDING is ON, use AGIOS for scheduling I/Os"
 )
 
+################################################################################
+# MSGPack client metrics
+################################################################################
 
+gkfs_define_option(
+    GKFS_ENABLE_CLIENT_METRICS
+    HELP_TEXT "Enable client metrics via MSGPack"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "If GKFS_ENABLE_CLIENT_METRICS is ON, use MSGPack to dump client read/write metrics"
+)

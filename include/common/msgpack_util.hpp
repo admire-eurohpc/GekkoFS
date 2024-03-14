@@ -63,6 +63,8 @@ public:
     // public:
     ClientMetrics();
 
+    ~ClientMetrics() = default;
+
     void
     add_event(size_t size,
               std::chrono::time_point<std::chrono::system_clock> start);

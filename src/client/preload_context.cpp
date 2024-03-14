@@ -36,6 +36,7 @@
 
 #include <common/env_util.hpp>
 #include <common/path_util.hpp>
+#include <common/msgpack_util.hpp>
 #include <config.hpp>
 #include <hermes.hpp>
 
@@ -72,6 +73,10 @@ PreloadContext::PreloadContext()
     PreloadContext::set_replicas(
             std::stoi(gkfs::env::get_var(gkfs::env::NUM_REPL, "0")));
 }
+
+// Destructor set here to allow unique_ptr of forward declared classes in the
+// header. T must be complete at the point of deletion.
+PreloadContext::~PreloadContext() = default;
 
 void
 PreloadContext::init_logging() {
@@ -467,15 +472,15 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
-messagepack::ClientMetrics&
-PreloadContext::write_metrics() {
-    return write_metrics_;
-}
+ gkfs::messagepack::ClientMetrics&
+ PreloadContext::write_metrics() {
+     return *write_metrics_;
+ }
 
-messagepack::ClientMetrics&
-PreloadContext::read_metrics() {
-    return read_metrics_;
-}
+ gkfs::messagepack::ClientMetrics&
+ PreloadContext::read_metrics() {
+     return *read_metrics_;
+ }
 
 } // namespace preload
 } // namespace gkfs

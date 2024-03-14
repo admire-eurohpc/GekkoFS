@@ -33,7 +33,6 @@
 #include <hermes.hpp>
 #include <map>
 #include <mercury.h>
-#include <common/msgpack_util.hpp>
 #include <memory>
 #include <vector>
 #include <string>
@@ -52,6 +51,11 @@ class Distributor;
 namespace log {
 struct logger;
 }
+namespace messagepack {
+class ClientMetrics;
+}
+
+
 
 namespace preload {
 /*
@@ -108,8 +112,9 @@ private:
     std::string hostname;
     int replicas_;
 
-    gkfs::messagepack::ClientMetrics write_metrics_{};
-    gkfs::messagepack::ClientMetrics read_metrics_{};
+    std::unique_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
+    std::unique_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
+
 
 public:
     static PreloadContext*
@@ -122,6 +127,8 @@ public:
 
     void
     operator=(PreloadContext const&) = delete;
+
+    ~PreloadContext();
 
     void
     init_logging();
@@ -228,10 +235,10 @@ public:
     int
     get_replicas();
 
-    messagepack::ClientMetrics&
+    gkfs::messagepack::ClientMetrics&
     write_metrics();
 
-    messagepack::ClientMetrics&
+    gkfs::messagepack::ClientMetrics&
     read_metrics();
 };
 

@@ -37,6 +37,7 @@
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
+#include <common/msgpack_util.hpp>
 
 extern "C" {
 #include <dirent.h> // used for file types in the getdents{,64}() functions
