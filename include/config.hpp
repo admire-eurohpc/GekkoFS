@@ -45,6 +45,7 @@ constexpr auto forwarding_file_path = "";
 namespace metrics {
 // Default directory where client metrics are stored. Can be set via
 // LIBGKFS_METRICS_PATH. Filename consists of starting time, pid, and hostname
+// Note: when LIBGKFS_METRICS_IP is given, ZeroMQ is used instead
 constexpr auto client_metrics_path = "/tmp/gkfs_client_metrics";
 } // namespace metrics
 

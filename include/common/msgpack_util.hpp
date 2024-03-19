@@ -41,41 +41,62 @@
 
 namespace gkfs::messagepack {
 
-enum class client_metric_type { write, read };
+enum class client_metric_io_type { write, read };
+enum class client_metric_flush_type { file, socket };
 
 class ClientMetrics {
 
 public:
+    /*
+     * MessagePack data structure for client metrics. Includes only what is
+     * actually sent
+     */
+    struct msgpack_data {
+        std::chrono::time_point<std::chrono::system_clock> init_t_;
+        std::string hostname_;
+        int pid_;
+        std::string io_type_;
+        std::vector<uint32_t> start_t_{};
+        std::vector<uint32_t> end_t_{};
+        std::vector<uint32_t> req_size_{};
+        uint32_t total_bytes_{};
+        int total_iops_{0};
+
+        template <class T>
+        void
+        pack(T& pack) {
+            pack(init_t_, hostname_, pid_, io_type_, start_t_, end_t_,
+                 req_size_, total_iops_, total_bytes_);
+        }
+
+        std::vector<uint8_t>
+        pack_msgpack() {
+            return msgpack::pack(*this);
+        }
+    };
+
+private:
+    msgpack_data msgpack_data_{};
+
+    zmq::context_t zmq_context_;
+    zmq::socket_t zmq_socket_;
+
     //    std::mutex mtx_{};
     //    std::thread thread_{};
 
-    std::chrono::time_point<std::chrono::system_clock> init_t_;
-    std::string hostname_;
-    int pid_;
-
-    // in microseconds
-    std::vector<uint32_t> start_t_{};
-    std::vector<uint32_t> end_t_{};
-    // in bytes
-    std::vector<uint32_t> req_size_{};
-
-    uint32_t total_bytes_{};
-    int total_iops_{0};
+    client_metric_flush_type flush_type_{client_metric_flush_type::file};
 
     bool is_enabled_{false};
     std::string path_{};
 
-    // public:
-    ClientMetrics();
+public:
+    ClientMetrics() = default;
 
-    ~ClientMetrics() = default;
+    explicit ClientMetrics(client_metric_io_type io_type,
+                           client_metric_flush_type flush_type =
+                                   client_metric_flush_type::file);
 
-    template <class T>
-    void
-    pack(T& pack) {
-        pack(init_t_, hostname_, pid_, start_t_, end_t_, req_size_, total_iops_,
-             total_bytes_);
-    }
+    ~ClientMetrics();
 
     void
     add_event(size_t size,
@@ -89,6 +110,12 @@ public:
 
     void
     disable();
+
+    void
+    zmq_connect(const std::string& ip_port);
+
+    bool
+    zmq_is_connected();
 
     [[nodiscard]] const std::string&
     path() const;

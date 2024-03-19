@@ -296,7 +296,10 @@ init_preload() {
         init_forwarding_mapper();
     }
 #ifdef GKFS_ENABLE_CLIENT_METRICS
-    CTX->init_metrics();
+    if(!CTX->init_metrics()) {
+        exit_error_msg(EXIT_FAILURE,
+                       "Unable to initialize client metrics. Exiting...");
+    }
 #endif
 
     gkfs::preload::start_interception();

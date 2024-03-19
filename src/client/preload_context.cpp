@@ -117,26 +117,64 @@ PreloadContext::init_logging() {
     );
 }
 
-void
+bool
 PreloadContext::init_metrics() {
 #ifdef GKFS_ENABLE_CLIENT_METRICS
-    write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>();
-    read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>();
-    if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
-        LOG(INFO, "Client metrics enabled. Initializing...");
-        write_metrics_->enable();
-        read_metrics_->enable();
-        auto metrics_path =
-                gkfs::env::get_var(gkfs::env::METRICS_PATH,
-                                   gkfs::config::metrics::client_metrics_path);
-        std::filesystem::create_directories(metrics_path);
-        write_metrics_->path(metrics_path, "write");
-        LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
-        read_metrics_->path(metrics_path, "read");
-        LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
-        // TODO metrics interval
+    if(gkfs::env::var_is_set(gkfs::env::METRICS_IP_PORT)) {
+        write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::write,
+                gkfs::messagepack::client_metric_flush_type::socket);
+        read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::read,
+                gkfs::messagepack::client_metric_flush_type::socket);
+        if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
+            LOG(INFO,
+                "Client metrics enabled with ZeroMQ flushing. Initializing...");
+            write_metrics_->enable();
+            read_metrics_->enable();
+            auto metrics_ip = gkfs::env::get_var(gkfs::env::METRICS_IP_PORT);
+            write_metrics_->zmq_connect(metrics_ip);
+            if(!write_metrics_->zmq_is_connected()) {
+                LOG(ERROR, "Client write metrics failed to connect to : {}",
+                    metrics_ip);
+                return false;
+            }
+            LOG(INFO, "Client write metrics connected to : {}", metrics_ip);
+            read_metrics_->zmq_connect(metrics_ip);
+            if(!read_metrics_->zmq_is_connected()) {
+                LOG(ERROR, "Client read metrics failed to connect to : {}",
+                    metrics_ip);
+                return false;
+            }
+            LOG(INFO, "Client read metrics connected to : {}", metrics_ip);
+        }
+    } else {
+        write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::write);
+        read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::read);
+        if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
+            LOG(INFO,
+                "Client metrics enabled with file flushing. Initializing...");
+            write_metrics_->enable();
+            read_metrics_->enable();
+            if(!gkfs::env::var_is_set(gkfs::env::METRICS_PATH)) {
+                LOG(WARNING, "No metrics path set. Using default path at {}",
+                    gkfs::config::metrics::client_metrics_path);
+            }
+            auto metrics_path = gkfs::env::get_var(
+                    gkfs::env::METRICS_PATH,
+                    gkfs::config::metrics::client_metrics_path);
+            std::filesystem::create_directories(metrics_path);
+            write_metrics_->path(metrics_path, "write");
+            LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
+            read_metrics_->path(metrics_path, "read");
+            LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
+            // TODO metrics interval
+        }
     }
 #endif
+    return true;
 }
 
 void

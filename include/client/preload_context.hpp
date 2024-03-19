@@ -55,8 +55,6 @@ namespace messagepack {
 class ClientMetrics;
 }
 
-
-
 namespace preload {
 /*
  * Client file system config
@@ -133,7 +131,7 @@ public:
     void
     init_logging();
 
-    void
+    bool
     init_metrics();
 
     void

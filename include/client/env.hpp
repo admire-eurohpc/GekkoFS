@@ -54,6 +54,7 @@ static constexpr auto FORWARDING_MAP_FILE = ADD_PREFIX("FORWARDING_MAP_FILE");
 static constexpr auto ENABLE_METRICS = ADD_PREFIX("ENABLE_METRICS");
 static constexpr auto METRICS_INTERVAL = ADD_PREFIX("METRICS_INTERVAL");
 static constexpr auto METRICS_PATH = ADD_PREFIX("METRICS_PATH");
+static constexpr auto METRICS_IP_PORT = ADD_PREFIX("METRICS_IP_PORT");
 #endif
 
 static constexpr auto NUM_REPL = ADD_PREFIX("NUM_REPL");
