@@ -125,6 +125,7 @@ target_sources(msgpack_util
 target_link_libraries(msgpack_util
     PUBLIC
     Msgpack::Msgpack
+    cppzmq
     rpc_utils
     )
 

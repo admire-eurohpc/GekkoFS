@@ -37,6 +37,8 @@
 #include <thread>
 #include <mutex>
 
+#include <zmq.hpp>
+
 namespace gkfs::messagepack {
 
 enum class client_metric_type { write, read };

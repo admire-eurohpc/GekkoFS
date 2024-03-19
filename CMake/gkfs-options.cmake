@@ -370,6 +370,6 @@ gkfs_define_option(
 gkfs_define_option(
     GKFS_ENABLE_CLIENT_METRICS
     HELP_TEXT "Enable client metrics via MSGPack"
-    DEFAULT_VALUE OFF
+    DEFAULT_VALUE ON # TODO disable by default
     DESCRIPTION "If GKFS_ENABLE_CLIENT_METRICS is ON, use MSGPack to dump client read/write metrics"
 )
