@@ -234,6 +234,14 @@ gkfs_define_option(
     DEFAULT_VALUE OFF
 )
 
+
+# use old resolve function
+gkfs_define_option(
+	GKFS_USE_OLD_PATH_RESOLVE
+  HELP_TEXT "Use the old implementation of the resolve function"
+  DEFAULT_VALUE OFF
+)
+
 cmake_dependent_option(GKFS_INSTALL_TESTS "Install GekkoFS self tests" OFF "GKFS_BUILD_TESTS" OFF)
 
 
@@ -263,6 +271,14 @@ gkfs_define_option(
   HELP_TEXT "Enable support for rename"
   DEFAULT_VALUE OFF
   DESCRIPTION "Compile with support for rename ops (experimental)"
+)
+
+## external link support
+gkfs_define_option(
+  GKFS_FOLLOW_EXTERNAL_SYMLINKS
+  HELP_TEXT "Enable support for following external links for resolving the path"
+  DEFAULT_VALUE OFF
+  DESCRIPTION "Compile with lstat usage in path resolve"
 )
 
 

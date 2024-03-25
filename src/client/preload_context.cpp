@@ -45,6 +45,7 @@
 
 #include <cassert>
 #include <filesystem>
+#include <utility>
 
 #ifndef BYPASS_SYSCALL
 #include <libsyscall_intercept_hook_point.h>
@@ -317,7 +318,9 @@ PreloadContext::relativize_fd_path(int dirfd, const char* raw_path,
         path = raw_path;
     }
 
-    if(gkfs::path::resolve(path, relative_path, resolve_last_link)) {
+    std::pair<bool, std::string> resolved_path = gkfs::path::resolve(path, resolve_last_link);
+	  relative_path = resolved_path.second;
+    if(resolved_path.first) {
         return RelativizeStatus::internal;
     }
     return RelativizeStatus::external;
@@ -347,7 +350,10 @@ PreloadContext::relativize_path(const char* raw_path,
         path = raw_path;
     }
 
-    return gkfs::path::resolve(path, relative_path, resolve_last_link);
+    std::pair<bool, std::string> resolved_path = gkfs::path::resolve(path, resolve_last_link);
+	  relative_path = resolved_path.second;
+	  return resolved_path.first;
+
 }
 
 const std::string&

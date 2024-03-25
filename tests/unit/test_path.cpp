@@ -28,7 +28,16 @@
 
 #include <catch2/catch.hpp>
 #include <client/path.hpp>
-#include <utility>
+#include <client/preload_context.hpp>
+
+// mock CTX
+class text_context {
+	std::string mntdir = "/tmp/gkfs_mount";
+	const std::string& mountdir(){
+		return mntdir;
+	}
+};
+#define CTX text_context
 
 SCENARIO(" resolve fn should handle empty path ",
          "[test_path][empty]") {
@@ -39,7 +48,7 @@ SCENARIO(" resolve fn should handle empty path ",
 
         WHEN(" resolve with empty path ") {
             THEN(" / should be returned ") {
-                REQUIRE(gkfs::path::resolve_new("", mntpath).second ==  "/");
+                REQUIRE(gkfs::path::resolve_new("").second ==  "/");
             }
         }
     }
@@ -55,19 +64,19 @@ SCENARIO(" resolve fn should handle internal paths ",
 
         WHEN(" resolve with relative path ") {
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/../../tmp/./gkfs_mount/bar/./", mntpath).second ==  "/bar/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../../tmp/./gkfs_mount/bar/./").second ==  "/bar/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/tmp/../tmp/gkfs_mount/bar/./", mntpath).second ==  "/bar/");
+                REQUIRE(gkfs::path::resolve_new("/tmp/../tmp/gkfs_mount/bar/./").second ==  "/bar/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/tmp/./gkfs_mount/bar/./", mntpath).second ==  "/bar/");
+                REQUIRE(gkfs::path::resolve_new("/tmp/./gkfs_mount/bar/./").second ==  "/bar/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/tmp/gkfs_mount/bar/./", mntpath).second ==  "/bar/");
+                REQUIRE(gkfs::path::resolve_new("/tmp/gkfs_mount/bar/./").second ==  "/bar/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/../.././tmp/gkfs_mount/", mntpath).second ==  "/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../.././tmp/gkfs_mount/").second ==  "/");
             }
         }
     }
@@ -83,19 +92,22 @@ SCENARIO(" resolve fn should handle external paths ",
 
         WHEN(" resolve with relative path ") {
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/../bar/./", mntpath).second ==  "/home/bar/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../ar/.").second ==  "/home/bar");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/../bar/../", mntpath).second ==  "/home/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../bar/./").second ==  "/home/bar/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/../../", mntpath).second ==  "/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../bar/../").second ==  "/home/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/foo/./bar/../", mntpath).second ==  "/home/foo/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/../../").second ==  "/");
             }
             THEN(" iwas ") {
-                REQUIRE(gkfs::path::resolve_new("/home/./../tmp/", mntpath).second ==  "/tmp/");
+                REQUIRE(gkfs::path::resolve_new("/home/foo/./bar/../").second ==  "/home/foo/");
+            }
+            THEN(" iwas ") {
+                REQUIRE(gkfs::path::resolve_new("/home/./../tmp/").second ==  "/tmp/");
             }
         }
     }
