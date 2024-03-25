@@ -52,7 +52,8 @@ static constexpr auto HOSTS_FILE = ADD_PREFIX("HOSTS_FILE");
 static constexpr auto FORWARDING_MAP_FILE = ADD_PREFIX("FORWARDING_MAP_FILE");
 #ifdef GKFS_ENABLE_CLIENT_METRICS
 static constexpr auto ENABLE_METRICS = ADD_PREFIX("ENABLE_METRICS");
-static constexpr auto METRICS_INTERVAL = ADD_PREFIX("METRICS_INTERVAL");
+static constexpr auto METRICS_FLUSH_INTERVAL =
+        ADD_PREFIX("METRICS_FLUSH_INTERVAL");
 static constexpr auto METRICS_PATH = ADD_PREFIX("METRICS_PATH");
 static constexpr auto METRICS_IP_PORT = ADD_PREFIX("METRICS_IP_PORT");
 #endif

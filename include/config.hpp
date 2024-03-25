@@ -42,12 +42,13 @@ constexpr auto hostfile_path = "./gkfs_hosts.txt";
 // We do not default this, ENV variable always required.
 constexpr auto forwarding_file_path = "";
 
-namespace metrics {
+namespace client_metrics {
 // Default directory where client metrics are stored. Can be set via
 // LIBGKFS_METRICS_PATH. Filename consists of starting time, pid, and hostname
 // Note: when LIBGKFS_METRICS_IP is given, ZeroMQ is used instead
-constexpr auto client_metrics_path = "/tmp/gkfs_client_metrics";
-} // namespace metrics
+constexpr auto flush_path = "/tmp/gkfs_client_metrics";
+constexpr auto flush_interval = 5; // in seconds
+} // namespace client_metrics
 
 namespace io {
 /*

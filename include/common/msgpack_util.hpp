@@ -36,8 +36,11 @@
 #include <csignal>
 #include <thread>
 #include <mutex>
+#include <atomic>
+#include <memory>
 
 #include <zmq.hpp>
+#include <condition_variable>
 
 namespace gkfs::messagepack {
 
@@ -76,25 +79,31 @@ public:
     };
 
 private:
+    bool metrics_enabled_{false};
+
     msgpack_data msgpack_data_{};
 
-    zmq::context_t zmq_context_;
-    zmq::socket_t zmq_socket_;
-
-    //    std::mutex mtx_{};
-    //    std::thread thread_{};
+    std::mutex data_mtx_{};
+    std::thread flush_thread_{};
+    std::condition_variable flush_thread_cv_{};
+    std::mutex flush_thread_cv_mutex_{};
+    std::atomic<bool> flush_thread_running_{false};
 
     client_metric_flush_type flush_type_{client_metric_flush_type::file};
+    int flush_interval_{};
+    std::unique_ptr<zmq::context_t> zmq_flush_context_ = nullptr;
+    std::unique_ptr<zmq::socket_t> zmq_flush_socket_ = nullptr;
+    std::string flush_path_{};
+    int flush_count_{0};
 
-    bool is_enabled_{false};
-    std::string path_{};
 
 public:
     ClientMetrics() = default;
 
     explicit ClientMetrics(client_metric_io_type io_type,
                            client_metric_flush_type flush_type =
-                                   client_metric_flush_type::file);
+                                   client_metric_flush_type::file,
+                           int flush_interval = 5);
 
     ~ClientMetrics();
 
@@ -103,7 +112,13 @@ public:
               std::chrono::time_point<std::chrono::system_clock> start);
 
     void
+    reset_metrics();
+
+    void
     flush_msgpack();
+
+    void
+    flush_loop();
 
     void
     enable();
@@ -122,6 +137,9 @@ public:
 
     void
     path(const std::string& path, const std::string prefix = "");
+
+    int
+    flush_count() const;
 };
 
 } // namespace gkfs::messagepack

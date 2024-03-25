@@ -120,13 +120,18 @@ PreloadContext::init_logging() {
 bool
 PreloadContext::init_metrics() {
 #ifdef GKFS_ENABLE_CLIENT_METRICS
+    auto flush_interval = std::stoi(gkfs::env::get_var(
+            gkfs::env::METRICS_FLUSH_INTERVAL,
+            std::to_string(gkfs::config::client_metrics::flush_interval)));
     if(gkfs::env::var_is_set(gkfs::env::METRICS_IP_PORT)) {
         write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
                 gkfs::messagepack::client_metric_io_type::write,
-                gkfs::messagepack::client_metric_flush_type::socket);
+                gkfs::messagepack::client_metric_flush_type::socket,
+                flush_interval);
         read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
                 gkfs::messagepack::client_metric_io_type::read,
-                gkfs::messagepack::client_metric_flush_type::socket);
+                gkfs::messagepack::client_metric_flush_type::socket,
+                flush_interval);
         if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
             LOG(INFO,
                 "Client metrics enabled with ZeroMQ flushing. Initializing...");
@@ -150,9 +155,13 @@ PreloadContext::init_metrics() {
         }
     } else {
         write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
-                gkfs::messagepack::client_metric_io_type::write);
+                gkfs::messagepack::client_metric_io_type::write,
+                gkfs::messagepack::client_metric_flush_type::file,
+                flush_interval);
         read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
-                gkfs::messagepack::client_metric_io_type::read);
+                gkfs::messagepack::client_metric_io_type::read,
+                gkfs::messagepack::client_metric_flush_type::file,
+                flush_interval);
         if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
             LOG(INFO,
                 "Client metrics enabled with file flushing. Initializing...");
@@ -160,17 +169,16 @@ PreloadContext::init_metrics() {
             read_metrics_->enable();
             if(!gkfs::env::var_is_set(gkfs::env::METRICS_PATH)) {
                 LOG(WARNING, "No metrics path set. Using default path at {}",
-                    gkfs::config::metrics::client_metrics_path);
+                    gkfs::config::client_metrics::flush_path);
             }
             auto metrics_path = gkfs::env::get_var(
                     gkfs::env::METRICS_PATH,
-                    gkfs::config::metrics::client_metrics_path);
+                    gkfs::config::client_metrics::flush_path);
             std::filesystem::create_directories(metrics_path);
             write_metrics_->path(metrics_path, "write");
             LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
             read_metrics_->path(metrics_path, "read");
             LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
-            // TODO metrics interval
         }
     }
 #endif
