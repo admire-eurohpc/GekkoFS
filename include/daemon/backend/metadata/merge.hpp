@@ -33,6 +33,8 @@
 #include <rocksdb/merge_operator.h>
 #include <common/metadata.hpp>
 
+#include <ctime>
+
 namespace rdb = rocksdb;
 
 namespace gkfs::metadata {
@@ -43,7 +45,9 @@ namespace gkfs::metadata {
 enum class OperandID : char {
     increase_size = 'i',
     decrease_size = 'd',
-    create = 'c'
+    create = 'c',
+    update_time = 't'
+
 };
 
 /**
@@ -156,6 +160,33 @@ public:
     std::string
     serialize_params() const override;
 };
+
+/**
+ * @brief Update time operand
+ */
+class UpdateTimeOperand : public MergeOperand {
+private:
+    time_t mtime_{};
+
+public:
+    UpdateTimeOperand() = default;
+
+    explicit UpdateTimeOperand(time_t mtime);
+
+    explicit UpdateTimeOperand(const rdb::Slice& serialized_op);
+
+    OperandID
+    id() const override;
+
+    std::string
+    serialize_params() const override;
+
+    time_t
+    mtime() const {
+        return mtime_;
+    }
+};
+
 /**
  * @brief Merge operator class passed to RocksDB, used during merge operations
  */

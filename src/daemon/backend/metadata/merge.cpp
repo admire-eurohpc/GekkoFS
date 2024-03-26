@@ -137,6 +137,26 @@ CreateOperand::serialize_params() const {
     return metadata;
 }
 
+UpdateTimeOperand::UpdateTimeOperand(time_t mtime) : mtime_(mtime) {}
+
+UpdateTimeOperand::UpdateTimeOperand(const rdb::Slice& serialized_op) {
+    // Parse size
+    size_t read = 0;
+    mtime_ = ::stoul(serialized_op.ToString(), &read);
+    // check that we consumed all the input string
+    assert(read == serialized_op.size());
+}
+
+OperandID
+UpdateTimeOperand::id() const {
+    return OperandID::update_time;
+}
+
+string
+UpdateTimeOperand::serialize_params() const {
+    return ::to_string(mtime_);
+}
+
 /**
  * @internal
  * Merges all operands in chronological order for the same key.
@@ -181,10 +201,6 @@ MetadataMergeOperator::FullMergeV2(const MergeOperationInput& merge_in,
         auto operand_id = MergeOperand::get_id(serialized_op);
         auto parameters = MergeOperand::get_params(serialized_op);
 
-        if constexpr(gkfs::config::metadata::use_mtime) {
-            md.update_mtime_now();
-        }
-
         if(operand_id == OperandID::increase_size) {
             auto op = IncreaseSizeOperand(parameters);
             if(op.append()) {
@@ -204,6 +220,9 @@ MetadataMergeOperator::FullMergeV2(const MergeOperationInput& merge_in,
             fsize = op.size();
         } else if(operand_id == OperandID::create) {
             continue;
+        } else if(operand_id == OperandID::update_time) {
+            auto op = UpdateTimeOperand(parameters);
+            md.mtime(op.mtime());
         } else {
             throw ::runtime_error("Unrecognized merge operand ID: " +
                                   (char) operand_id);
