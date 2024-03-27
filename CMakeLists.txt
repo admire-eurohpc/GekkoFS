@@ -299,11 +299,6 @@ if(GKFS_ENABLE_PROMETHEUS)
     add_definitions(-DGKFS_ENABLE_PROMETHEUS)
 endif ()
 
-# Enable MSGPack metrics
-if(GKFS_ENABLE_CLIENT_METRICS)
-    add_definitions(-DGKFS_ENABLE_CLIENT_METRICS)
-endif ()
-
 configure_file(include/common/cmake_configure.hpp.in include/common/cmake_configure.hpp)
 
 if(GKFS_ENABLE_CLIENT_LOG)

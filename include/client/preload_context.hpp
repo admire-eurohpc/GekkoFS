@@ -110,8 +110,8 @@ private:
     std::string hostname;
     int replicas_;
 
-    std::unique_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
-    std::unique_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
+    std::shared_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
+    std::shared_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
 
 
 public:
@@ -236,10 +236,10 @@ public:
     int
     get_replicas();
 
-    gkfs::messagepack::ClientMetrics&
+    const std::shared_ptr<gkfs::messagepack::ClientMetrics>
     write_metrics();
 
-    gkfs::messagepack::ClientMetrics&
+    const std::shared_ptr<gkfs::messagepack::ClientMetrics>
     read_metrics();
 };
 

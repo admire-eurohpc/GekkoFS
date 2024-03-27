@@ -113,19 +113,20 @@ target_sources(path_util
     ${INCLUDE_DIR}/common/path_util.hpp
     )
 
-add_library(msgpack_util STATIC)
-set_property(TARGET msgpack_util PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(msgpack_util PROPERTIES LINKER_LANGUAGE CXX)
-target_sources(msgpack_util
-    PUBLIC
-    ${INCLUDE_DIR}/common/msgpack_util.hpp
-    PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/msgpack_util.cpp
+if (GKFS_ENABLE_CLIENT_METRICS)
+    add_library(msgpack_util STATIC)
+    set_property(TARGET msgpack_util PROPERTY POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(msgpack_util PROPERTIES LINKER_LANGUAGE CXX)
+    target_sources(msgpack_util
+        PUBLIC
+        ${INCLUDE_DIR}/common/msgpack_util.hpp
+        PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/msgpack_util.cpp
     )
-target_link_libraries(msgpack_util
-    PUBLIC
-    Msgpack::Msgpack
-    cppzmq
-    rpc_utils
+    target_link_libraries(msgpack_util
+        PUBLIC
+        Msgpack::Msgpack
+        cppzmq
+        rpc_utils
     )
-
+endif ()

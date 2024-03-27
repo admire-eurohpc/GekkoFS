@@ -37,7 +37,9 @@
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
+#ifdef GKFS_ENABLE_CLIENT_METRICS
 #include <common/msgpack_util.hpp>
+#endif
 #include <utility>
 
 extern "C" {
@@ -956,7 +958,7 @@ gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off6
 #ifdef GKFS_ENABLE_CLIENT_METRICS
     auto start_t = std::chrono::high_resolution_clock::now();
     auto written = gkfs_do_write(file, buf, count, offset, update_pos);
-    CTX->write_metrics().add_event(written, start_t);
+    CTX->write_metrics()->add_event(written, start_t);
     return written;
 #else
     return gkfs_do_write(file, buf, count, offset, update_pos);
@@ -1121,7 +1123,7 @@ gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count, off64
 #ifdef GKFS_ENABLE_CLIENT_METRICS
     auto start_t = std::chrono::high_resolution_clock::now();
     auto read = gkfs_do_read(file, buf, count, offset);
-    CTX->read_metrics().add_event(read, start_t);
+    CTX->read_metrics()->add_event(read, start_t);
     return read;
 #else
     return gkfs_do_read(file, buf, count, offset);

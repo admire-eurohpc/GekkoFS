@@ -78,6 +78,7 @@ target_link_options(gkfs_user_lib PRIVATE -z noexecstack)
 if(GKFS_ENABLE_AGIOS)
   target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
 endif()
+# Enable MSGPack metrics for intercept only
 
 target_link_libraries(
   gkfs_intercept
@@ -88,8 +89,16 @@ target_link_libraries(
          fmt::fmt
          Threads::Threads
          Syscall_intercept::Syscall_intercept
-         msgpack_util
 )
+# Enable MSGPack metrics for intercept only
+if (GKFS_ENABLE_CLIENT_METRICS)
+	target_link_libraries(
+		gkfs_intercept
+		PUBLIC
+		msgpack_util
+	)
+	target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_CLIENT_METRICS)
+endif ()
 
 target_link_libraries(
   gkfs_user_lib
@@ -99,7 +108,6 @@ target_link_libraries(
          hermes
          fmt::fmt
          Threads::Threads
-         msgpack_util
 )
 
 install(

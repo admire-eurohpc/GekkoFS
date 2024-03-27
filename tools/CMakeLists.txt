@@ -25,12 +25,14 @@
 #                                                                              #
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
-include(load_nlohmann_json)
 
-add_executable(gkfs_clientmetrics2json)
-target_sources(gkfs_clientmetrics2json
-    PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/clientmetrics2json.cpp
-)
-target_link_libraries(gkfs_clientmetrics2json PUBLIC msgpack_util nlohmann_json::nlohmann_json)
-install(TARGETS gkfs_clientmetrics2json RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if (GKFS_ENABLE_CLIENT_METRICS)
+    include(load_nlohmann_json)
+    add_executable(gkfs_clientmetrics2json)
+    target_sources(gkfs_clientmetrics2json
+        PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/clientmetrics2json.cpp
+    )
+    target_link_libraries(gkfs_clientmetrics2json PUBLIC msgpack_util nlohmann_json::nlohmann_json)
+    install(TARGETS gkfs_clientmetrics2json RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif ()

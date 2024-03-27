@@ -36,7 +36,9 @@
 
 #include <common/rpc/distributor.hpp>
 #include <common/common_defs.hpp>
+#ifdef GKFS_ENABLE_CLIENT_METRICS
 #include <common/msgpack_util.hpp>
+#endif
 
 #include <ctime>
 #include <cstdlib>
@@ -319,10 +321,10 @@ destroy_preload() {
     }
 #ifdef GKFS_ENABLE_CLIENT_METRICS
     LOG(INFO, "Flushing final metrics...");
-    CTX->write_metrics().flush_msgpack();
-    CTX->read_metrics().flush_msgpack();
+    CTX->write_metrics()->flush_msgpack();
+    CTX->read_metrics()->flush_msgpack();
     LOG(INFO, "Metrics flushed. Total flush operations: {}",
-        CTX->write_metrics().flush_count());
+        CTX->write_metrics()->flush_count());
 #endif
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");

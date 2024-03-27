@@ -36,7 +36,10 @@
 
 #include <common/env_util.hpp>
 #include <common/path_util.hpp>
+#ifdef GKFS_ENABLE_CLIENT_METRICS
 #include <common/msgpack_util.hpp>
+#endif
+
 #include <config.hpp>
 #include <hermes.hpp>
 
@@ -541,14 +544,14 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
-gkfs::messagepack::ClientMetrics&
+const std::shared_ptr<messagepack::ClientMetrics>
 PreloadContext::write_metrics() {
-    return *write_metrics_;
+    return write_metrics_;
 }
 
-gkfs::messagepack::ClientMetrics&
+const std::shared_ptr<messagepack::ClientMetrics>
 PreloadContext::read_metrics() {
-    return *read_metrics_;
+    return read_metrics_;
 }
 
 } // namespace preload
