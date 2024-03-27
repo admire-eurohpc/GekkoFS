@@ -62,6 +62,7 @@ report_msgpack(std::vector<unsigned char>& buffer) {
     json_obj["total_iops"] = undata.total_iops_;
     json_obj["start_t_micro"] = undata.start_t_;
     json_obj["end_t_micro"] = undata.end_t_;
+    json_obj["flush_t"] = undata.flush_t_;
     json_obj["req_size"] = undata.req_size_;
     json_obj["[extra]avg_thruput_mib"] = avg_thruput;
 

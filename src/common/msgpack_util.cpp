@@ -51,7 +51,7 @@ namespace gkfs::messagepack {
 ClientMetrics::ClientMetrics(client_metric_io_type io_type,
                              client_metric_flush_type ftype, int flush_interval)
     : flush_interval_(flush_interval) {
-    msgpack_data_.init_t_ = std::chrono::system_clock::now();
+    init_t_ = std::chrono::system_clock::now();
     msgpack_data_.hostname_ = gkfs::rpc::get_my_hostname(true);
     msgpack_data_.pid_ = getpid();
     if(io_type == client_metric_io_type::write) {
@@ -91,10 +91,9 @@ ClientMetrics::add_event(
         return;
     auto end = std::chrono::system_clock::now();
     std::lock_guard<std::mutex> const data_lock(data_mtx_);
-    auto start_offset = std::chrono::duration<double, std::micro>(
-            start - msgpack_data_.init_t_);
-    auto end_offset = std::chrono::duration<double, std::micro>(
-            end - msgpack_data_.init_t_);
+    auto start_offset =
+            std::chrono::duration<double, std::micro>(start - init_t_);
+    auto end_offset = std::chrono::duration<double, std::micro>(end - init_t_);
     auto duration = std::chrono::duration<double, std::micro>(end_offset -
                                                               start_offset);
     msgpack_data_.total_bytes_ += size;
@@ -112,6 +111,7 @@ void
 ClientMetrics::reset_metrics() {
     msgpack_data_.start_t_.clear();
     msgpack_data_.end_t_.clear();
+    msgpack_data_.flush_t_ = 0;
     msgpack_data_.req_size_.clear();
     msgpack_data_.total_bytes_ = 0;
     msgpack_data_.total_iops_ = 0;
@@ -124,6 +124,10 @@ ClientMetrics::flush_msgpack() {
     std::lock_guard<std::mutex> const data_lock(data_mtx_);
     if(msgpack_data_.total_iops_ == 0)
         return;
+    auto flush_t_now = std::chrono::system_clock::now();
+    msgpack_data_.flush_t_ = static_cast<size_t>(
+            std::chrono::duration<double, std::micro>(flush_t_now - init_t_)
+                    .count());
     auto data = msgpack_data_.pack_msgpack();
     if(flush_type_ == client_metric_flush_type::file) {
         auto fd =
@@ -188,13 +192,12 @@ ClientMetrics::path() const {
 }
 void
 ClientMetrics::path(const string& path, const string prefix) {
-    const std::time_t t =
-            std::chrono::system_clock::to_time_t(msgpack_data_.init_t_);
+    const std::time_t t = std::chrono::system_clock::to_time_t(init_t_);
     std::stringstream init_t_stream;
     init_t_stream << std::put_time(std::localtime(&t), "%F_%T");
     flush_path_ = path + "/" + prefix + "_" + init_t_stream.str() + "_" +
-                  msgpack_data_.hostname_ + "_" + to_string(msgpack_data_.pid_) +
-            ".msgpack";
+                  msgpack_data_.hostname_ + "_" +
+                  to_string(msgpack_data_.pid_) + ".msgpack";
 }
 int
 ClientMetrics::flush_count() const {

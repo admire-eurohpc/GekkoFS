@@ -55,7 +55,7 @@ public:
      * actually sent
      */
     struct msgpack_data {
-        std::chrono::time_point<std::chrono::system_clock> init_t_;
+        uint32_t flush_t_;
         std::string hostname_;
         int pid_;
         std::string io_type_;
@@ -68,7 +68,7 @@ public:
         template <class T>
         void
         pack(T& pack) {
-            pack(init_t_, hostname_, pid_, io_type_, start_t_, end_t_,
+            pack(flush_t_, hostname_, pid_, io_type_, start_t_, end_t_,
                  req_size_, total_iops_, total_bytes_);
         }
 
@@ -82,6 +82,9 @@ private:
     bool metrics_enabled_{false};
 
     msgpack_data msgpack_data_{};
+
+    // Initialization time used to compute relative timestamps
+    std::chrono::time_point<std::chrono::system_clock> init_t_;
 
     std::mutex data_mtx_{};
     std::thread flush_thread_{};
