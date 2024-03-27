@@ -104,18 +104,15 @@ extract_protocol(const string& uri) {
         throw runtime_error(fmt::format("Invalid format for URI: '{}'", uri));
     }
     string protocol{};
-
-    if(uri.find(gkfs::rpc::protocol::ofi_sockets) != string::npos) {
-        protocol = gkfs::rpc::protocol::ofi_sockets;
-    } else if(uri.find(gkfs::rpc::protocol::ofi_psm2) != string::npos) {
-        protocol = gkfs::rpc::protocol::ofi_psm2;
-    } else if(uri.find(gkfs::rpc::protocol::ofi_verbs) != string::npos) {
-        protocol = gkfs::rpc::protocol::ofi_verbs;
-    } else if(uri.find(gkfs::rpc::protocol::ofi_tcp) != string::npos) {
-        protocol = gkfs::rpc::protocol::ofi_tcp;
+    for(const auto& valid_protocol :
+        gkfs::rpc::protocol::all_remote_protocols) {
+        if(uri.find(valid_protocol) != string::npos) {
+            protocol = valid_protocol;
+            break;
+        }
     }
-    // check for shared memory protocol. Can be plain shared memory or real ofi
-    // protocol + auto_sm
+    // check for shared memory protocol. Can be plain shared memory or real
+    // ofi protocol + auto_sm
     if(uri.find(gkfs::rpc::protocol::na_sm) != string::npos) {
         if(protocol.empty())
             protocol = gkfs::rpc::protocol::na_sm;

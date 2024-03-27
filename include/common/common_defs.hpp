@@ -58,11 +58,18 @@ constexpr auto get_chunk_stat = "rpc_srv_chunk_stat";
 } // namespace tag
 
 namespace protocol {
-constexpr auto ofi_psm2 = "ofi+psm2";
+constexpr auto na_sm = "na+sm";
 constexpr auto ofi_sockets = "ofi+sockets";
 constexpr auto ofi_tcp = "ofi+tcp";
 constexpr auto ofi_verbs = "ofi+verbs";
-constexpr auto na_sm = "na+sm";
+constexpr auto ofi_psm2 = "ofi+psm2";
+constexpr auto ucx_all = "ucx+all";
+constexpr auto ucx_tcp = "ucx+tcp";
+constexpr auto ucx_rc = "ucx+rc";
+constexpr auto ucx_ud = "ucx+ud";
+constexpr auto all_remote_protocols = {ofi_sockets, ofi_tcp, ofi_verbs,
+                                       ofi_psm2,    ucx_all, ucx_tcp,
+                                       ucx_rc,      ucx_ud};
 } // namespace protocol
 } // namespace gkfs::rpc
 

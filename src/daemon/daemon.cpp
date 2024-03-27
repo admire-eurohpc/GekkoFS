@@ -477,14 +477,18 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
     auto rpc_protocol = string(gkfs::rpc::protocol::ofi_sockets);
     if(desc.count("--rpc-protocol")) {
         rpc_protocol = opts.rpc_protocol;
-        if(rpc_protocol != gkfs::rpc::protocol::ofi_verbs &&
-           rpc_protocol != gkfs::rpc::protocol::ofi_sockets &&
-           rpc_protocol != gkfs::rpc::protocol::ofi_psm2 &&
-           rpc_protocol != gkfs::rpc::protocol::ofi_tcp) {
+        auto protocol_found = false;
+        for(const auto& valid_protocol :
+            gkfs::rpc::protocol::all_remote_protocols) {
+            if(rpc_protocol == valid_protocol) {
+                protocol_found = true;
+                break;
+            }
+        }
+        if(!protocol_found)
             throw runtime_error(fmt::format(
                     "Given RPC protocol '{}' not supported. Check --help for supported protocols.",
                     rpc_protocol));
-        }
     }
 
     auto use_auto_sm = desc.count("--auto-sm") != 0;
