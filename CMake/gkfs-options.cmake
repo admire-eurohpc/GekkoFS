@@ -237,7 +237,7 @@ gkfs_define_option(
 
 # use old resolve function
 gkfs_define_option(
-	GKFS_USE_OLD_PATH_RESOLVE
+  GKFS_USE_LEGACY_PATH_RESOLVE
   HELP_TEXT "Use the old implementation of the resolve function"
   DEFAULT_VALUE OFF
 )

@@ -126,18 +126,17 @@ follow_symlinks(const string& path) {
 
 pair<bool, string>
 resolve(const string& path, bool resolve_last_link) {
-#ifdef GKFS_USE_OLD_PATH_RESOLVE
+#ifdef GKFS_USE_LEGACY_PATH_RESOLVE
     string resolved;
     bool is_in_path = resolve(path, resolved, resolve_last_link);
     return make_pair(is_in_path, resolved);
 #else
-    return resolve_new(path);
+    return resolve_new(path, CTX->mountdir());
 #endif
 }
 
 pair<bool, string>
-resolve_new(const string& path) {
-    const string& mountdir = CTX->mountdir();
+resolve_new(const string& path, const string& mountdir) {
     LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, mountdir);
     string resolved = "";
     stack<size_t> last_component_pos;
@@ -156,8 +155,7 @@ resolve_new(const string& path) {
         if(comp_size == 2 && path.at(start) == '.' &&
            path.at(start + 1) == '.') {
             // component is '..', we skip it
-            LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path,
-                mountdir);
+            LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, mountdir);
             resolved.erase(last_component_pos.top());
             last_component_pos.pop();
             continue;

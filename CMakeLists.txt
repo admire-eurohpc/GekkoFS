@@ -272,8 +272,8 @@ if (GKFS_SYMLINK_SUPPORT)
     add_definitions(-DHAS_SYMLINKS)
 endif ()
 
-if (GKFS_USE_OLD_PATH_RESOLVE)
-    add_definitions(-DGKFS_USE_OLD_PATH_RESOLVE)
+if (GKFS_USE_LEGACY_PATH_RESOLVE)
+    add_definitions(-DGKFS_USE_LEGACY_PATH_RESOLVE)
 endif ()
 
 if (GKFS_FOLLOW_EXTERNAL_SYMLINKS)

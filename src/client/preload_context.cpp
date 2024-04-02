@@ -318,9 +318,10 @@ PreloadContext::relativize_fd_path(int dirfd, const char* raw_path,
         path = raw_path;
     }
 
-    std::pair<bool, std::string> resolved_path = gkfs::path::resolve(path, resolve_last_link);
-	  relative_path = resolved_path.second;
-    if(resolved_path.first) {
+    auto [is_in_path, resolved_path] =
+            gkfs::path::resolve(path, resolve_last_link);
+    relative_path = resolved_path;
+    if(is_in_path) {
         return RelativizeStatus::internal;
     }
     return RelativizeStatus::external;
@@ -350,10 +351,10 @@ PreloadContext::relativize_path(const char* raw_path,
         path = raw_path;
     }
 
-    std::pair<bool, std::string> resolved_path = gkfs::path::resolve(path, resolve_last_link);
-	  relative_path = resolved_path.second;
-	  return resolved_path.first;
-
+    auto [is_in_path, resolved_path] =
+            gkfs::path::resolve(path, resolve_last_link);
+    relative_path = resolved_path;
+    return is_in_path;
 }
 
 const std::string&

@@ -77,7 +77,7 @@ target_link_libraries(tests
     helpers
     arithmetic
     distributor
-    gkfs_intercept
+    gkfs_user_lib
     )
 
 # Catch2's contrib folder includes some helper functions
