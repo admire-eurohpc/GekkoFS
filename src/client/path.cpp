@@ -131,46 +131,63 @@ resolve(const string& path, bool resolve_last_link) {
     bool is_in_path = resolve(path, resolved, resolve_last_link);
     return make_pair(is_in_path, resolved);
 #else
-    return resolve_new(path, CTX->mountdir());
+    return resolve_new(path);
 #endif
 }
 
 pair<bool, string>
-resolve_new(const string& path, const string& mountdir) {
-    LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, mountdir);
+resolve_new(const string& path) {
+    LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, CTX->mountdir());
+
+    if(path.empty()) {
+        return make_pair(false, "/");
+    }
+
     string resolved = "";
     stack<size_t> last_component_pos;
+    const string absolute_path = (path.at(0) == path::separator)
+                                         ? path
+                                         : CTX->cwd() + path::separator + path;
 
-    for(size_t start = 0; start < path.size(); start++) {
-        size_t end = path.find(path::separator, start);
+    for(size_t start = 0; start < absolute_path.size(); start++) {
+        size_t end = absolute_path.find(path::separator, start);
+        // catches the case without separator at the end
+        if(end == string::npos) {
+            end = absolute_path.size();
+        }
         size_t comp_size = end - start;
-        if(comp_size == 1 && path.at(start) == path::separator) {
-            // should I use same while loop as in the original here?
+        if(comp_size == 0 && absolute_path.at(start) == path::separator) {
             continue;
         }
-        if(comp_size == 1 && path.at(start) == '.') {
+        if(comp_size == 1 && absolute_path.at(start) == '.') {
             // component is '.', we skip it
             continue;
         }
-        if(comp_size == 2 && path.at(start) == '.' &&
-           path.at(start + 1) == '.') {
+        if(comp_size == 2 && absolute_path.at(start) == '.' &&
+           absolute_path.at(start + 1) == '.') {
             // component is '..', we skip it
-            LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", path, mountdir);
-            resolved.erase(last_component_pos.top());
-            last_component_pos.pop();
+            LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", absolute_path,
+                CTX->mountdir());
+            if(last_component_pos.empty()) {
+                resolved = "/";
+            } else {
+                resolved.erase(last_component_pos.top());
+                last_component_pos.pop();
+            }
             continue;
         }
         // add `/<component>` to the reresolved path
         resolved.push_back(path::separator);
         last_component_pos.push(resolved.size() - 1);
-        resolved.append(path, start, comp_size);
+        resolved.append(absolute_path, start, comp_size);
+        start = end;
 
 #ifdef GKFS_FOLLOW_EXTERNAL_SYMLINKS
         resolved = follow_symlinks(resolved);
 #endif
     }
 
-    if(resolved.substr(0, mountdir.size()) == mountdir) {
+    if(resolved.substr(0, CTX->mountdir().size()) == CTX->mountdir()) {
         resolved.erase(1, CTX->mountdir().size());
         LOG(DEBUG, "internal: \"{}\"", resolved);
         return make_pair(true, resolved);

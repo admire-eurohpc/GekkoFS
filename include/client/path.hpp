@@ -42,7 +42,7 @@ std::pair<bool, std::string>
 resolve(const std::string& path, bool resolve_last_link = true);
 
 std::pair<bool, std::string>
-resolve_new(const std::string& path, const std::string& mountdir);
+resolve_new(const std::string& path);
 
 [[deprecated(
         "Use GKFS_USE_LEGACY_PATH_RESOLVE to use old implementation")]] bool
