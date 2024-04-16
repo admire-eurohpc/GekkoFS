@@ -133,6 +133,7 @@ SCENARIO(" resolve fn should handle external paths ",
                 TEST_PAIR(gkfs::path::resolve_new("./tmp//bar/./"), false,
                           "/home/foo/tmp/bar");
                 TEST_PAIR(gkfs::path::resolve_new("../../../.."), false, "/");
+                TEST_PAIR(gkfs::path::resolve_new("../../../../foo"), false, "/foo");
             }
         }
     }

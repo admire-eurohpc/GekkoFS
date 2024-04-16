@@ -70,6 +70,9 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 
 ### New
 
+- Rewrite of the resolve path function to improve performance by making the
+  use of syscall for following symlinks optional
+  ([!183](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/183)).
 - Support for client-side per process logging, activated
   with `LIBGKFS_LOG_PER_PROCESS` ([!179](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/179)).
 - Support mtime with option gkfs::config::metadata::

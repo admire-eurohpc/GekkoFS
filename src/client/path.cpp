@@ -169,7 +169,7 @@ resolve_new(const string& path) {
             LOG(DEBUG, "path: \"{}\", mountdir: \"{}\"", absolute_path,
                 CTX->mountdir());
             if(last_component_pos.empty()) {
-                resolved = "/";
+                resolved = "";
             } else {
                 resolved.erase(last_component_pos.top());
                 last_component_pos.pop();
