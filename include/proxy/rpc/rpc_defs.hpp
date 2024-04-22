@@ -33,6 +33,8 @@ DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_read)
 
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_write)
 
+DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_truncate)
+
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_chunk_stat)
 
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_get_dirents_extended)

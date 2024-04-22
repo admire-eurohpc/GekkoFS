@@ -45,6 +45,9 @@ register_server_ipcs(margo_instance_id mid) {
     MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_read,
                    rpc_client_proxy_read_in_t, rpc_data_out_t,
                    proxy_rpc_srv_read)
+    MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_truncate,
+                   rpc_client_proxy_trunc_in_t, rpc_err_out_t,
+                   proxy_rpc_srv_truncate)
     MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_chunk_stat,
                    rpc_chunk_stat_in_t, rpc_chunk_stat_out_t,
                    proxy_rpc_srv_chunk_stat)

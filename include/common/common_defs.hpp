@@ -69,6 +69,7 @@ constexpr auto client_proxy_update_size =
         "proxy_rpc_srv_update_metadentry_size";
 constexpr auto client_proxy_write = "proxy_rpc_srv_write_data";
 constexpr auto client_proxy_read = "proxy_rpc_srv_read_data";
+constexpr auto client_proxy_truncate = "proxy_rpc_srv_truncate";
 constexpr auto client_proxy_chunk_stat = "proxy_rpc_srv_chunk_stat";
 constexpr auto client_proxy_get_dirents_extended =
         "proxy_rpc_srv_get_dirents_extended";

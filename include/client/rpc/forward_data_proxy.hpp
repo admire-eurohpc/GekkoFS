@@ -26,6 +26,10 @@ std::pair<int, ssize_t>
 forward_read_proxy(const std::string& path, void* buf, off64_t offset,
                    size_t read_size);
 
+int
+forward_truncate_proxy(const std::string& path, size_t current_size,
+                       size_t new_size);
+
 std::pair<int, ChunkStat>
 forward_get_chunk_stat_proxy();
 

@@ -65,6 +65,8 @@ hermes::detail::register_user_request_types(uint32_t provider_id) {
                 provider_id);
         (void) registered_requests().add<gkfs::rpc::read_data_proxy>(
                 provider_id);
+        (void) registered_requests().add<gkfs::rpc::trunc_data_proxy>(
+                provider_id);
         (void) registered_requests().add<gkfs::rpc::chunk_stat_proxy>(
                 provider_id);
         (void) registered_requests().add<gkfs::rpc::create_proxy>(provider_id);

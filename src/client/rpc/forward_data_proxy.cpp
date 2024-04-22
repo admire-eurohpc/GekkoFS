@@ -72,8 +72,8 @@ forward_write_proxy(const string& path, const void* buf, off64_t offset,
 
         gkfs::rpc::write_data_proxy::input in(path, offset, write_size,
                                               local_buffers);
-        LOG(DEBUG, "proxy-host: {}, path: '{}', size: {}, offset: {}", endp.to_string(),
-            path, in.write_size(), in.offset());
+        LOG(DEBUG, "proxy-host: {}, path: '{}', size: {}, offset: {}",
+            endp.to_string(), path, in.write_size(), in.offset());
 
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that
         // we can retry for RPC_TRIES (see old commits with margo)
@@ -135,8 +135,8 @@ forward_read_proxy(const string& path, void* buf, const off64_t offset,
 
         gkfs::rpc::read_data_proxy::input in(path, offset, read_size,
                                              local_buffers);
-        LOG(DEBUG, "proxy-host: {}, path: '{}', size: {}, offset: {}", endp.to_string(),
-            path, in.read_size(), in.offset());
+        LOG(DEBUG, "proxy-host: {}, path: '{}', size: {}, offset: {}",
+            endp.to_string(), path, in.read_size(), in.offset());
 
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that
         // we can retry for RPC_TRIES (see old commits with margo)
@@ -163,6 +163,33 @@ forward_read_proxy(const string& path, void* buf, const off64_t offset,
         return make_pair(err, 0);
     else
         return make_pair(0, out_size);
+}
+
+int
+forward_truncate_proxy(const std::string& path, size_t current_size,
+                       size_t new_size) {
+    auto endp = CTX->proxy_host();
+    gkfs::rpc::trunc_data_proxy::input in(path, current_size, new_size);
+
+    try {
+        LOG(DEBUG, "Sending RPC ...");
+        // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
+        // can retry for RPC_TRIES (see old commits with margo)
+        // TODO(amiranda): hermes will eventually provide a post(endpoint)
+        // returning one result and a broadcast(endpoint_set) returning a
+        // result_set. When that happens we can remove the .at(0) :/
+
+        auto out = ld_proxy_service->post<gkfs::rpc::trunc_data_proxy>(endp, in)
+                           .get()
+                           .at(0);
+        LOG(DEBUG, "Got response success: {}", out.err());
+
+        return out.err() ? out.err() : 0;
+
+    } catch(const std::exception& ex) {
+        LOG(ERROR, "while getting rpc output");
+        return EBUSY;
+    }
 }
 
 pair<int, ChunkStat>

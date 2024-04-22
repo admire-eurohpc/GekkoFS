@@ -136,7 +136,9 @@ MERCURY_GEN_PROC(rpc_client_proxy_read_in_t,
                  ((hg_const_string_t) (path))(
                          (int64_t) (offset)) // file offset, NOT chunk offset
                  ((hg_uint64_t) (read_size))((hg_bulk_t) (bulk_handle)))
-
+MERCURY_GEN_PROC(rpc_client_proxy_trunc_in_t,
+                 ((hg_const_string_t) (path))((hg_uint64_t) (current_size))(
+                         (hg_uint64_t) (length)))
 // proxy <-> daemon
 
 MERCURY_GEN_PROC(

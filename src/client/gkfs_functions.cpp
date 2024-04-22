@@ -768,8 +768,13 @@ gkfs_truncate(const std::string& path, off_t old_size, off_t new_size) {
         }
     }
 
-    auto err = gkfs::rpc::forward_truncate(path, old_size, new_size,
-                                           CTX->get_replicas());
+    int err = 0;
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_truncate_proxy(path, old_size, new_size);
+    } else {
+        err = gkfs::rpc::forward_truncate(path, old_size, new_size,
+                                          CTX->get_replicas());
+    }
     if(err) {
         LOG(DEBUG, "Failed to truncate data");
         errno = err;

@@ -124,6 +124,7 @@ constexpr auto fwd_stat = true;
 constexpr auto fwd_remove = true;
 constexpr auto fwd_update_size = true;
 constexpr auto fwd_io = true;
+constexpr auto fwd_truncate = true;
 constexpr auto fwd_chunk_stat = true;
 constexpr auto fwd_get_dirents_single = true;
 // Only use proxy for io if write/read size is higher than set value
