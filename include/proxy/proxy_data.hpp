@@ -28,6 +28,7 @@ struct margo_client_ids {
     hg_id_t rpc_create_id;
     hg_id_t rpc_stat_id;
     hg_id_t rpc_remove_id;
+    hg_id_t rpc_decr_size_id;
     hg_id_t rpc_remove_data_id;
     hg_id_t rpc_update_metadentry_size_id;
     hg_id_t rpc_write_id;

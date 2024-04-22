@@ -147,6 +147,9 @@ register_client_rpcs(margo_instance_id mid) {
     PROXY_DATA->rpc_client_ids().rpc_remove_id =
             MARGO_REGISTER(mid, gkfs::rpc::tag::remove_metadata,
                            rpc_rm_node_in_t, rpc_rm_metadata_out_t, NULL);
+    PROXY_DATA->rpc_client_ids().rpc_decr_size_id =
+            MARGO_REGISTER(mid, gkfs::rpc::tag::decr_size, rpc_trunc_in_t,
+                           rpc_err_out_t, NULL);
     PROXY_DATA->rpc_client_ids().rpc_remove_data_id =
             MARGO_REGISTER(mid, gkfs::rpc::tag::remove_data, rpc_rm_node_in_t,
                            rpc_err_out_t, NULL);
