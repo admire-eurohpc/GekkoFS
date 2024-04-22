@@ -55,7 +55,7 @@ pkg_install() {
     CURR="${SOURCE_DIR}/rocksdb"
     prepare_build_dir "${CURR}"
     cd "${CURR}/build"
-    PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig" $CMAKE \
+    PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH}" $CMAKE \
     -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_PREFIX_PATH="${INSTALL_DIR}" \

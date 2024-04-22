@@ -50,7 +50,7 @@ pkg_install() {
     cd "${CURR}"
     ./prepare.sh
     cd "${CURR}/build"
-    ../configure --prefix="${INSTALL_DIR}" PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig" CFLAGS="${CFLAGS} -Wall -O3"
+    ../configure --prefix="${INSTALL_DIR}" PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH}" CFLAGS="${CFLAGS} -Wall -O3"
     make -j"${CORES}"
     make install
 }
