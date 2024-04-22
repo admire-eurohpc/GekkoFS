@@ -200,9 +200,9 @@ proxy_rpc_srv_truncate(hg_handle_t handle) {
     PROXY_DATA->log()->debug(
             "{}() Got RPC with path '{}' current_size '{}' length '{}'",
             __func__, client_in.path, client_in.current_size, client_in.length);
-    client_out.err = EIO;
-    //    client_out.err = gkfs::rpc::forward_create(client_in.path,
-    //    client_in.mode);
+
+    client_out.err = gkfs::rpc::forward_truncate(
+            client_in.path, client_in.current_size, client_in.length);
 
     PROXY_DATA->log()->debug("{}() Sending output err '{}'", __func__,
                              client_out.err);
@@ -210,92 +210,6 @@ proxy_rpc_srv_truncate(hg_handle_t handle) {
 }
 
 DEFINE_MARGO_RPC_HANDLER(proxy_rpc_srv_truncate)
-
-
-// int trunc_data(const std::string& path, size_t current_size, size_t new_size)
-// {
-//     assert(current_size > new_size);
-//     hg_return_t ret;
-//     rpc_trunc_in_t in;
-//     in.path = path.c_str();
-//     in.length = new_size;
-//
-//     bool error = false;
-//
-//     // Find out which data server needs to delete chunks in order to contact
-//     only them const unsigned int chunk_start = chnk_id_for_offset(new_size,
-//     CHUNKSIZE); const unsigned int chunk_end =
-//     chnk_id_for_offset(current_size - new_size - 1, CHUNKSIZE);
-//     std::unordered_set<unsigned int> hosts;
-//     for(unsigned int chunk_id = chunk_start; chunk_id <= chunk_end;
-//     ++chunk_id) {
-//         hosts.insert(CTX->distributor()->locate_data(path, chunk_id));
-//     }
-//
-//     std::vector<hg_handle_t> rpc_handles(hosts.size());
-//     std::vector<margo_request> rpc_waiters(hosts.size());
-//     unsigned int req_num = 0;
-//     for (const auto& host: hosts) {
-//         ret = margo_create_wrap_helper(rpc_trunc_data_id, host,
-//         rpc_handles[req_num]); if (ret != HG_SUCCESS) {
-//             CTX->log()->error("{}() Unable to create Mercury handle for host:
-//             ", __func__, host); break;
-//         }
-//
-//         // send async rpc
-//         ret = margo_iforward(rpc_handles[req_num], &in,
-//         &rpc_waiters[req_num]); if (ret != HG_SUCCESS) {
-//             CTX->log()->error("{}() Failed to send request to host: {}",
-//             __func__, host); break;
-//         }
-//         ++req_num;
-//     }
-//
-//     if(req_num < hosts.size()) {
-//         // An error occurred. Cleanup and return
-//         CTX->log()->error("{}() Error -> sent only some requests {}/{}.
-//         Cancelling request...", __func__, req_num, hosts.size());
-//         for(unsigned int i = 0; i < req_num; ++i) {
-//             margo_destroy(rpc_handles[i]);
-//         }
-//         errno = EIO;
-//         return -1;
-//     }
-//
-//     assert(req_num == hosts.size());
-//     // Wait for RPC responses and then get response
-//     rpc_err_out_t out{};
-//     for (unsigned int i = 0; i < hosts.size(); ++i) {
-//         ret = margo_wait(rpc_waiters[i]);
-//         if (ret == HG_SUCCESS) {
-//             ret = margo_get_output(rpc_handles[i], &out);
-//             if (ret == HG_SUCCESS) {
-//                 if(out.err){
-//                     CTX->log()->error("{}() received error response: {}",
-//                     __func__, out.err); error = true;
-//                 }
-//             } else {
-//                 // Get output failed
-//                 CTX->log()->error("{}() while getting rpc output", __func__);
-//                 error = true;
-//             }
-//         } else {
-//             // Wait failed
-//             CTX->log()->error("{}() Failed while waiting for response",
-//             __func__); error = true;
-//         }
-//
-//         /* clean up resources consumed by this rpc */
-//         margo_free_output(rpc_handles[i], &out);
-//         margo_destroy(rpc_handles[i]);
-//     }
-//
-//     if(error) {
-//         errno = EIO;
-//         return -1;
-//     }
-//     return 0;
-// }
 
 static hg_return_t
 proxy_rpc_srv_chunk_stat(hg_handle_t handle) {

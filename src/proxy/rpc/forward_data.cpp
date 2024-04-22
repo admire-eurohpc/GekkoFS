@@ -18,6 +18,7 @@
 #include <common/rpc/distributor.hpp>
 
 #include <map>
+#include <unordered_set>
 
 using namespace std;
 
@@ -341,6 +342,108 @@ forward_read(const std::string& path, void* buf, const int64_t offset,
     }
     margo_bulk_free(bulk_handle);
     return ::make_pair(err, out_size);
+}
+
+int
+forward_truncate(const std::string& path, size_t current_size,
+                 size_t new_size) {
+
+    rpc_trunc_in_t daemon_in{};
+    rpc_err_out_t daemon_out{};
+    hg_return_t ret{};
+    bool err = false;
+    // fill in
+    daemon_in.path = path.c_str();
+    daemon_in.length = new_size;
+
+    // import pow2-optimized arithmetic functions
+    using namespace gkfs::utils::arithmetic;
+
+    // Find out which data servers need to delete data chunks in order to
+    // contact only them
+    const unsigned int chunk_start =
+            block_index(new_size, gkfs::config::rpc::chunksize);
+    const unsigned int chunk_end = block_index(current_size - new_size - 1,
+                                               gkfs::config::rpc::chunksize);
+
+    std::unordered_set<unsigned int> hosts;
+    for(unsigned int chunk_id = chunk_start; chunk_id <= chunk_end;
+        ++chunk_id) {
+        hosts.insert(PROXY_DATA->distributor()->locate_data(path, chunk_id, 0));
+    }
+    // some helper variables for async RPC
+    vector<hg_handle_t> rpc_handles(hosts.size());
+    vector<margo_request> rpc_waiters(hosts.size());
+    unsigned int req_num = 0;
+    // Issue non-blocking RPC requests and wait for the result later
+    for(const auto& host : hosts) {
+
+        ret = margo_create(PROXY_DATA->client_rpc_mid(),
+                           PROXY_DATA->rpc_endpoints().at(host),
+                           PROXY_DATA->rpc_client_ids().rpc_truncate_id,
+                           &rpc_handles[req_num]);
+        if(ret != HG_SUCCESS) {
+            PROXY_DATA->log()->error(
+                    "{}() Unable to create Mercury handle for host: ", __func__,
+                    host);
+            break;
+        }
+        // Send RPC
+        ret = margo_iforward(rpc_handles[req_num], &daemon_in,
+                             &rpc_waiters[req_num]);
+        if(ret != HG_SUCCESS) {
+            PROXY_DATA->log()->error(
+                    "{}() Unable to send non-blocking rpc for path {} and recipient {}",
+                    __func__, path, host);
+            break;
+        }
+        req_num++;
+    }
+    if(req_num < hosts.size()) {
+        // An error occurred. Cleanup and return
+        PROXY_DATA->log()->error(
+                "{}() Error -> sent only some requests {}/{}. Cancelling request...",
+                __func__, req_num, hosts.size());
+        for(unsigned int i = 0; i < req_num; ++i) {
+            margo_destroy(rpc_handles[i]);
+        }
+        // TODO Ideally wait for dangling responses
+        return EIO;
+    }
+    // Wait for RPC responses and then get response
+    for(unsigned int i = 0; i < hosts.size(); ++i) {
+        ret = margo_wait(rpc_waiters[i]);
+        if(ret == HG_SUCCESS) {
+            ret = margo_get_output(rpc_handles[i], &daemon_out);
+            if(ret == HG_SUCCESS) {
+                if(daemon_out.err) {
+                    PROXY_DATA->log()->error("{}() received error response: {}",
+                                             __func__, daemon_out.err);
+                    err = true;
+                }
+            } else {
+                // Get output failed
+                PROXY_DATA->log()->error("{}() while getting rpc output",
+                                         __func__);
+                err = true;
+            }
+        } else {
+            // Wait failed
+            PROXY_DATA->log()->error("{}() Failed while waiting for response",
+                                     __func__);
+            err = true;
+        }
+
+        /* clean up resources consumed by this rpc */
+        margo_free_output(rpc_handles[i], &daemon_out);
+        margo_destroy(rpc_handles[i]);
+    }
+
+    if(err) {
+        errno = EBUSY;
+        return -1;
+    }
+    return 0;
 }
 
 pair<int, ChunkStat>

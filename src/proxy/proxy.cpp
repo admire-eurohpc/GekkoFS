@@ -132,6 +132,8 @@ register_client_rpcs(margo_instance_id mid) {
     PROXY_DATA->rpc_client_ids().rpc_read_id =
             MARGO_REGISTER(mid, gkfs::rpc::tag::proxy_daemon_read,
                            rpc_proxy_daemon_read_in_t, rpc_data_out_t, NULL);
+    PROXY_DATA->rpc_client_ids().rpc_truncate_id = MARGO_REGISTER(
+            mid, gkfs::rpc::tag::truncate, rpc_trunc_in_t, rpc_err_out_t, NULL);
     PROXY_DATA->rpc_client_ids().rpc_chunk_stat_id =
             MARGO_REGISTER(mid, gkfs::rpc::tag::get_chunk_stat,
                            rpc_chunk_stat_in_t, rpc_chunk_stat_out_t, NULL);

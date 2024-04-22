@@ -27,6 +27,9 @@ std::pair<int, ssize_t>
 forward_read(const std::string& path, void* buf, int64_t offset,
              size_t read_size);
 
+int
+forward_truncate(const std::string& path, size_t current_size, size_t new_size);
+
 std::pair<int, ChunkStat>
 forward_get_chunk_stat();
 

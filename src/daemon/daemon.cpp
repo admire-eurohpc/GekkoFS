@@ -258,6 +258,8 @@ register_proxy_server_rpcs(margo_instance_id mid) {
     MARGO_REGISTER(mid, gkfs::rpc::tag::get_dirents_extended,
                    rpc_get_dirents_in_t, rpc_get_dirents_out_t,
                    rpc_srv_get_dirents_extended);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::truncate, rpc_trunc_in_t, rpc_err_out_t,
+                   rpc_srv_truncate);
     // proxy daemon specific RPCs
     MARGO_REGISTER(mid, gkfs::rpc::tag::proxy_daemon_write,
                    rpc_proxy_daemon_write_in_t, rpc_data_out_t,
