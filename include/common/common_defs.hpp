@@ -65,6 +65,7 @@ constexpr auto get_chunk_stat = "rpc_srv_chunk_stat";
 constexpr auto client_proxy_create = "proxy_rpc_srv_create";
 constexpr auto client_proxy_stat = "proxy_rpc_srv_stat";
 constexpr auto client_proxy_remove = "proxy_rpc_srv_remove";
+constexpr auto client_proxy_decr_size = "proxy_rpc_srv_decr_size";
 constexpr auto client_proxy_update_size =
         "proxy_rpc_srv_update_metadentry_size";
 constexpr auto client_proxy_write = "proxy_rpc_srv_write_data";

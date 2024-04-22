@@ -72,6 +72,8 @@ hermes::detail::register_user_request_types(uint32_t provider_id) {
         (void) registered_requests().add<gkfs::rpc::create_proxy>(provider_id);
         (void) registered_requests().add<gkfs::rpc::stat_proxy>(provider_id);
         (void) registered_requests().add<gkfs::rpc::remove_proxy>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::decr_size_proxy>(
+                provider_id);
         (void) registered_requests()
                 .add<gkfs::rpc::update_metadentry_size_proxy>(provider_id);
         (void) registered_requests().add<gkfs::rpc::get_dirents_extended_proxy>(

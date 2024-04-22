@@ -57,6 +57,8 @@ register_server_ipcs(margo_instance_id mid) {
                    rpc_stat_out_t, proxy_rpc_srv_stat)
     MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_remove, rpc_rm_node_in_t,
                    rpc_err_out_t, proxy_rpc_srv_remove)
+    MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_decr_size, rpc_trunc_in_t,
+                   rpc_err_out_t, proxy_rpc_srv_decr_size)
     MARGO_REGISTER(mid, gkfs::rpc::tag::client_proxy_update_size,
                    rpc_update_metadentry_size_in_t,
                    rpc_update_metadentry_size_out_t,

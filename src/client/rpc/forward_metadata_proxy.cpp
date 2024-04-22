@@ -98,6 +98,31 @@ forward_remove_proxy(const std::string& path) {
     }
 }
 
+int
+forward_decr_size_proxy(const std::string& path, size_t length) {
+    auto endp = CTX->proxy_host();
+
+    try {
+        LOG(DEBUG, "Sending RPC ...");
+        // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
+        // can retry for RPC_TRIES (see old commits with margo)
+        // TODO(amiranda): hermes will eventually provide a post(endpoint)
+        // returning one result and a broadcast(endpoint_set) returning a
+        // result_set. When that happens we can remove the .at(0) :/
+        auto out =
+                ld_proxy_service
+                        ->post<gkfs::rpc::decr_size_proxy>(endp, path, length)
+                        .get()
+                        .at(0);
+        LOG(DEBUG, "Got response success: {}", out.err());
+
+        return out.err() ? out.err() : 0;
+    } catch(const std::exception& ex) {
+        LOG(ERROR, "while getting rpc output");
+        return EBUSY;
+    }
+}
+
 pair<int, off64_t>
 forward_update_metadentry_size_proxy(const string& path, const size_t size,
                                      const off64_t offset,

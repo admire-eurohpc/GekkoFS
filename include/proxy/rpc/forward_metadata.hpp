@@ -27,6 +27,9 @@ forward_stat(const std::string& path);
 int
 forward_remove(const std::string& path);
 
+int
+forward_decr_size(const std::string& path, size_t length);
+
 std::pair<int, off64_t>
 forward_update_metadentry_size(const std::string& path, const size_t size,
                                const off64_t offset, const bool append_flag);

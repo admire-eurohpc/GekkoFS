@@ -25,6 +25,9 @@ forward_stat_proxy(const std::string& path, std::string& attr);
 int
 forward_remove_proxy(const std::string& path);
 
+int
+forward_decr_size_proxy(const std::string& path, size_t length);
+
 std::pair<int, off64_t>
 forward_update_metadentry_size_proxy(const std::string& path, const size_t size,
                                      const off64_t offset,

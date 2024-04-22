@@ -27,6 +27,8 @@ DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_stat)
 
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_remove)
 
+DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_decr_size)
+
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_update_metadentry_size)
 
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_read)

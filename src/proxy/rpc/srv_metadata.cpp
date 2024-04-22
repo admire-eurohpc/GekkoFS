@@ -89,6 +89,29 @@ proxy_rpc_srv_remove(hg_handle_t handle) {
 DEFINE_MARGO_RPC_HANDLER(proxy_rpc_srv_remove)
 
 static hg_return_t
+proxy_rpc_srv_decr_size(hg_handle_t handle) {
+    rpc_trunc_in_t client_in{};
+    rpc_err_out_t client_out{};
+
+    auto ret = margo_get_input(handle, &client_in);
+    if(ret != HG_SUCCESS) {
+        PROXY_DATA->log()->error("{}() Failed to retrieve input from handle",
+                                 __func__);
+        return gkfs::rpc::cleanup_respond(&handle, &client_in, &client_out);
+    }
+    PROXY_DATA->log()->debug("{}() Got RPC with path '{}' length '{}'",
+                             __func__, client_in.path, client_in.length);
+    client_out.err =
+            gkfs::rpc::forward_decr_size(client_in.path, client_in.length);
+
+    PROXY_DATA->log()->debug("{}() Sending output err '{}'", __func__,
+                             client_out.err);
+    return gkfs::rpc::cleanup_respond(&handle, &client_in, &client_out);
+}
+
+DEFINE_MARGO_RPC_HANDLER(proxy_rpc_srv_decr_size)
+
+static hg_return_t
 proxy_rpc_srv_update_metadentry_size(hg_handle_t handle) {
 
     rpc_update_metadentry_size_in_t client_in{};

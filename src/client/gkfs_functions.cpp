@@ -759,16 +759,24 @@ gkfs_truncate(const std::string& path, off_t old_size, off_t new_size) {
     if(new_size == old_size) {
         return 0;
     }
-    for(auto copy = 0; copy < (CTX->get_replicas() + 1); copy++) {
-        auto err = gkfs::rpc::forward_decr_size(path, new_size, copy);
-        if(err) {
-            LOG(DEBUG, "Failed to decrease size");
-            errno = err;
-            return -1;
+    int err = 0;
+    // decrease size on metadata server first
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_decr_size_proxy(path, new_size);
+    } else {
+        for(auto copy = 0; copy < (CTX->get_replicas() + 1); copy++) {
+            err = gkfs::rpc::forward_decr_size(path, new_size, copy);
+            if(err) {
+                break;
+            }
         }
     }
-
-    int err = 0;
+    if(err) {
+        LOG(DEBUG, "Failed to decrease size");
+        errno = err;
+        return -1;
+    }
+    // truncate chunks to new_size next
     if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
         err = gkfs::rpc::forward_truncate_proxy(path, old_size, new_size);
     } else {

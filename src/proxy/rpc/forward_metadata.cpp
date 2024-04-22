@@ -246,6 +246,11 @@ forward_remove(const std::string& path) {
     return remove_data(path);
 }
 
+int
+forward_decr_size(const std::string& path, size_t length) {
+    return EIO;
+}
+
 pair<int, off64_t>
 forward_update_metadentry_size(const string& path, const size_t size,
                                const off64_t offset, const bool append_flag) {
