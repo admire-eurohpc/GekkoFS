@@ -112,6 +112,38 @@ proxy_rpc_srv_decr_size(hg_handle_t handle) {
 DEFINE_MARGO_RPC_HANDLER(proxy_rpc_srv_decr_size)
 
 static hg_return_t
+proxy_rpc_srv_get_metadentry_size(hg_handle_t handle) {
+
+    rpc_path_only_in_t client_in{};
+    rpc_get_metadentry_size_out_t client_out{};
+
+    auto ret = margo_get_input(handle, &client_in);
+    if(ret != HG_SUCCESS) {
+        PROXY_DATA->log()->error("{}() Failed to retrieve input from handle",
+                                 __func__);
+        return gkfs::rpc::cleanup_respond(&handle, &client_in, &client_out);
+    }
+    PROXY_DATA->log()->debug("{}() path: '{}'", __func__, client_in.path);
+
+    try {
+        auto [err, ret_size] =
+                gkfs::rpc::forward_get_metadentry_size(client_in.path);
+        client_out.err = 0;
+        client_out.ret_size = ret_size;
+    } catch(const std::exception& e) {
+        PROXY_DATA->log()->error("{}() Failed to get metadentry size RPC: '{}'",
+                                 __func__, e.what());
+        client_out.err = EBUSY;
+    }
+
+    PROXY_DATA->log()->debug("{}() Sending output err '{}' ret_size '{}'",
+                             __func__, client_out.err, client_out.ret_size);
+    return gkfs::rpc::cleanup_respond(&handle, &client_in, &client_out);
+}
+
+DEFINE_MARGO_RPC_HANDLER(proxy_rpc_srv_get_metadentry_size)
+
+static hg_return_t
 proxy_rpc_srv_update_metadentry_size(hg_handle_t handle) {
 
     rpc_update_metadentry_size_in_t client_in{};

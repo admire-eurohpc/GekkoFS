@@ -293,6 +293,12 @@ forward_decr_size(const std::string& path, size_t length) {
 }
 
 pair<int, off64_t>
+forward_get_metadentry_size(const string& path) {
+    // return default
+    return make_pair(0, 0);
+}
+
+pair<int, off64_t>
 forward_update_metadentry_size(const string& path, const size_t size,
                                const off64_t offset, const bool append_flag) {
     hg_handle_t rpc_handle = nullptr;

@@ -516,9 +516,9 @@ int
 forward_truncate(const std::string& path, size_t current_size, size_t new_size,
                  const int8_t num_copies) {
 
-    if(CTX->use_proxy()) {
-        LOG(WARNING, "{} is run due to missing proxy implementation!",
-            __func__);
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__, gkfs::config::proxy::fwd_truncate);
     }
 
     // import pow2-optimized arithmetic functions

@@ -122,6 +122,7 @@ constexpr auto pid_path = "/tmp/gkfs_proxy.pid";
 constexpr auto fwd_create = true;
 constexpr auto fwd_stat = true;
 constexpr auto fwd_remove = true;
+constexpr auto fwd_get_size = true;
 constexpr auto fwd_update_size = true;
 constexpr auto fwd_io = true;
 constexpr auto fwd_truncate = true;

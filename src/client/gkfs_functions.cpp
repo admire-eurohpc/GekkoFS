@@ -708,9 +708,16 @@ gkfs_lseek(shared_ptr<gkfs::filemap::OpenFile> gkfs_fd, off_t offset,
             gkfs_fd->pos(gkfs_fd->pos() + offset);
             break;
         case SEEK_END: {
-            // TODO: handle replicas
-            auto ret =
-                    gkfs::rpc::forward_get_metadentry_size(gkfs_fd->path(), 0);
+            std::pair<int, off64_t> ret{};
+            if(gkfs::config::proxy::fwd_get_size && CTX->use_proxy()) {
+                ret = gkfs::rpc::forward_get_metadentry_size_proxy(
+                        gkfs_fd->path());
+            } else {
+                // TODO: handle replicas
+                ret = gkfs::rpc::forward_get_metadentry_size(gkfs_fd->path(),
+                                                             0);
+            }
+
             auto err = ret.first;
             if(err) {
                 errno = err;

@@ -33,6 +33,9 @@ forward_update_metadentry_size_proxy(const std::string& path, const size_t size,
                                      const off64_t offset,
                                      const bool append_flag);
 
+std::pair<int, off64_t>
+forward_get_metadentry_size_proxy(const std::string& path);
+
 std::pair<int, std::vector<std::tuple<const std::string, bool, size_t, time_t>>>
 forward_get_dirents_single_proxy(const std::string& path, int server);
 

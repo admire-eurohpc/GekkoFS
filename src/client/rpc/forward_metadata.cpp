@@ -293,9 +293,9 @@ forward_remove(const std::string& path, const int8_t num_copies) {
  */
 int
 forward_decr_size(const std::string& path, size_t length, const int copy) {
-    if(CTX->use_proxy()) {
-        LOG(WARNING, "{} is run due to missing proxy implementation!",
-            __func__);
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__, gkfs::config::proxy::fwd_truncate);
     }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));

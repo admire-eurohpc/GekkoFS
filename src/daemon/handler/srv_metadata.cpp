@@ -489,8 +489,8 @@ rpc_srv_get_metadentry_size(hg_handle_t handle) {
         out.err = EBUSY;
     }
 
-    GKFS_DATA->spdlogger()->debug("{}() Sending output '{}'", __func__,
-                                  out.err);
+    GKFS_DATA->spdlogger()->debug("{}() Sending output err '{}' ret_size '{}'",
+                                  __func__, out.err, out.ret_size);
     auto hret = margo_respond(handle, &out);
     if(hret != HG_SUCCESS) {
         GKFS_DATA->spdlogger()->error("{}() Failed to respond", __func__);
