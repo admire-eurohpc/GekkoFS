@@ -294,8 +294,52 @@ forward_decr_size(const std::string& path, size_t length) {
 
 pair<int, off64_t>
 forward_get_metadentry_size(const string& path) {
-    // return default
-    return make_pair(0, 0);
+    hg_handle_t rpc_handle = nullptr;
+    rpc_path_only_in_t daemon_in{};
+    rpc_get_metadentry_size_out_t daemon_out{};
+    int err = 0;
+    off64_t ret_offset = 0;
+    // fill in
+    daemon_in.path = path.c_str();
+    // Create handle
+    PROXY_DATA->log()->debug("{}() Creating Margo handle ...", __func__);
+    auto endp = PROXY_DATA->rpc_endpoints().at(
+            PROXY_DATA->distributor()->locate_file_metadata(path, 0));
+    auto ret = margo_create(
+            PROXY_DATA->client_rpc_mid(), endp,
+            PROXY_DATA->rpc_client_ids().rpc_get_metadentry_size_id,
+            &rpc_handle);
+    if(ret != HG_SUCCESS) {
+        PROXY_DATA->log()->error("{}() Critical error", __func__);
+        return make_pair(EBUSY, 0);
+        ;
+    }
+    ret = margo_forward(rpc_handle, &daemon_in);
+    if(ret == HG_SUCCESS) {
+        // Get response
+        PROXY_DATA->log()->trace("{}() Waiting for response", __func__);
+        ret = margo_get_output(rpc_handle, &daemon_out);
+        if(ret == HG_SUCCESS) {
+            PROXY_DATA->log()->debug(
+                    "{}() Got response success err '{}' ret_size '{}'",
+                    __func__, daemon_out.err, daemon_out.ret_size);
+            err = daemon_out.err;
+            ret_offset = daemon_out.ret_size;
+            margo_free_output(rpc_handle, &daemon_out);
+        } else {
+            // something is wrong
+            err = EBUSY;
+            PROXY_DATA->log()->error("{}() while getting rpc output", __func__);
+        }
+    } else {
+        // something is wrong
+        err = EBUSY;
+        PROXY_DATA->log()->error("{}() sending rpc failed", __func__);
+    }
+
+    /* clean up resources consumed by this rpc */
+    margo_destroy(rpc_handle);
+    return make_pair(err, ret_offset);
 }
 
 pair<int, off64_t>

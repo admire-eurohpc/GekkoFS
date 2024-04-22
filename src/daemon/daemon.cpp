@@ -253,6 +253,8 @@ register_proxy_server_rpcs(margo_instance_id mid) {
                    rpc_err_out_t, rpc_srv_decr_size);
     MARGO_REGISTER(mid, gkfs::rpc::tag::remove_data, rpc_rm_node_in_t,
                    rpc_err_out_t, rpc_srv_remove_data);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::get_metadentry_size, rpc_path_only_in_t,
+                   rpc_get_metadentry_size_out_t, rpc_srv_get_metadentry_size);
     MARGO_REGISTER(mid, gkfs::rpc::tag::update_metadentry_size,
                    rpc_update_metadentry_size_in_t,
                    rpc_update_metadentry_size_out_t,
