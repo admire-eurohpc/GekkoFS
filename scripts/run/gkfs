@@ -222,7 +222,9 @@ start_daemon() {
         done
     else
         create_pid_file ${SRUN_DAEMON_PID_FILE} ${daemon_pid}
-        create_pid_file ${SRUN_PROXY_PID_FILE} ${proxy_pid}
+        if [[ ${USE_PROXY} == true ]]; then
+            create_pid_file ${SRUN_PROXY_PID_FILE} ${proxy_pid}
+        fi
     fi
 }
 #######################################
@@ -243,7 +245,7 @@ stop_daemons() {
         exit 1
     fi
     # attempt to shutdown proxy
-    if [[ -e ${proxy_pid_file} ]]; then
+    if [[ ${USE_PROXY} == true ]] && [[ -e ${proxy_pid_file} ]]; then
         while IFS= read -r line
         do
             if ps -p "${line}" > /dev/null; then
@@ -366,7 +368,7 @@ USE_SRUN=${USE_SRUN}
 RUN_FOREGROUND=false
 DAEMON_NUMACTL_=${DAEMON_NUMACTL}
 PROXY_NUMACTL_=${PROXY_NUMACTL}
-USE_PROXY=false
+USE_PROXY=${USE_PROXY}
 # parse input
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
