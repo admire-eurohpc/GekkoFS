@@ -49,15 +49,17 @@ wait_for_gkfs_daemons() {
 # If valid, an additional line is added. Otherwise, the pid in the file is deleted.
 # Globals:
 #   SRUN_DAEMON_PID_FILE
+#   SRUN_PROXY_PID_FILE
 #   VERBOSE
 # Arguments:
+#   path to pid file
 #   pid to write to pid file
 # Outputs:
 #   Writes status to stdout if VERBOSE is true
 #######################################
 create_pid_file() {
-    local pid_file=${SRUN_DAEMON_PID_FILE}
-    local pid=${1}
+    local pid_file=${1}
+    local pid=${2}
     if [[ ${VERBOSE} == true ]]; then
         echo -e "${C_AST_GREEN}Creating pid file at ${pid_file} with pid ${pid} ..."
     fi
@@ -174,35 +176,35 @@ start_daemon() {
     echo -e "${C_AST_GREEN}GekkoFS daemons running"
     echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
 
-    #if [[ ${USE_PROXY} == true ]]; then
-    #    echo -e "${C_AST_GREEN}Starting GekkoFS proxies (${NODE_NUM} nodes) ..."
-    #    start_time="$(date -u +%s.%3N)"
-    #    ${proxy_execute} &
-    #    local proxy_pid=$!
-    #    sleep 5 # TODO
-    #    stop_time="$(date -u +%s.%3N)"
-    #    elapsed="$(bc <<<"$stop_time-$start_time")"
-    #    echo -e "${C_AST_GREEN}GekkoFS daemons probably :) running"
-    #    echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
-    #fi
+    if [[ ${USE_PROXY} == true ]]; then
+        echo -e "${C_AST_GREEN}Starting GekkoFS proxies (${NODE_NUM} nodes) ..."
+        start_time="$(date -u +%s.%3N)"
+        ${proxy_execute} &
+        local proxy_pid=$!
+        sleep 5 # TODO
+        stop_time="$(date -u +%s.%3N)"
+        elapsed="$(bc <<<"$stop_time-$start_time")"
+        echo -e "${C_AST_GREEN}GekkoFS proxies probably :) running"
+        echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
+    fi
 
     if [[ ${RUN_FOREGROUND} == true ]]; then
         echo "Press 'q' to exit"
         while : ; do
             read -n 1 k <&1
             if [[ $k = q ]] ; then
-                #if [[ ${USE_PROXY} == true ]]; then
-                #    start_time="$(date -u +%s.%3N)"
-                #    echo
-                #    echo -e "${C_AST_GREEN}Shutting down GekkoFS proxies ..."
-                #    if [[ -n ${proxy_pid} ]]; then
-                #        kill -s SIGINT ${proxy_pid} &
-                #        wait ${proxy_pid}
-                #    fi
-                #    stop_time="$(date -u +%s.%3N)"
-                #    elapsed="$(bc <<<"$stop_time-$start_time")"
-                #    echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
-                #fi
+                if [[ ${USE_PROXY} == true ]]; then
+                    start_time="$(date -u +%s.%3N)"
+                    echo
+                    echo -e "${C_AST_GREEN}Shutting down GekkoFS proxies ..."
+                    if [[ -n ${proxy_pid} ]]; then
+                        kill -s SIGINT ${proxy_pid} &
+                        wait ${proxy_pid}
+                    fi
+                    stop_time="$(date -u +%s.%3N)"
+                    elapsed="$(bc <<<"$stop_time-$start_time")"
+                    echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
+                fi
                 start_time="$(date -u +%s.%3N)"
                 echo
                 echo -e "${C_AST_GREEN}Shutting down GekkoFS daemons ..."
@@ -219,20 +221,48 @@ start_daemon() {
             fi
         done
     else
-        create_pid_file ${daemon_pid}
-#        create_pid_file ${proxy_pid}
+        create_pid_file ${SRUN_DAEMON_PID_FILE} ${daemon_pid}
+        create_pid_file ${SRUN_PROXY_PID_FILE} ${proxy_pid}
     fi
 }
 #######################################
 # Stops GekkoFS daemons for the configured pid file
 # Globals:
 #   SRUN_DAEMON_PID_FILE
+#   SRUN_PROXY_PID_FILE
 #   VERBOSE
 # Outputs:
 #   Writes status to stdout
 #######################################
 stop_daemons() {
     local pid_file=${SRUN_DAEMON_PID_FILE}
+    local proxy_pid_file=${SRUN_PROXY_PID_FILE}
+    # if no daemon or proxy pid file exists, exit
+    if [[ ! -e ${pid_file} ]] && [[ ! -e ${proxy_pid_file} ]]; then
+        echo -e "${C_AST_RED}No pid files found -> no daemon or proxy running. Exiting ..."
+        exit 1
+    fi
+    # attempt to shutdown proxy
+    if [[ -e ${proxy_pid_file} ]]; then
+        while IFS= read -r line
+        do
+            if ps -p "${line}" > /dev/null; then
+                echo -e "${C_AST_GREEN}Stopping proxy with pid ${line}"
+                start_time="$(date -u +%s.%3N)"
+                kill -s SIGINT "${line}" &
+                # poll pid until it stopped
+                if [[ ${VERBOSE} == true ]]; then
+                    echo -e "${C_AST_GREEN}Waiting for proxies to exit ..."
+                fi
+                timeout 1 tail --pid=${line} -f /dev/null
+            fi
+        done < "${proxy_pid_file}"
+        rm "${proxy_pid_file}"
+        stop_time="$(date -u +%s.%3N)"
+        elapsed="$(bc <<<"$stop_time-$start_time")"
+        echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
+    fi
+    # attempt to shutdown daemon
     if [[ -e ${pid_file} ]]; then
         while IFS= read -r line
         do
@@ -251,8 +281,6 @@ stop_daemons() {
         stop_time="$(date -u +%s.%3N)"
         elapsed="$(bc <<<"$stop_time-$start_time")"
         echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
-    else
-        echo -e "${C_AST_RED}No pid file found -> no daemon running. Exiting ..."
     fi
 }
 #######################################
