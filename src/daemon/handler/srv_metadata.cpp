@@ -253,6 +253,11 @@ rpc_srv_remove_metadata(hg_handle_t handle) {
                 GKFS_DATA->storage()->destroy_chunk_space(in.path);
         }
 
+    } catch(const gkfs::metadata::NotFoundException& e) {
+        GKFS_DATA->spdlogger()->warn(
+                "{}(): path '{}' message '{}'. Continuing, setting out.err 0.",
+                __func__, in.path, e.what());
+        out.err = 0;
     } catch(const gkfs::metadata::DBException& e) {
         GKFS_DATA->spdlogger()->error("{}(): path '{}' message '{}'", __func__,
                                       in.path, e.what());
