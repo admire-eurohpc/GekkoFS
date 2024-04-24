@@ -1347,7 +1347,11 @@ gkfs_rmdir(const std::string& path) {
         errno = ENOTEMPTY;
         return -1;
     }
-    err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_remove_proxy(path);
+    } else {
+        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    }
     if(err) {
         errno = err;
         return -1;
