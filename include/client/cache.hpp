@@ -30,17 +30,37 @@
 #ifndef GKFS_CLIENT_CACHE
 #define GKFS_CLIENT_CACHE
 
+#include <client/open_file_map.hpp>
+
+#include <ctime>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <mutex>
 #include <optional>
+#include <cstdint>
 
 namespace gkfs::cache {
 
+struct cache_entry {
+    gkfs::filemap::FileType file_type;
+    uint64_t size;
+    time_t ctime;
+};
+
 class Cache {
 private:
-    std::unordered_map<std::string, std::string> entries_;
+    std::unordered_map<uint32_t, std::unordered_map<std::string, cache_entry>>
+            entries_;
+    std::unordered_map<std::string, uint32_t> entry_dir_id_;
     std::mutex mtx_;
+    std::hash<std::string> str_hash;
+
+    uint32_t
+    gen_dir_id(const std::string& dir_path);
+
+    uint32_t
+    get_dir_id(const std::string& dir_path);
 
 public:
     Cache() = default;
@@ -48,17 +68,22 @@ public:
     virtual ~Cache() = default;
 
     void
-    insert(const std::string& key, const std::string& value);
+    insert(const std::string& parent_dir, const std::string name,
+           const cache_entry value);
 
-    std::optional<std::string>
-    get(const std::string& key);
+    std::optional<cache_entry>
+    get(const std::string& parent_dir, const std::string& name);
 
     void
-    remove(const std::string& key);
+    clear_dir(const std::string& dir_path);
+
+    void
+    dump_cache_to_log(const std::string& dir_path);
 
     void
     clear();
 };
+
 
 } // namespace gkfs::cache
 

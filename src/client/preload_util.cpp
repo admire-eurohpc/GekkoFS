@@ -32,6 +32,7 @@
 #include <client/logging.hpp>
 #include <client/rpc/forward_metadata.hpp>
 #include <client/rpc/forward_metadata_proxy.hpp>
+#include <client/cache.hpp>
 
 #include <common/rpc/distributor.hpp>
 #include <common/rpc/rpc_util.hpp>
@@ -45,6 +46,7 @@
 #include <regex>
 #include <csignal>
 #include <random>
+#include <filesystem>
 
 extern "C" {
 #include <sys/sysmacros.h>
@@ -209,6 +211,35 @@ optional<gkfs::metadata::Metadata>
 get_metadata(const string& path, bool follow_links) {
     std::string attr;
     int err{};
+    if(CTX->use_cache()) {
+        std::filesystem::path p(path);
+        auto parent = p.parent_path().string();
+        auto filename = p.filename().string();
+        //        LOG(INFO, "{}(): for path '{}' -> parent path '{}' leaf name
+        //        '{}'",
+        //            __func__, path, p.parent_path().string(),
+        //            p.filename().string());
+        auto cache_entry = CTX->cache()->get(parent, filename);
+        if(cache_entry) {
+            //            LOG(INFO, "{}(): Cache hit for path '{}'", __func__,
+            //            path);
+            // TOOD something like this:
+            //            struct stat st{};
+            //            metadata_to_stat(path, *cache_entry, st);
+            //            return gkfs::metadata::Metadata{st};
+            // TODO add mode to extended RPC
+            mode_t mode = 33188;
+            if(cache_entry->file_type == gkfs::filemap::FileType::directory) {
+                mode = 16895;
+            }
+            gkfs::metadata::Metadata md{};
+            md.mode(mode);
+            md.ctime(cache_entry->ctime);
+            md.size(cache_entry->size);
+            return md;
+        }
+    }
+
     if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
         err = gkfs::rpc::forward_stat_proxy(path, attr);
     } else {

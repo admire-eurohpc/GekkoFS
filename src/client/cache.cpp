@@ -28,38 +28,95 @@
 */
 
 #include <client/cache.hpp>
+#include <client/preload.hpp>
+#include <client/preload_util.hpp>
+#include <client/logging.hpp>
+
+#include <cstdint>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 namespace gkfs::cache {
 
-void
-Cache::insert(const std::string& key, const std::string& value) {
-    std::lock_guard<std::mutex> const lock(mtx_);
-    entries_[key] = value;
+uint32_t
+Cache::gen_dir_id(const std::string& dir_path) {
+    return str_hash(dir_path);
 }
 
-std::optional<std::string>
-Cache::get(const std::string& key) {
-    std::lock_guard<std::mutex> const lock(mtx_);
-    // return key if found
-    if(entries_.find(key) != entries_.end()) {
-        return entries_[key];
+uint32_t
+Cache::get_dir_id(const std::string& dir_path) {
+    // check if id already exists in map and return
+    if(entry_dir_id_.find(dir_path) != entry_dir_id_.end()) {
+        return entry_dir_id_[dir_path];
     }
-    return {};
+    // otherwise generate one
+    auto dir_id = gen_dir_id(dir_path);
+    entry_dir_id_.emplace(dir_path, dir_id);
+    return dir_id;
+}
+
+
+void
+Cache::insert(const std::string& parent_dir, const std::string name,
+              const cache_entry value) {
+    std::lock_guard<std::mutex> const lock(mtx_);
+    auto dir_id = get_dir_id(parent_dir);
+    entries_[dir_id].emplace(name, value);
+}
+
+std::optional<cache_entry>
+Cache::get(const std::string& parent_dir, const std::string& name) {
+    std::lock_guard<std::mutex> const lock(mtx_);
+    auto dir_id = get_dir_id(parent_dir);
+    if(entries_[dir_id].find(name) != entries_[dir_id].end()) {
+        return entries_[dir_id][name];
+    } else {
+        return {};
+    }
 }
 
 void
-Cache::remove(const std::string& key) {
+Cache::clear_dir(const std::string& dir_path) {
     std::lock_guard<std::mutex> const lock(mtx_);
-    entries_.erase(key);
+
+    auto id_it = entry_dir_id_.find(dir_path);
+    if(id_it == entry_dir_id_.end()) {
+        return;
+    }
+    auto entry_it = entries_.find(id_it->second);
+    if(entry_it != entries_.end()) {
+        entries_.erase(entry_it);
+    }
+    entry_dir_id_.erase(id_it);
+}
+
+void
+Cache::dump_cache_to_log(const std::string& dir_path) {
+    std::lock_guard<std::mutex> const lock(mtx_);
+    auto id_it = entry_dir_id_.find(dir_path);
+    if(id_it == entry_dir_id_.end()) {
+        LOG(INFO, "{}(): Cache contents for dir path '{}' NONE", __func__,
+            dir_path);
+        return;
+    }
+    auto dir_id = id_it->second;
+    for(auto& [name, entry] : entries_[dir_id]) {
+        // log entry
+        LOG(INFO,
+            "{}(): Cache contents for dir path '{}' -> name '{}' is_dir '{}' size '{}' ctime '{}'",
+            __func__, dir_path, name,
+            entry.file_type == gkfs::filemap::FileType::directory, entry.size,
+            entry.ctime);
+    }
 }
 
 void
 Cache::clear() {
     std::lock_guard<std::mutex> const lock(mtx_);
     entries_.clear();
+    entry_dir_id_.clear();
 }
 
 } // namespace gkfs::cache

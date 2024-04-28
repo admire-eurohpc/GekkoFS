@@ -258,15 +258,17 @@ init_environment() {
 #endif
         CTX->distributor(distributor);
     }
-    try {
-        LOG(INFO, "Initializing client caching...");
-        auto cache = std::make_shared<gkfs::cache::Cache>();
-        CTX->cache(cache);
-        LOG(INFO, "Client caching is enabled and will be used!");
-        CTX->use_cache(true);
-    } catch(const std::exception& e) {
-        exit_error_msg(EXIT_FAILURE,
-                       "Failed to initialize cache: "s + e.what());
+    if(gkfs::env::var_is_set(gkfs::env::DIR_CACHE)) {
+        try {
+            LOG(INFO, "Initializing client caching...");
+            auto cache = std::make_shared<gkfs::cache::Cache>();
+            CTX->cache(cache);
+            LOG(INFO, "Client caching is enabled and will be used!");
+            CTX->use_cache(true);
+        } catch(const std::exception& e) {
+            exit_error_msg(EXIT_FAILURE,
+                           "Failed to initialize cache: "s + e.what());
+        }
     }
 
     LOG(INFO, "Retrieving file system configuration...");
