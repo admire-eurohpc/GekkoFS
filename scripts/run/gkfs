@@ -91,8 +91,8 @@ create_pid_file() {
 #   PROXY_ARGS_
 #   CPUS_PER_TASK
 #   VERBOSE
-#   DAEMON_NUMACTL_
-#   PROXY_NUMACTL_
+#   DAEMON_AFFINITY_
+#   PROXY_AFFINITY_
 #   USE_PROXY
 #   DAEMON_CPUNODEBIND
 #   DAEMON_MEMBIND
@@ -104,17 +104,41 @@ create_pid_file() {
 #######################################
 start_daemon() {
     local node_list
-    local srun_cmd
+    local srun_daemon_cmd
+    local srun_proxy_cmd
     local daemon_execute
     local proxy_execute
     # setup
     if [[ ${USE_SRUN} == true ]]; then
-        node_list=$(scontrol show job "${SLURM_JOB_ID}" | grep " NodeList=" | cut -d "=" -f2)
-        if [[ -z ${NODE_NUM} ]]; then
-            NODE_NUM=$(scontrol show hostname "${node_list}" | wc -l)
+        # check for daemon first
+        if [[ -n ${DAEMON_NODELIST_} ]]; then
+            if [[ ! -f ${DAEMON_NODELIST_} ]]; then
+                echo -e "${C_AST_RED}ERROR: Daemon nodelist file not found at ${DAEMON_NODELIST_}. Exiting ..."
+                exit 1
+            fi
+            NODE_NUM=$(wc -l < "${DAEMON_NODELIST_}")
+            srun_daemon_cmd="srun --disable-status --nodelist=${DAEMON_NODELIST_} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+        else
+            node_list=$(scontrol show job "${SLURM_JOB_ID}" | grep " NodeList=" | cut -d "=" -f2)
+            if [[ -z ${NODE_NUM} ]]; then
+                NODE_NUM=$(scontrol show hostname "${node_list}" | wc -l)
+            fi
+            # Setting up base srun cmd
+            srun_daemon_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
         fi
-        # Setting up base srun cmd
-        srun_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+        if [[ ${USE_PROXY} == true ]]; then
+            if [[ -n ${PROXY_NODELIST_} ]]; then
+                if [[ ! -f ${PROXY_NODELIST_} ]]; then
+                    echo -e "${C_AST_RED}ERROR: Proxy nodelist file not found at ${PROXY_NODELIST_}. Exiting ..."
+                    exit 1
+                fi
+                NODE_NUM_PROXY=$(wc -l < "${PROXY_NODELIST_}")
+                srun_proxy_cmd="srun --disable-status --nodelist=${PROXY_NODELIST_} --ntasks=${NODE_NUM_PROXY} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+            else
+                srun_proxy_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+                NODE_NUM_PROXY=$NODE_NUM
+            fi
+        fi
     else
         NODE_NUM=1
     fi
@@ -136,22 +160,22 @@ start_daemon() {
     if [[ ${USE_PROXY} == true ]]; then
         daemon_cmd="${daemon_cmd} ${DAEMON_PROXY_ARGS}"
     fi
-    # Setting up numactl
-    if [[ ${DAEMON_NUMACTL_} == true ]]; then
-        daemon_cmd="numactl --cpunodebind=${DAEMON_CPUNODEBIND} --membind=${DAEMON_MEMBIND} ${daemon_cmd}"
+    # Set cpu affinity for daemon
+    if [[ -n ${DAEMON_AFFINITY_} ]]; then
+        daemon_cmd="${DAEMON_AFFINITY_} ${daemon_cmd}"
     fi
     # final daemon execute command
-    daemon_execute="${srun_cmd}${daemon_cmd}"
+    daemon_execute="${srun_daemon_cmd} ${SRUN_DAEMON_ARGS} ${daemon_cmd}"
 
     # Setting up base proxy command
     if [[ ${USE_PROXY} == true ]]; then
         local proxy_cmd="${PROXY_BIN} -H ${HOSTSFILE} --pid-path ${PROXY_LOCAL_PID_FILE} ${PROXY_ARGS_}"
-        # Setting up numactl
-        if [[ ${PROXY_NUMACTL_} == true ]]; then
-            proxy_cmd="numactl --cpunodebind=${PROXY_CPUNODEBIND} --membind=${PROXY_MEMBIND} ${proxy_cmd}"
+        # Set cpu affinity for proxy
+        if [[ -n ${PROXY_AFFINITY_} ]]; then
+            proxy_cmd="${PROXY_AFFINITY_} ${proxy_cmd}"
         fi
         # final proxy execute command
-        proxy_execute="${srun_cmd}${proxy_cmd}"
+        proxy_execute="${srun_proxy_cmd} ${SRUN_PROXY_ARGS} ${proxy_cmd}"
     fi
 
     if [[ ${VERBOSE} == true ]]; then
@@ -177,7 +201,7 @@ start_daemon() {
     echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
 
     if [[ ${USE_PROXY} == true ]]; then
-        echo -e "${C_AST_GREEN}Starting GekkoFS proxies (${NODE_NUM} nodes) ..."
+        echo -e "${C_AST_GREEN}Starting GekkoFS proxies (${NODE_NUM_PROXY} nodes) ..."
         start_time="$(date -u +%s.%3N)"
         ${proxy_execute} &
         local proxy_pid=$!
@@ -293,7 +317,7 @@ stop_daemons() {
 usage_short() {
     echo "
 usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [--proxy <false>] [-f/--foreground <false>]
-        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [--daemon_numactl <false>] [--proxy_numactl <false>] [-v/--verbose <false>]
+        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [-v/--verbose <false>]
         {start,stop}
     "
 }
@@ -325,8 +349,6 @@ help_msg() {
             -n, --numnodes <n>      GekkoFS daemons are started on n nodes.
                                     Nodelist is extracted from Slurm via the SLURM_JOB_ID env variable.
             --cpuspertask <#cores>  Set the number of cores the daemons can use. Must use '--srun'.
-            --daemon_numactl        Use numactl for the daemon. Modify gkfs.conf for further numactl configurations.
-            --proxy_numactl         Use numactl for the proxy. Modify gkfs.conf for further numactl configurations.
             -c, --config            Path to configuration file. By defaults looks for a 'gkfs.conf' in this directory.
             -v, --verbose           Increase verbosity
             "
@@ -365,9 +387,11 @@ CPUS_PER_TASK=$(grep -c ^processor /proc/cpuinfo)
 DAEMON_ARGS_=${DAEMON_ARGS}
 PROXY_ARGS_=${PROXY_ARGS}
 USE_SRUN=${USE_SRUN}
+DAEMON_NODELIST_=${DAEMON_NODELIST}
+PROXY_NODELIST_=${PROXY_NODELIST}
 RUN_FOREGROUND=false
-DAEMON_NUMACTL_=${DAEMON_NUMACTL}
-PROXY_NUMACTL_=${PROXY_NUMACTL}
+DAEMON_AFFINITY_=${DAEMON_AFFINITY}
+PROXY_AFFINITY_=${PROXY_AFFINITY}
 USE_PROXY=${USE_PROXY}
 # parse input
 POSITIONAL=()
@@ -412,13 +436,15 @@ while [[ $# -gt 0 ]]; do
         RUN_FOREGROUND=true
         shift # past argument
         ;;
-    --daemon_numactl)
-        DAEMON_NUMACTL_=true
+    --daemon_nodelist)
+        DAEMON_NODELIST_="$2"
         shift # past argument
+        shift # past value
         ;;
-    --proxy_numactl)
-        PROXY_NUMACTL_=true
+    --proxy_nodelist)
+        PROXY_NODELIST_="$2"
         shift # past argument
+        shift # past value
         ;;
     --cpuspertask)
         CPUS_PER_TASK=$2
