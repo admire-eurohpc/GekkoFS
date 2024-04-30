@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Propagate PKG_CONFIG_PATH to dependency scripts ([!185](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/185)).
 - Added syscall support for listxattr family ([!186](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/186)).
 - Remove optimization, removing one RPC per operation ([!195](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/195)).
 - Added the GekkoFS proxy as an optional gateway between client and daemon. The proxy is started on each compute node
