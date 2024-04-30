@@ -28,7 +28,7 @@ forward_create_proxy(const std::string& path, const mode_t mode) {
     auto endp = CTX->proxy_host();
 
     try {
-        LOG(DEBUG, "Sending RPC ...");
+        LOG(DEBUG, "{}() Sending RPC for path '{}'...", __func__, path);
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
         // can retry for RPC_TRIES (see old commits with margo)
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
@@ -42,7 +42,8 @@ forward_create_proxy(const std::string& path, const mode_t mode) {
 
         return out.err() ? out.err() : 0;
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return EBUSY;
     }
 }
@@ -53,7 +54,7 @@ forward_stat_proxy(const std::string& path, string& attr) {
     auto endp = CTX->proxy_host();
 
     try {
-        LOG(DEBUG, "Sending RPC ...");
+        LOG(DEBUG, "{}() Sending RPC for path '{}'...", __func__, path);
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
         // can retry for RPC_TRIES (see old commits with margo)
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
@@ -70,7 +71,8 @@ forward_stat_proxy(const std::string& path, string& attr) {
         attr = out.db_val();
         return 0;
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return EBUSY;
     }
 }
@@ -80,7 +82,7 @@ forward_remove_proxy(const std::string& path) {
     auto endp = CTX->proxy_host();
 
     try {
-        LOG(DEBUG, "Sending RPC ...");
+        LOG(DEBUG, "{}() Sending RPC for path '{}'...", __func__, path);
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
         // can retry for RPC_TRIES (see old commits with margo)
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
@@ -93,7 +95,8 @@ forward_remove_proxy(const std::string& path) {
 
         return out.err() ? out.err() : 0;
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return EBUSY;
     }
 }
@@ -103,7 +106,7 @@ forward_decr_size_proxy(const std::string& path, size_t length) {
     auto endp = CTX->proxy_host();
 
     try {
-        LOG(DEBUG, "Sending RPC ...");
+        LOG(DEBUG, "{}() Sending RPC for path '{}'...", __func__, path);
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
         // can retry for RPC_TRIES (see old commits with margo)
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
@@ -118,7 +121,8 @@ forward_decr_size_proxy(const std::string& path, size_t length) {
 
         return out.err() ? out.err() : 0;
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return EBUSY;
     }
 }
@@ -150,7 +154,8 @@ forward_update_metadentry_size_proxy(const string& path, const size_t size,
         else
             return make_pair(0, out.ret_size());
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return make_pair(EBUSY, 0);
     }
 }
@@ -160,7 +165,7 @@ forward_get_metadentry_size_proxy(const std::string& path) {
     auto endp = CTX->proxy_host();
 
     try {
-        LOG(DEBUG, "Sending RPC ...");
+        LOG(DEBUG, "{}() Sending RPC for path '{}'...", __func__, path);
         // TODO(amiranda): add a post() with RPC_TIMEOUT to hermes so that we
         // can retry for RPC_TRIES (see old commits with margo)
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
@@ -179,7 +184,8 @@ forward_get_metadentry_size_proxy(const std::string& path) {
         else
             return make_pair(0, out.ret_size());
     } catch(const std::exception& ex) {
-        LOG(ERROR, "while getting rpc output");
+        LOG(ERROR, "{}() getting rpc output for path '{}' failed", __func__,
+            path);
         return make_pair(EBUSY, 0);
     }
 }
