@@ -1044,10 +1044,12 @@ gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset) {
  */
 ssize_t
 gkfs_write(int fd, const void* buf, size_t count) {
-    auto gkfs_file = CTX->file_map()->get(fd);
+    auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     // call pwrite and update pos
-    auto ret = gkfs_write_ws(*gkfs_file, reinterpret_cast<const char*>(buf),
-                             count, gkfs_file->pos(), true);
+    auto ret = gkfs_write_ws(*gkfs_fd, reinterpret_cast<const char*>(buf),
+                             count, gkfs_fd->pos(), true);
     return ret;
 }
 
@@ -1216,6 +1218,8 @@ gkfs_pread(int fd, void* buf, size_t count, off64_t offset) {
 ssize_t
 gkfs_read(int fd, void* buf, size_t count) {
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_read_ws(*gkfs_fd, reinterpret_cast<char*>(buf), count, pos);
     // Update offset in file descriptor in the file map
