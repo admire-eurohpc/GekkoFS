@@ -1030,6 +1030,8 @@ gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
 ssize_t
 gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset) {
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     return gkfs_write_ws(*file, reinterpret_cast<const char*>(buf), count,
                          offset);
 }
@@ -1066,6 +1068,8 @@ ssize_t
 gkfs_pwritev(int fd, const struct iovec* iov, int iovcnt, off_t offset) {
 
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     auto pos = offset; // keep track of current position
     ssize_t written = 0;
     ssize_t ret;
@@ -1105,6 +1109,8 @@ ssize_t
 gkfs_writev(int fd, const struct iovec* iov, int iovcnt) {
 
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_pwritev(fd, iov, iovcnt, pos);
     assert(ret != 0);
@@ -1204,6 +1210,8 @@ gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
 ssize_t
 gkfs_pread(int fd, void* buf, size_t count, off64_t offset) {
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     return gkfs_read_ws(*gkfs_fd, reinterpret_cast<char*>(buf), count, offset);
 }
 
@@ -1242,6 +1250,8 @@ ssize_t
 gkfs_preadv(int fd, const struct iovec* iov, int iovcnt, off_t offset) {
 
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     auto pos = offset; // keep track of current position
     ssize_t read = 0;
     ssize_t ret;
@@ -1281,6 +1291,8 @@ ssize_t
 gkfs_readv(int fd, const struct iovec* iov, int iovcnt) {
 
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_preadv(fd, iov, iovcnt, pos);
     assert(ret != 0);
