@@ -339,6 +339,8 @@ gkfs_create(const std::string& path, mode_t mode) {
  */
 int
 gkfs_remove(const std::string& path) {
+#ifdef HAS_SYMLINKS
+#ifdef HAS_RENAME
     auto md = gkfs::utils::get_metadata(path);
     if(!md) {
         return -1;
@@ -349,8 +351,6 @@ gkfs_remove(const std::string& path) {
         errno = EISDIR;
         return -1;
     }
-#ifdef HAS_SYMLINKS
-#ifdef HAS_RENAME
     if(md.value().blocks() == -1) {
         errno = ENOENT;
         return -1;
@@ -378,7 +378,7 @@ gkfs_remove(const std::string& path) {
     if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
         err = gkfs::rpc::forward_remove_proxy(path);
     } else {
-        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+        err = gkfs::rpc::forward_remove(path, false, CTX->get_replicas());
     }
     if(err) {
         errno = err;
@@ -1340,19 +1340,17 @@ gkfs_opendir(const std::string& path) {
  */
 int
 gkfs_rmdir(const std::string& path) {
+    int err;
+    // check that directory is empty if a strict dir hierarchy is enforced
+    // TODO rename #define
+#if GKFS_CREATE_CHECK_PARENTS
     auto md = gkfs::utils::get_metadata(path);
     if(!md) {
         LOG(DEBUG, "Error: Path '{}' err code '{}' ", path, strerror(errno));
         return -1;
     }
-    if(!S_ISDIR(md->mode())) {
-        LOG(DEBUG, "Path '{}' is not a directory", path);
-        errno = ENOTDIR;
-        return -1;
-    }
-
     auto ret = gkfs::rpc::forward_get_dirents(path);
-    auto err = ret.first;
+    err = ret.first;
     if(err) {
         errno = err;
         return -1;
@@ -1363,10 +1361,11 @@ gkfs_rmdir(const std::string& path) {
         errno = ENOTEMPTY;
         return -1;
     }
+#endif
     if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
         err = gkfs::rpc::forward_remove_proxy(path);
     } else {
-        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+        err = gkfs::rpc::forward_remove(path, true, CTX->get_replicas());
     }
     if(err) {
         errno = err;

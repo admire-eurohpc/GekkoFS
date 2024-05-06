@@ -241,23 +241,30 @@ rpc_srv_remove_metadata(hg_handle_t handle) {
     GKFS_DATA->spdlogger()->debug("{}() Got remove metadata RPC with path '{}'",
                                   __func__, in.path);
 
-    // Remove metadentry if exists on the node
     try {
         auto md = gkfs::metadata::get(in.path);
-        gkfs::metadata::remove(in.path);
-        out.err = 0;
-        out.mode = md.mode();
-        out.size = md.size();
-        if constexpr(gkfs::config::metadata::implicit_data_removal) {
-            if(S_ISREG(md.mode()) && (md.size() != 0))
-                GKFS_DATA->storage()->destroy_chunk_space(in.path);
+        if(S_ISDIR(md.mode()) && !in.rm_dir) {
+            // return is directory errorcode if request was not rmdir
+            out.err = EISDIR;
+        } else if(!S_ISDIR(md.mode()) && in.rm_dir) {
+            // return is not directory errorcode if request was rmdir
+            out.err = ENOTDIR;
+        } else {
+            // remove metadata (and implicitly data if enabled
+            gkfs::metadata::remove(in.path);
+            out.err = 0;
+            out.mode = md.mode();
+            out.size = S_ISDIR(md.mode()) ? 0 : md.size();
+            // if file, remove metadata and also return mode and size
+            if constexpr(gkfs::config::metadata::implicit_data_removal) {
+                if(S_ISREG(md.mode()) && (md.size() != 0))
+                    GKFS_DATA->storage()->destroy_chunk_space(in.path);
+            }
         }
-
     } catch(const gkfs::metadata::NotFoundException& e) {
-        GKFS_DATA->spdlogger()->warn(
-                "{}(): path '{}' message '{}'. Continuing, setting out.err 0.",
-                __func__, in.path, e.what());
-        out.err = 0;
+        // This exception is only thrown from get() if the entry does not exist
+        // remove() does not throw this exception
+        out.err = ENOENT;
     } catch(const gkfs::metadata::DBException& e) {
         GKFS_DATA->spdlogger()->error("{}(): path '{}' message '{}'", __func__,
                                       in.path, e.what());

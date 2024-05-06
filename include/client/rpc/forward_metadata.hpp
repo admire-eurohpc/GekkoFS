@@ -62,7 +62,7 @@ forward_rename(const std::string& oldpath, const std::string& newpath,
 #endif // HAS_RENAME
 
 int
-forward_remove(const std::string& path, const int8_t num_copies);
+forward_remove(const std::string& path, bool rm_dir, const int8_t num_copies);
 
 int
 forward_decr_size(const std::string& path, size_t length, const int copy);
