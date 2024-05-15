@@ -547,8 +547,6 @@ PreloadContext::get_replicas() {
     return replicas_;
 }
 
-<<<<<<< HEAD
-
 const std::shared_ptr<messagepack::ClientMetrics>
 PreloadContext::write_metrics() {
     return write_metrics_;
@@ -559,7 +557,6 @@ PreloadContext::read_metrics() {
     return read_metrics_;
 }
 
-=======
 void
 PreloadContext::set_ec_ondemand(const bool ec_ondemand) {
     ec_ondemand_ = ec_ondemand;
@@ -571,6 +568,9 @@ PreloadContext::get_ec_ondemand() {
 }
 
 
+<<<<<<< HEAD
 >>>>>>> 801361a3 (Added ondemand calculation)
+=======
+>>>>>>> b1972d58 (changes and merge)
 } // namespace preload
 } // namespace gkfs

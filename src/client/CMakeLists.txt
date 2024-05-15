@@ -121,7 +121,6 @@ if(GKFS_ENABLE_EC)
          hermes
          fmt::fmt
          Threads::Threads
-         Date::TZ
          GF_complete::GF_complete
          Jerasure::Jerasure
     )

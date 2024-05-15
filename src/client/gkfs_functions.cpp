@@ -1030,11 +1030,10 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     auto ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
     err = ret_write.first;
     write_size = ret_write.second;
-
 #ifdef GKFS_ENABLE_EC
     // Only compute Erasure codes if we do not have enabled the ondemand
     // environment variable
-    if(CTX->get_ec_ondemand() == false) {
+    if(CTX->get_ec_ondemand() == false and num_replicas>0) {
         auto res = gkfs_ecc_write(file, count, offset, write_size);
         if(res) {
             LOG(ERROR, "erasure code writing failed");
