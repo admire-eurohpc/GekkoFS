@@ -784,6 +784,27 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
                     reinterpret_cast<const char*>(arg1),
                     reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
             break;
+#ifdef SYS_listxattr
+        case SYS_listxattr:
+            *result = gkfs::hook::hook_listxattr(
+                    reinterpret_cast<const char*>(arg0),
+                    reinterpret_cast<char*>(arg1), static_cast<size_t>(arg2));
+            break;
+#endif
+#ifdef SYS_llistxattr
+        case SYS_llistxattr:
+            *result = gkfs::hook::hook_llistxattr(
+                    reinterpret_cast<const char*>(arg0),
+                    reinterpret_cast<char*>(arg1), static_cast<size_t>(arg2));
+            break;
+#endif
+#ifdef SYS_flistxattr
+        case SYS_flistxattr:
+            *result = gkfs::hook::hook_flistxattr(reinterpret_cast<long>(arg0),
+                                                  reinterpret_cast<char*>(arg1),
+                                                  static_cast<size_t>(arg2));
+            break;
+#endif
 
         case SYS_lgetxattr:
             *result = gkfs::hook::hook_lgetxattr(
