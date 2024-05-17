@@ -41,6 +41,10 @@ class Distributor;
 
 namespace daemon {
 
+struct margo_client_ids {
+    hg_id_t test_rpc_id;
+};
+
 class RPCData {
 
 private:
@@ -50,6 +54,8 @@ private:
     // contexts that were created at init time
     margo_instance_id server_rpc_mid_;
     margo_instance_id proxy_server_rpc_mid_;
+    margo_instance_id client_rpc_mid_;
+    margo_client_ids rpc_client_ids_{};
 
     // Argobots I/O pools and execution streams
     ABT_pool io_pool_;
@@ -83,7 +89,16 @@ public:
     proxy_server_rpc_mid();
 
     void
-    proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid);
+    proxy_server_rpc_mid(margo_instance* client_rpc_mid);
+
+    margo_instance*
+    client_rpc_mid();
+
+    void
+    client_rpc_mid(margo_instance* client_rpc_mid);
+
+    margo_client_ids&
+    rpc_client_ids();
 
     ABT_pool
     io_pool() const;

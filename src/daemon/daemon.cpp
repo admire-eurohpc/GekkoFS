@@ -235,6 +235,52 @@ init_rpc_server() {
     register_server_rpcs(mid);
 }
 
+/**
+ * @brief Registers RPC handlers to a given Margo instance.
+ * @internal
+ * Registering is done by associating a Margo instance id (mid) with the RPC
+ * name and its handler function including defined input/out structs
+ * @endinternal
+ * @param margo_instance_id
+ */
+void
+register_client_rpcs(margo_instance_id mid) {
+    // TODO
+    RPC_DATA->rpc_client_ids().test_rpc_id = MARGO_REGISTER(
+            mid, gkfs::rpc::tag::fs_config, void, rpc_config_out_t, NULL);
+}
+
+/**
+ * @brief Initializes the daemon RPC client.
+ * @throws std::runtime_error on failure
+ */
+void
+init_rpc_client() {
+    struct hg_init_info hg_options = HG_INIT_INFO_INITIALIZER;
+    hg_options.auto_sm = GKFS_DATA->use_auto_sm() ? HG_TRUE : HG_FALSE;
+    hg_options.stats = HG_FALSE;
+    if(gkfs::rpc::protocol::ofi_psm2 == GKFS_DATA->rpc_protocol())
+        hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
+    // Start Margo (this will also initialize Argobots and Mercury internally)
+    auto margo_config = "{}";
+    struct margo_init_info args = {nullptr};
+    args.json_config = margo_config;
+    args.hg_init_info = &hg_options;
+    auto* mid = margo_init_ext(GKFS_DATA->bind_addr().c_str(),
+                               MARGO_CLIENT_MODE, &args);
+
+    if(mid == MARGO_INSTANCE_NULL) {
+        throw runtime_error("Failed to initialize the Margo RPC client");
+    }
+
+    GKFS_DATA->spdlogger()->info(
+            "{}() RPC client initialization successful for protocol {}",
+            __func__, GKFS_DATA->bind_addr());
+
+    RPC_DATA->client_rpc_mid(mid);
+    register_client_rpcs(mid);
+}
+
 void
 register_proxy_server_rpcs(margo_instance_id mid) {
     MARGO_REGISTER(mid, gkfs::rpc::tag::get_chunk_stat, rpc_chunk_stat_in_t,
@@ -464,6 +510,18 @@ init_environment() {
     if(!GKFS_DATA->hosts_file().empty()) {
         gkfs::utils::populate_hosts_file();
     }
+
+    // Init margo client
+    GKFS_DATA->spdlogger()->debug("{}() Initializing RPC client: '{}'",
+                                  __func__, GKFS_DATA->bind_addr());
+    try {
+        init_rpc_client();
+    } catch(const std::exception& e) {
+        GKFS_DATA->spdlogger()->error(
+                "{}() Failed to initialize RPC client: {}", __func__, e.what());
+        throw;
+    }
+
     GKFS_DATA->spdlogger()->info("Startup successful. Daemon is ready.");
 }
 
@@ -523,6 +581,12 @@ destroy_enviroment() {
 
     GKFS_DATA->spdlogger()->info("{}() Closing metadata DB", __func__);
     GKFS_DATA->close_mdb();
+
+    if(RPC_DATA->client_rpc_mid() != nullptr) {
+        GKFS_DATA->spdlogger()->info("{}() Finalizing margo RPC client ...",
+                                     __func__);
+        margo_finalize(RPC_DATA->client_rpc_mid());
+    }
 
 
     // Delete rootdir/metadir if requested

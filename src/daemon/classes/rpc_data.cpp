@@ -54,6 +54,21 @@ RPCData::proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid) {
     RPCData::proxy_server_rpc_mid_ = proxy_server_rpc_mid;
 }
 
+margo_instance*
+RPCData::client_rpc_mid() {
+    return client_rpc_mid_;
+}
+
+void
+RPCData::client_rpc_mid(margo_instance* client_rpc_mid) {
+    RPCData::client_rpc_mid_ = client_rpc_mid;
+}
+
+margo_client_ids&
+RPCData::rpc_client_ids() {
+    return rpc_client_ids_;
+}
+
 ABT_pool
 RPCData::io_pool() const {
     return io_pool_;
