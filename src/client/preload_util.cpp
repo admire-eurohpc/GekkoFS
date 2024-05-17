@@ -161,6 +161,10 @@ load_hostfile(const std::string& path) {
     string uri;
     std::smatch match;
     while(getline(lf, line)) {
+        // if line starts with #, it indicates the end of current FS instance
+        // It is therefore skipped
+        if(line[0] == '#')
+            continue;
         if(!regex_match(line, match, line_re)) {
 
             LOG(ERROR, "Unrecognized line format: [path: '{}', line: '{}']",
