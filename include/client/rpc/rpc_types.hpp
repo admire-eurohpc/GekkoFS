@@ -3740,7 +3740,7 @@ struct expand_start {
     constexpr static const hg_id_t mercury_id = 0;
 
     // RPC name
-    constexpr static const auto name = gkfs::rpc::malleable::tag::expand_start;
+    constexpr static const auto name = gkfs::malleable::rpc::tag::expand_start;
 
     // requires response?
     constexpr static const auto requires_response = true;
@@ -3859,7 +3859,7 @@ struct expand_status {
     constexpr static const hg_id_t mercury_id = 0;
 
     // RPC name
-    constexpr static const auto name = gkfs::rpc::malleable::tag::expand_status;
+    constexpr static const auto name = gkfs::malleable::rpc::tag::expand_status;
 
     // requires response?
     constexpr static const auto requires_response = true;
@@ -3961,7 +3961,7 @@ struct expand_finalize {
 
     // RPC name
     constexpr static const auto name =
-            gkfs::rpc::malleable::tag::expand_finalize;
+            gkfs::malleable::rpc::tag::expand_finalize;
 
     // requires response?
     constexpr static const auto requires_response = true;

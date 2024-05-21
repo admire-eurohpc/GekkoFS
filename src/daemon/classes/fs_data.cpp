@@ -33,6 +33,14 @@
 
 namespace gkfs::daemon {
 
+FsData::FsData() {
+    ABT_mutex_create(&maintenance_mode_mutex_);
+}
+
+FsData::~FsData() {
+    ABT_mutex_free(&maintenance_mode_mutex_);
+}
+
 // getter/setter
 
 const std::shared_ptr<spdlog::logger>&
@@ -312,6 +320,34 @@ FsData::prometheus_gateway() const {
 void
 FsData::prometheus_gateway(const std::string& prometheus_gateway) {
     FsData::prometheus_gateway_ = prometheus_gateway;
+}
+
+bool
+FsData::maintenance_mode() const {
+    return maintenance_mode_;
+}
+
+void
+FsData::maintenance_mode(bool maintenance_mode) {
+    ABT_mutex_lock(maintenance_mode_mutex_);
+    if(maintenance_mode && maintenance_mode_) {
+        auto err_str =
+                "Critical error: Maintenance mode enabled twice, e.g., due to multiple expand requests. This is not a allowed and should not happen.";
+        spdlogger()->error(err_str);
+        throw std::runtime_error(err_str);
+    }
+    maintenance_mode_ = maintenance_mode;
+    ABT_mutex_unlock(maintenance_mode_mutex_);
+}
+
+bool
+FsData::redist_running() const {
+    return redist_running_;
+}
+
+void
+FsData::redist_running(bool redist_running) {
+    redist_running_ = redist_running;
 }
 
 } // namespace gkfs::daemon

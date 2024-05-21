@@ -84,4 +84,13 @@ DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_read)
 
 DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_write)
 
+// malleability
+
+DECLARE_MARGO_RPC_HANDLER(rpc_srv_expand_start)
+
+DECLARE_MARGO_RPC_HANDLER(rpc_srv_expand_status)
+
+DECLARE_MARGO_RPC_HANDLER(rpc_srv_expand_finalize)
+
+
 #endif // GKFS_DAEMON_RPC_DEFS_HPP

@@ -176,6 +176,13 @@ register_server_rpcs(margo_instance_id mid) {
                    rpc_srv_truncate);
     MARGO_REGISTER(mid, gkfs::rpc::tag::get_chunk_stat, rpc_chunk_stat_in_t,
                    rpc_chunk_stat_out_t, rpc_srv_get_chunk_stat);
+    // malleability
+    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::expand_start,
+                   rpc_expand_start_in_t, rpc_err_out_t, rpc_srv_expand_start);
+    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::expand_status, void,
+                   rpc_err_out_t, rpc_srv_expand_status);
+    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::expand_finalize, void,
+                   rpc_err_out_t, rpc_srv_expand_status);
 }
 
 /**

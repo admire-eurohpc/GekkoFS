@@ -56,7 +56,9 @@ namespace daemon {
 class FsData {
 
 private:
-    FsData() = default;
+    FsData();
+
+    ~FsData();
 
     // logger
     std::shared_ptr<spdlog::logger> spdlogger_;
@@ -103,6 +105,16 @@ private:
 
     // Prometheus
     std::string prometheus_gateway_ = gkfs::config::stats::prometheus_gateway;
+
+    // Malleability
+    // maintenance mode is used to prevent new RPCs to the filesystem and
+    // indicates for clients: try again. Is set to true when redist is running
+    bool maintenance_mode_ = false;
+    ABT_mutex maintenance_mode_mutex_;
+    // redist_running_ indicates to client that redistribution is running
+    bool redist_running_ = false;
+    ABT_thread redist_thread_;
+
 
 public:
     static FsData*
@@ -284,6 +296,18 @@ public:
 
     void
     prometheus_gateway(const std::string& prometheus_gateway_);
+
+    bool
+    maintenance_mode() const;
+
+    void
+    maintenance_mode(bool maintenance_mode);
+
+    bool
+    redist_running() const;
+
+    void
+    redist_running(bool redist_running);
 };
 
 

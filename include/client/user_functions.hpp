@@ -98,6 +98,10 @@ expand_start(int old_server_conf, int new_server_conf);
 int
 expand_status();
 
+/**
+ * @brief Finalize the expansion process
+ * @return error code
+ */
 int
 expand_finalize();
 } // namespace malleable

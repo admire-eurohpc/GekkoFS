@@ -81,12 +81,6 @@ constexpr auto proxy_daemon_read = "proxy_daemon_rpc_srv_read_data";
 
 } // namespace tag
 
-namespace malleable::tag {
-constexpr auto expand_start = "rpc_srv_expand_start";
-constexpr auto expand_status = "rpc_srv_expand_status";
-constexpr auto expand_finalize = "rpc_srv_expand_finalize";
-} // namespace malleable::tag
-
 namespace protocol {
 constexpr auto na_sm = "na+sm";
 constexpr auto ofi_sockets = "ofi+sockets";
@@ -110,6 +104,12 @@ constexpr auto all_remote_protocols = {ofi_sockets, ofi_tcp, ofi_verbs,
 #pragma GCC diagnostic pop
 } // namespace protocol
 } // namespace gkfs::rpc
+
+namespace gkfs::malleable::rpc::tag {
+constexpr auto expand_start = "rpc_srv_expand_start";
+constexpr auto expand_status = "rpc_srv_expand_status";
+constexpr auto expand_finalize = "rpc_srv_expand_finalize";
+} // namespace gkfs::malleable::rpc::tag
 
 namespace gkfs::config::syscall::stat {
 // Number 512-byte blocks allocated as it is in the linux kernel (struct_stat.h)
