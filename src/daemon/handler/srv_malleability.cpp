@@ -28,6 +28,7 @@
 */
 #include <daemon/daemon.hpp>
 #include <daemon/handler/rpc_defs.hpp>
+#include <daemon/malleability/malleable_manager.hpp>
 
 #include <common/rpc/rpc_types.hpp>
 
@@ -52,51 +53,15 @@ rpc_srv_expand_start(hg_handle_t handle) {
     GKFS_DATA->spdlogger()->debug(
             "{}() Got RPC with old conf '{}' new conf '{}'", __func__,
             in.old_server_conf, in.new_server_conf);
-    // if maintenance mode is already set, daemon is blown up as it is not
-    // allowed
-    GKFS_DATA->maintenance_mode(true);
-    GKFS_DATA->redist_running(true);
-
-    // TODO branch off here with ABT thread and start redistribution
-    //    auto abt_err = ABT_thread_create(RPC_DATA->io_pool(), nullptr,
-    //                              &task_args_[idx], &abt_tasks_[idx]);
-
-
-    //    try {
-    out.err = 0;
-    //    } catch(const std::exception& e) {
-    //        GKFS_DATA->spdlogger()->error("{}() Failed to start expansion:
-    //        '{}'",
-    //                                      __func__, e.what());
-    //        out.err = -1;
-    //    }
-
-    GKFS_DATA->spdlogger()->debug("{}() Sending output err '{}'", __func__,
-                                  out.err);
-    auto hret = margo_respond(handle, &out);
-    if(hret != HG_SUCCESS) {
-        GKFS_DATA->spdlogger()->error("{}() Failed to respond", __func__);
-    }
-
-    // Destroy handle when finished
-    margo_free_input(handle, &in);
-    margo_destroy(handle);
-    return HG_SUCCESS;
-}
-
-hg_return_t
-rpc_srv_expand_status(hg_handle_t handle) {
-    rpc_err_out_t out;
-
-    GKFS_DATA->spdlogger()->debug("{}() Got RPC ", __func__);
-
     try {
-        // return 1 if redistribution is running, 0 otherwise.
-        out.err = GKFS_DATA->redist_running() ? 1 : 0;
+        // if maintenance mode is already set, error is thrown -- not allowed
+        GKFS_DATA->maintenance_mode(true);
+        GKFS_DATA->malleable_manager()->expand_start(in.old_server_conf,
+                                                     in.new_server_conf);
+        out.err = 0;
     } catch(const std::exception& e) {
-        GKFS_DATA->spdlogger()->error(
-                "{}() Failed to check status for expansion: '{}'", __func__,
-                e.what());
+        GKFS_DATA->spdlogger()->error("{}() Failed to start expansion: '{}' ",
+                                      __func__, e.what());
         out.err = -1;
     }
 
@@ -106,7 +71,31 @@ rpc_srv_expand_status(hg_handle_t handle) {
     if(hret != HG_SUCCESS) {
         GKFS_DATA->spdlogger()->error("{}() Failed to respond", __func__);
     }
+    // Destroy handle when finished
+    margo_free_input(handle, &in);
+    margo_destroy(handle);
+    return HG_SUCCESS;
+}
 
+hg_return_t
+rpc_srv_expand_status(hg_handle_t handle) {
+    rpc_err_out_t out;
+    GKFS_DATA->spdlogger()->debug("{}() Got RPC ", __func__);
+    try {
+        // return 1 if redistribution is running, 0 otherwise.
+        out.err = GKFS_DATA->redist_running() ? 1 : 0;
+    } catch(const std::exception& e) {
+        GKFS_DATA->spdlogger()->error(
+                "{}() Failed to check status for expansion: '{}'", __func__,
+                e.what());
+        out.err = -1;
+    }
+    GKFS_DATA->spdlogger()->debug("{}() Sending output err '{}'", __func__,
+                                  out.err);
+    auto hret = margo_respond(handle, &out);
+    if(hret != HG_SUCCESS) {
+        GKFS_DATA->spdlogger()->error("{}() Failed to respond", __func__);
+    }
     // Destroy handle when finished
     margo_destroy(handle);
     return HG_SUCCESS;

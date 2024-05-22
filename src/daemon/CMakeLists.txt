@@ -49,6 +49,7 @@ target_sources(
           handler/srv_metadata.cpp
           handler/srv_management.cpp
     handler/srv_malleability.cpp
+    malleability/malleable_manager.cpp
   PUBLIC ${CMAKE_SOURCE_DIR}/include/config.hpp
          ${CMAKE_SOURCE_DIR}/include/version.hpp.in
 )

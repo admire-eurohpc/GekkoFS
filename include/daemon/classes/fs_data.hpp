@@ -51,6 +51,10 @@ namespace utils {
 class Stats;
 }
 
+namespace malleable {
+class MalleableManager;
+}
+
 namespace daemon {
 
 class FsData {
@@ -106,15 +110,14 @@ private:
     // Prometheus
     std::string prometheus_gateway_ = gkfs::config::stats::prometheus_gateway;
 
-    // Malleability
     // maintenance mode is used to prevent new RPCs to the filesystem and
     // indicates for clients: try again. Is set to true when redist is running
     bool maintenance_mode_ = false;
     ABT_mutex maintenance_mode_mutex_;
     // redist_running_ indicates to client that redistribution is running
     bool redist_running_ = false;
-    ABT_thread redist_thread_;
 
+    std::shared_ptr<gkfs::malleable::MalleableManager> malleable_manager_;
 
 public:
     static FsData*
@@ -308,6 +311,13 @@ public:
 
     void
     redist_running(bool redist_running);
+
+    const std::shared_ptr<gkfs::malleable::MalleableManager>&
+    malleable_manager() const;
+
+    void
+    malleable_manager(const std::shared_ptr<gkfs::malleable::MalleableManager>&
+                              malleable_manager);
 };
 
 

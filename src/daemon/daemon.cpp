@@ -47,6 +47,7 @@
 #include <daemon/backend/metadata/db.hpp>
 #include <daemon/backend/data/chunk_storage.hpp>
 #include <daemon/util.hpp>
+#include <daemon/malleability/malleable_manager.hpp>
 #include <CLI/CLI.hpp>
 
 #ifdef GKFS_ENABLE_AGIOS
@@ -528,6 +529,21 @@ init_environment() {
                 "{}() Failed to initialize RPC client: {}", __func__, e.what());
         throw;
     }
+    GKFS_DATA->spdlogger()->debug("{}() RPC client running.", __func__);
+    GKFS_DATA->spdlogger()->debug("{}() Initializing MalleableManager...",
+                                  __func__);
+    try {
+        auto malleable_manager =
+                std::make_shared<gkfs::malleable::MalleableManager>();
+        GKFS_DATA->malleable_manager(malleable_manager);
+    } catch(const std::exception& e) {
+        GKFS_DATA->spdlogger()->error(
+                "{}() Failed to initialize MalleableManager: {}", __func__,
+                e.what());
+        throw;
+    }
+    GKFS_DATA->spdlogger()->debug("{}() MalleableManager running.", __func__);
+
 
     GKFS_DATA->spdlogger()->info("Startup successful. Daemon is ready.");
 }

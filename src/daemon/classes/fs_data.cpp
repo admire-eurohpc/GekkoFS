@@ -350,4 +350,16 @@ FsData::redist_running(bool redist_running) {
     redist_running_ = redist_running;
 }
 
+const std::shared_ptr<gkfs::malleable::MalleableManager>&
+FsData::malleable_manager() const {
+    return malleable_manager_;
+}
+
+void
+FsData::malleable_manager(
+        const std::shared_ptr<gkfs::malleable::MalleableManager>&
+                malleable_manager) {
+    malleable_manager_ = malleable_manager;
+}
+
 } // namespace gkfs::daemon
