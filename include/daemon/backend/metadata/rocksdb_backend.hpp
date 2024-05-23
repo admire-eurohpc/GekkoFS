@@ -174,8 +174,11 @@ public:
      * Code example for iterating all entries in KV store. This is for debug
      * only as it is too expensive
      */
-    void
+    void*
     iterate_all_impl() const;
+
+    uint64_t
+    db_size_impl() const;
 };
 
 } // namespace gkfs::metadata

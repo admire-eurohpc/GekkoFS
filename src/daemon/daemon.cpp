@@ -184,6 +184,11 @@ register_server_rpcs(margo_instance_id mid) {
                    rpc_err_out_t, rpc_srv_expand_status);
     MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::expand_finalize, void,
                    rpc_err_out_t, rpc_srv_expand_status);
+    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_metadata,
+                   rpc_migrate_metadata_in_t, rpc_err_out_t,
+                   rpc_srv_migrate_metadata);
+    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_data,
+                   rpc_migrate_data_in_t, rpc_err_out_t, rpc_srv_migrate_data);
 }
 
 /**
@@ -253,9 +258,12 @@ init_rpc_server() {
  */
 void
 register_client_rpcs(margo_instance_id mid) {
-    // TODO
-    RPC_DATA->rpc_client_ids().test_rpc_id = MARGO_REGISTER(
-            mid, gkfs::rpc::tag::fs_config, void, rpc_config_out_t, NULL);
+    RPC_DATA->rpc_client_ids().migrate_metadata_id =
+            MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_metadata,
+                           rpc_migrate_metadata_in_t, rpc_err_out_t, NULL);
+    //    RPC_DATA->rpc_client_ids().migrate_data_id = MARGO_REGISTER(
+    //            mid, gkfs::malleable::rpc::tag::migrate_metadata,
+    //            rpc_migrate_metadata_in_t, rpc_err_out_t, NULL);
 }
 
 /**

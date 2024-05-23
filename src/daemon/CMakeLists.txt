@@ -50,6 +50,7 @@ target_sources(
           handler/srv_management.cpp
     handler/srv_malleability.cpp
     malleability/malleable_manager.cpp
+    malleability/rpc/forward_redistribution.cpp
   PUBLIC ${CMAKE_SOURCE_DIR}/include/config.hpp
          ${CMAKE_SOURCE_DIR}/include/version.hpp.in
 )

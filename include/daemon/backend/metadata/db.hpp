@@ -164,8 +164,14 @@ public:
      * @brief Iterate over complete database, note ONLY used for debugging and
      * is therefore unused.
      */
-    void
+    void*
     iterate_all() const;
+
+    /**
+     * @brief Returns an estimated db size, i.e., number of KV pairs
+     */
+    uint64_t
+    db_size() const;
 };
 
 } // namespace gkfs::metadata

@@ -73,8 +73,11 @@ public:
     virtual std::vector<std::tuple<std::string, bool, size_t, time_t>>
     get_dirents_extended(const std::string& dir) const = 0;
 
-    virtual void
+    virtual void*
     iterate_all() const = 0;
+
+    virtual uint64_t
+    db_size() const = 0;
 };
 
 template <typename T>
@@ -137,9 +140,14 @@ public:
         return static_cast<T const&>(*this).get_dirents_extended_impl(dir);
     }
 
-    void
+    void*
     iterate_all() const {
-        static_cast<T const&>(*this).iterate_all_impl();
+        return static_cast<T const&>(*this).iterate_all_impl();
+    }
+
+    uint64_t
+    db_size() const {
+        return static_cast<T const&>(*this).db_size_impl();
     }
 };
 

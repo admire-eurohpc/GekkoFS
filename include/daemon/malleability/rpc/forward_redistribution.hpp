@@ -25,43 +25,21 @@
 
   SPDX-License-Identifier: GPL-3.0-or-later
 */
-#ifndef GEKKOFS_DAEMON_MALLEABLE_MANAGER_HPP
-#define GEKKOFS_DAEMON_MALLEABLE_MANAGER_HPP
+
+#ifndef GEKKOFS_DAEMON_FORWARD_REDISTRIBUTION_HPP
+#define GEKKOFS_DAEMON_FORWARD_REDISTRIBUTION_HPP
 
 #include <daemon/daemon.hpp>
+#include <string>
 
-namespace gkfs::malleable {
+namespace gkfs::malleable::rpc {
 
-class MalleableManager {
-private:
-    ABT_thread redist_thread_;
+int
+forward_metadata(std::string& key, std::string& value, unsigned int dest_id);
 
-    // TODO next 3 functions are mostly copy paste from preload_util. FIX
+void
+forward_data();
 
-    std::vector<std::pair<std::string, std::string>>
-    load_hostfile(const std::string& path);
+} // namespace gkfs::malleable::rpc
 
-    std::vector<std::pair<std::string, std::string>>
-    read_hosts_file();
-
-    void
-    connect_to_hosts(
-            const std::vector<std::pair<std::string, std::string>>& hosts);
-
-    static void
-    expand_abt(void* _arg);
-
-    int
-    redistribute_metadata();
-
-    void
-    redistribute_data();
-
-public:
-    void
-    expand_start(int old_server_conf, int new_server_conf);
-};
-} // namespace gkfs::malleable
-
-
-#endif // GEKKOFS_MALLEABLE_MANAGER_HPP
+#endif // GEKKOFS_DAEMON_FORWARD_REDISTRIBUTION_HPP

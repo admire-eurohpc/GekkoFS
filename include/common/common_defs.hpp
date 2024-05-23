@@ -109,6 +109,8 @@ namespace gkfs::malleable::rpc::tag {
 constexpr auto expand_start = "rpc_srv_expand_start";
 constexpr auto expand_status = "rpc_srv_expand_status";
 constexpr auto expand_finalize = "rpc_srv_expand_finalize";
+constexpr auto migrate_metadata = "rpc_srv_migrate_metadata";
+constexpr auto migrate_data = "rpc_srv_migrate_data";
 } // namespace gkfs::malleable::rpc::tag
 
 namespace gkfs::config::syscall::stat {
