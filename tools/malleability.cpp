@@ -45,16 +45,21 @@ main(int argc, const char* argv[]) {
     CLI::App desc{"Allowed options"};
     cli_options opts{};
 
-    auto res = gkfs_init();
-    cout << "Init result " << res << endl;
+    auto err = gkfs_init();
+    cout << "Init result " << err << endl;
 
-    res = gkfs::malleable::expand_start(1, 2);
-    cout << "Expand start " << res << endl;
-    res = gkfs::malleable::expand_status();
-    cout << "Expand status " << res << endl;
-    res = gkfs::malleable::expand_finalize();
-    cout << "Expand finalize " << res << endl;
+    err = gkfs::malleable::expand_start(1, 1);
+    if(err) {
+        cout << "Expand start failed. Exiting..." << endl;
+        gkfs_end();
+        return -1;
+    }
+    cout << "Expand start " << err << endl;
+    err = gkfs::malleable::expand_status();
+    cout << "Expand status " << err << endl;
+    err = gkfs::malleable::expand_finalize();
+    cout << "Expand finalize " << err << endl;
 
-    res = gkfs_end();
-    cout << "End result " << res << endl;
+    err = gkfs_end();
+    cout << "End result " << err << endl;
 }

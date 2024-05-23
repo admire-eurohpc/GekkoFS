@@ -227,7 +227,7 @@ MalleableManager::redistribute_metadata() {
     auto percent_interval = estimate_db_size / 1000;
     GKFS_DATA->spdlogger()->info(
             "{}() Starting metadata redistribution for '{}' estimated number of KV pairs...",
-            estimate_db_size, __func__);
+            __func__, estimate_db_size);
     int migration_err = 0;
     string key, value;
     auto iter =

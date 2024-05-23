@@ -29,17 +29,21 @@
 #ifndef GEKKOFS_COMMON_DEFS_HPP
 #define GEKKOFS_COMMON_DEFS_HPP
 
+namespace gkfs {
+namespace client {
+// This must be equivalent to the line set in the gkfs script
+constexpr auto hostsfile_end_str = "#FS_INSTANCE_END";
+
+} // namespace client
+namespace rpc {
 // These constexpr set the RPC's identity and which handler the receiver end
 // should use
-namespace gkfs::rpc {
-
 using chnk_id_t = unsigned long;
 struct ChunkStat {
     unsigned long chunk_size;
     unsigned long chunk_total;
     unsigned long chunk_free;
 };
-
 
 namespace tag {
 
@@ -103,19 +107,19 @@ constexpr auto all_remote_protocols = {ofi_sockets, ofi_tcp, ofi_verbs,
                                        ucx_rc,      ucx_ud};
 #pragma GCC diagnostic pop
 } // namespace protocol
-} // namespace gkfs::rpc
+} // namespace rpc
 
-namespace gkfs::malleable::rpc::tag {
+namespace malleable::rpc::tag {
 constexpr auto expand_start = "rpc_srv_expand_start";
 constexpr auto expand_status = "rpc_srv_expand_status";
 constexpr auto expand_finalize = "rpc_srv_expand_finalize";
 constexpr auto migrate_metadata = "rpc_srv_migrate_metadata";
 constexpr auto migrate_data = "rpc_srv_migrate_data";
-} // namespace gkfs::malleable::rpc::tag
+} // namespace malleable::rpc::tag
 
-namespace gkfs::config::syscall::stat {
+namespace config::syscall::stat {
 // Number 512-byte blocks allocated as it is in the linux kernel (struct_stat.h)
 constexpr auto st_nblocksize = 512;
-} // namespace gkfs::config::syscall::stat
-
+} // namespace config::syscall::stat
+} // namespace gkfs
 #endif // GEKKOFS_COMMON_DEFS_HPP

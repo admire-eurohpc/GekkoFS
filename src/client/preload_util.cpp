@@ -162,14 +162,14 @@ load_hostfile(const std::string& path) {
     std::smatch match;
     while(getline(lf, line)) {
         // if line starts with #, it indicates the end of current FS instance
-        // It is therefore skipped
-        if(line[0] == '#')
-            continue;
+        // Further hosts are not part of the file system instance yet and are
+        // therefore skipped The hostfile is ordered, so nothgin below this line
+        // can contain valid hosts
+        if(line.find(gkfs::client::hostsfile_end_str) != string::npos)
+            break;
         if(!regex_match(line, match, line_re)) {
-
             LOG(ERROR, "Unrecognized line format: [path: '{}', line: '{}']",
                 path, line);
-
             throw runtime_error(
                     fmt::format("unrecognized line format: '{}'", line));
         }

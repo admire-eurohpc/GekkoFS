@@ -28,17 +28,38 @@
 */
 
 #include <client/user_functions.hpp>
+#include <client/preload.hpp>
 #include <client/rpc/forward_malleability.hpp>
 #include <client/logging.hpp>
+
+#include <iostream>
+
+using namespace std;
 
 namespace gkfs::malleable {
 
 int
 expand_start(int old_server_conf, int new_server_conf) {
     LOG(INFO, "{}() Expand operation enter", __func__);
-    gkfs::malleable::rpc::forward_expand_start(old_server_conf,
-                                               new_server_conf);
-    return 0;
+    // sanity checks
+    if(old_server_conf == new_server_conf) {
+        auto err_str =
+                "ERR: Old server configuration is the same as the new one";
+        cerr << err_str << endl;
+        LOG(ERROR, "{}() {}", __func__, err_str);
+        return -1;
+    }
+    if(CTX->hosts().size() != static_cast<uint64_t>(old_server_conf)) {
+        auto err_str =
+                "ERR: Old server configuration does not match the number of hosts in hostsfile";
+        cerr << err_str << endl;
+        LOG(ERROR, "{}() {}", __func__, err_str);
+        return -1;
+    }
+    // TODO check that hostsfile contains endmarker
+    return gkfs::malleable::rpc::forward_expand_start(old_server_conf,
+                                                      new_server_conf);
+    //    return 0;
 }
 
 int

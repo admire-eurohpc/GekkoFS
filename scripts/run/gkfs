@@ -43,7 +43,8 @@ wait_for_gkfs_daemons() {
             exit 1
         fi
     done
-    echo "# End of current FS instance" >> "${HOSTSFILE}"
+    # This must be equivalent to the line set in include/common/common_defs.hpp
+    echo "#FS_INSTANCE_END" >> "${HOSTSFILE}"
 }
 #######################################
 # Creates a pid file for a given pid. If pid file exists, we check if its pids are still valid.
