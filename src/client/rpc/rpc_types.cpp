@@ -60,6 +60,12 @@ hermes::detail::register_user_request_types(uint32_t provider_id) {
         (void) registered_requests().add<gkfs::rpc::chunk_stat>(provider_id);
         (void) registered_requests().add<gkfs::rpc::get_dirents_extended>(
                 provider_id);
+        (void) registered_requests().add<gkfs::malleable::rpc::expand_start>(
+                provider_id);
+        (void) registered_requests().add<gkfs::malleable::rpc::expand_status>(
+                provider_id);
+        (void) registered_requests().add<gkfs::malleable::rpc::expand_finalize>(
+                provider_id);
     } else {
         (void) registered_requests().add<gkfs::rpc::write_data_proxy>(
                 provider_id);

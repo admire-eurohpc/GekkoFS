@@ -35,9 +35,10 @@ namespace gkfs::malleable {
 
 int
 expand_start(int old_server_conf, int new_server_conf) {
-    LOG(INFO, "{}() Expand operation started", __func__);
-    return gkfs::malleable::rpc::forward_expand_start(old_server_conf,
-                                                      new_server_conf);
+    LOG(INFO, "{}() Expand operation enter", __func__);
+    gkfs::malleable::rpc::forward_expand_start(old_server_conf,
+                                               new_server_conf);
+    return 0;
 }
 
 int
