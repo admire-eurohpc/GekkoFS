@@ -38,7 +38,7 @@ comment="Direct dependencies"
 # Dependencies that must be downloaded directly
 wgetdeps=(
     ["argobots"]="1.1"
-    ["rocksdb"]="8.6.7"
+    ["rocksdb"]="8.10.0"
 )
 
 # Dependencies that must be cloned

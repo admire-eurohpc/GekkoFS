@@ -38,7 +38,7 @@ comment="Dependencies required by the CI"
 # Dependencies that must be downloaded directly
 wgetdeps=(
     ["argobots"]="1.1"
-    ["rocksdb"]="8.6.7"
+    ["rocksdb"]="8.10.0"
     ["prometheus-cpp"]="v1.0.0"
     )
 

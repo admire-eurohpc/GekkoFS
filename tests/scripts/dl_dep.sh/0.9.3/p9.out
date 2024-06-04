@@ -6,6 +6,6 @@ Cloned 'https://github.com/ofiwg/libfabric.git' to 'libfabric' with commit '[HEA
 Cloned 'https://github.com/mercury-hpc/mercury' to 'mercury' with commit '[v2.1.0]' and flags '--recurse-submodules'
 Downloaded 'https://github.com/pmodels/argobots/archive/v1.1.tar.gz' to 'argobots'
 Cloned 'https://github.com/mochi-hpc/mochi-margo' to 'margo' with commit '[v0.9.6]' and flags ''
-Downloaded 'https://github.com/facebook/rocksdb/archive/v8.6.7.tar.gz' to 'rocksdb'
+Downloaded 'https://github.com/facebook/rocksdb/archive/v8.10.0.tar.gz' to 'rocksdb'
 Cloned 'https://github.com/GekkoFS/syscall_intercept.git' to 'syscall_intercept' with commit '[6eb27a9d2053bb2ac3bb9ce30e13b64ce055c19f]' and flags ''
 Done
