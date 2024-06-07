@@ -24,13 +24,11 @@ PFS for storage, instead of a local store available at the compute nodes.
 Enabling GekkoFWD
 ------------------
 
-To enable the I/O forwarding mode of GekkoFS, the
-:code:`GKFS_ENABLE_FORWARDING` CMake option should be enabled, :ref:`when
-configuring <building_gekkofs>` the build:
-
-.. code-block:: console
-
-    $ cmake -DENABLE_FORWARDING:BOOL=ON
+To enable the I/O forwarding mode of GekkoFS, an environment 
+variable named :code:`LIBGKFS_FORWARDING_MAP_FILE` is provided
+to allow users to identify the map file on each client.
+This environment variable will enable GekkoFS forwarding, then we 
+only need to use :code:`--enable-forwarding`` option in the servers.
 
 I/O Scheduling
 --------------

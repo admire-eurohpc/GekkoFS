@@ -95,6 +95,7 @@ private:
     bool enable_stats_ = false;
     bool enable_chunkstats_ = false;
     bool enable_prometheus_ = false;
+    bool enable_forwarding_ = false;
     std::string stats_file_;
 
     // Prometheus
@@ -245,6 +246,12 @@ public:
 
     void
     enable_chunkstats(bool enable_chunkstats);
+
+    bool
+    enable_forwarding() const;
+
+    void
+    enable_forwarding(bool enable_forwarding);
 
     bool
     enable_prometheus() const;

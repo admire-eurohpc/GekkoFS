@@ -50,13 +50,13 @@ std::unique_ptr<hermes::async_engine> ld_network_service; // extern variable
 
 namespace {
 
-#ifdef GKFS_ENABLE_FORWARDING
+// FORWARDING
 pthread_t mapper;
 bool forwarding_running;
 
 pthread_mutex_t remap_mutex;
 pthread_cond_t remap_signal;
-#endif
+// END FORWARDING
 
 inline void
 exit_error_msg(int errcode, const string& msg) {
@@ -102,7 +102,6 @@ init_hermes_client() {
     return true;
 }
 
-#ifdef GKFS_ENABLE_FORWARDING
 void*
 forwarding_mapper(void* p) {
     struct timespec timeout;
@@ -115,7 +114,7 @@ forwarding_mapper(void* p) {
         try {
             gkfs::utils::load_forwarding_map();
 
-            if(previous != CTX->fwd_host_id()) {
+            if(previous != (int64_t) CTX->fwd_host_id()) {
                 LOG(INFO, "{}() Forward to {}", __func__, CTX->fwd_host_id());
 
                 previous = CTX->fwd_host_id();
@@ -133,18 +132,14 @@ forwarding_mapper(void* p) {
 
     return nullptr;
 }
-#endif
 
-#ifdef GKFS_ENABLE_FORWARDING
 void
 init_forwarding_mapper() {
     forwarding_running = true;
 
     pthread_create(&mapper, NULL, forwarding_mapper, NULL);
 }
-#endif
 
-#ifdef GKFS_ENABLE_FORWARDING
 void
 destroy_forwarding_mapper() {
     forwarding_running = false;
@@ -153,7 +148,6 @@ destroy_forwarding_mapper() {
 
     pthread_join(mapper, NULL);
 }
-#endif
 
 void
 log_prog_name() {
@@ -207,31 +201,34 @@ init_environment() {
     }
 
     /* Setup distributor */
-#ifdef GKFS_ENABLE_FORWARDING
-    try {
-        gkfs::utils::load_forwarding_map();
+    auto forwarding_map_file = gkfs::env::get_var(
+            gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
 
-        LOG(INFO, "{}() Forward to {}", __func__, CTX->fwd_host_id());
-    } catch(std::exception& e) {
-        exit_error_msg(
-                EXIT_FAILURE,
-                fmt::format("Unable set the forwarding host '{}'", e.what()));
-    }
+    if(!forwarding_map_file.empty()) {
+        try {
+            gkfs::utils::load_forwarding_map();
 
-    auto forwarder_dist = std::make_shared<gkfs::rpc::ForwarderDistributor>(
-            CTX->fwd_host_id(), CTX->hosts().size());
-    CTX->distributor(forwarder_dist);
-#else
+            LOG(INFO, "{}() Forward to {}", __func__, CTX->fwd_host_id());
+        } catch(std::exception& e) {
+            exit_error_msg(EXIT_FAILURE,
+                           fmt::format("Unable set the forwarding host '{}'",
+                                       e.what()));
+        }
+
+        auto forwarder_dist = std::make_shared<gkfs::rpc::ForwarderDistributor>(
+                CTX->fwd_host_id(), CTX->hosts().size());
+        CTX->distributor(forwarder_dist);
+    } else {
+
 #ifdef GKFS_USE_GUIDED_DISTRIBUTION
-    auto distributor = std::make_shared<gkfs::rpc::GuidedDistributor>(
-            CTX->local_host_id(), CTX->hosts().size());
+        auto distributor = std::make_shared<gkfs::rpc::GuidedDistributor>(
+                CTX->local_host_id(), CTX->hosts().size());
 #else
-    auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>(
-            CTX->local_host_id(), CTX->hosts().size());
+        auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>(
+                CTX->local_host_id(), CTX->hosts().size());
 #endif
-    CTX->distributor(distributor);
-#endif
-
+        CTX->distributor(distributor);
+    }
 
     LOG(INFO, "Retrieving file system configuration...");
 
@@ -290,9 +287,11 @@ init_preload() {
 
     CTX->unprotect_user_fds();
 
-#ifdef GKFS_ENABLE_FORWARDING
-    init_forwarding_mapper();
-#endif
+    auto forwarding_map_file = gkfs::env::get_var(
+            gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
+    if(!forwarding_map_file.empty()) {
+        init_forwarding_mapper();
+    }
 
     gkfs::preload::start_interception();
     errno = oerrno;
@@ -304,10 +303,11 @@ init_preload() {
  */
 void
 destroy_preload() {
-#ifdef GKFS_ENABLE_FORWARDING
-    destroy_forwarding_mapper();
-#endif
-
+    auto forwarding_map_file = gkfs::env::get_var(
+            gkfs::env::FORWARDING_MAP_FILE, gkfs::config::forwarding_file_path);
+    if(!forwarding_map_file.empty()) {
+        destroy_forwarding_mapper();
+    }
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");
 

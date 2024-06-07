@@ -48,15 +48,16 @@ gkfs_client_log_level = 'all'
 gkfs_client_log_syscall_filter = 'epoll_wait,epoll_create'
 gkfs_daemon_active_log_pattern = r'Startup successful. Daemon is ready.'
 
-gkfwd_daemon_cmd = 'gkfwd_daemon'
+gkfwd_daemon_cmd = 'gkfs_daemon'
 gkfwd_client_cmd = 'gkfs.io'
-gkfwd_client_lib_file = 'libgkfwd_intercept.so'
+gkfwd_client_lib_file = 'libgkfs_intercept.so'
 gkfwd_hosts_file = 'gkfs_hosts.txt'
 gkfwd_forwarding_map_file = 'gkfs_forwarding.map'
-gkfwd_daemon_log_file = 'gkfwd_daemon.log'
+gkfwd_daemon_log_file = 'gkfs_daemon.log'
 gkfwd_daemon_log_level = '100'
-gkfwd_client_log_file = 'gkfwd_client.log'
+gkfwd_client_log_file = 'gkfs_client.log'
 gkfwd_client_log_level = 'all'
+gkfwd_client_log_syscall_filter = 'epoll_wait,epoll_create'
 gkfwd_daemon_active_log_pattern = r'Startup successful. Daemon is ready.'
 
 
@@ -520,7 +521,8 @@ class ShellClient:
             'LD_PRELOAD'           : str(self._preload_library),
             'LIBGKFS_HOSTS_FILE'   : str(self.cwd / gkfs_hosts_file),
             'LIBGKFS_LOG'          : gkfs_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'   : str(self._workspace.logdir / gkfs_client_log_file)
+            'LIBGKFS_LOG_OUTPUT'   : str(self._workspace.logdir / gkfs_client_log_file),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)
@@ -732,7 +734,8 @@ class FwdDaemon:
         args = [ '--mountdir', self.mountdir,
                  '--metadir', self.metadir,
                  '--rootdir', self.rootdir,
-                 '-l', self._address ]
+                 '-l', self._address,
+                 '--enable-forwarding']
 
         logger.debug(f"spawning daemon")
         logger.debug(f"cmdline: {self._cmd} " + " ".join(map(str, args)))
@@ -902,11 +905,12 @@ class FwdClient:
 
         self._patched_env = {
             'LD_LIBRARY_PATH'               : libdirs,
-            'LD_PRELOAD'                    : self._preload_library,
+            'LD_PRELOAD'                    : str(self._preload_library),
             'LIBGKFS_HOSTS_FILE'            : str(self.cwd / gkfwd_hosts_file),
             'LIBGKFS_FORWARDING_MAP_FILE'   : str(self.cwd / gkfwd_forwarding_map_file_local),
             'LIBGKFS_LOG'                   : gkfs_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file_local)
+            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file_local),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)
@@ -996,7 +1000,8 @@ class ShellFwdClient:
             'LIBGKFS_HOSTS_FILE'            : str(self.cwd / gkfwd_hosts_file),
             'LIBGKFS_FORWARDING_MAP_FILE'   : str(self.cwd / gkfwd_forwarding_map_file),
             'LIBGKFS_LOG'                   : gkfwd_client_log_level,
-            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file)
+            'LIBGKFS_LOG_OUTPUT'            : str(self._workspace.logdir / gkfwd_client_log_file),
+            'LIBGKFS_LOG_SYSCALL_FILTER': gkfs_client_log_syscall_filter
         }
 
         self._env.update(self._patched_env)

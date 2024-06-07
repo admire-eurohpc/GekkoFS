@@ -39,7 +39,8 @@
 namespace gkfs::config {
 
 constexpr auto hostfile_path = "./gkfs_hosts.txt";
-constexpr auto forwarding_file_path = "./gkfs_forwarding.map";
+// We do not default this, ENV variable always required.
+constexpr auto forwarding_file_path = "";
 
 namespace io {
 /*

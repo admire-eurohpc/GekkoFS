@@ -43,4 +43,4 @@ Required
 Optional
 --------
 
-- `agios <https://github.com/francielizanon/agios>`_ (commit c26a654 or newer) to enable GekkoFWD mode.
+- `agios <https://github.com/francielizanon/agios>`_ (commit c26a654 or newer) to enable GekkoFWD mode scheduling.

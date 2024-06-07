@@ -31,7 +31,8 @@
 #define IOINTERCEPT_PRELOAD_HPP
 
 #include <client/preload_context.hpp>
-
+#include <common/env_util.hpp>
+#include <client/env.hpp>
 #define EUNKNOWN (-1)
 
 #define CTX gkfs::preload::PreloadContext::getInstance()

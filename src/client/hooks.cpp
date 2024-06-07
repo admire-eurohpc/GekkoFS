@@ -878,7 +878,7 @@ hook_renameat(int olddfd, const char* oldname, int newdfd, const char* newname,
         "newname \"{}\", flags {}",
         __func__, olddfd, oldname, newdfd, newname, flags);
 
-    const char* oldpath_pass;
+    const char* oldpath_pass = oldname;
     std::string oldpath_resolved;
     auto oldpath_status =
             CTX->relativize_fd_path(olddfd, oldname, oldpath_resolved);
@@ -902,7 +902,7 @@ hook_renameat(int olddfd, const char* oldname, int newdfd, const char* newname,
             return -EINVAL;
     }
 
-    const char* newpath_pass;
+    const char* newpath_pass = newname;
     std::string newpath_resolved;
     auto newpath_status =
             CTX->relativize_fd_path(newdfd, newname, newpath_resolved);

@@ -160,10 +160,6 @@ find_package(Margo 0.9.6 REQUIRED)
 message(STATUS "[${PROJECT_NAME}] Checking for syscall_intercept")
 find_package(Syscall_intercept REQUIRED)
 
-### Date (required by the libgkfs_intercept.so)
-message(STATUS "[${PROJECT_NAME}] Checking for Date")
-find_package(Date REQUIRED)
-
 ### AGIOS: required for scheduling I/O requests
 if (GKFS_ENABLE_AGIOS)
     message(STATUS "[${PROJECT_NAME}] Checking for Agios")
@@ -225,7 +221,7 @@ include_from_source(fmt
   MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
   SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG f94b7364b9409f05207c3af3fa4666730e11a854 # v6.1.2
+  GIT_TAG e57ca2e3685b160617d3d95fcd9e789c4e06ca88 # v10.1.0
 )
 
 # ensure that fmt is linked as PIC
@@ -338,11 +334,7 @@ if (GKFS_BUILD_TESTS)
     message(STATUS "[gekkofs] Network interface for tests: ${GKFS_TESTS_INTERFACE}")
 
     message(STATUS "[gekkofs] Check for forwarding tests...")
-    if (GKFS_ENABLE_FORWARDING)
-        set(GKFS_TESTS_FORWARDING "ON" CACHE STRING "Enable I/O forwarding tests (default: OFF)")
-    else ()
-        set(GKFS_TESTS_FORWARDING "OFF" CACHE STRING "Enable I/O forwarding tests (default: OFF)")
-    endif ()
+    set(GKFS_TESTS_FORWARDING "ON" CACHE STRING "Enable I/O forwarding tests (default: OFF)")
     message(STATUS "[gekkofs] Forwarding tests: ${GKFS_TESTS_FORWARDING}")
     message(STATUS "[gekkofs] Check for guided distributor tests...")
     if (GKFS_USE_GUIDED_DISTRIBUTION)
