@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2022, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2022, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -25,23 +25,17 @@
 
   SPDX-License-Identifier: GPL-3.0-or-later
 */
-
+#include <client/user_functions.hpp>
 
 #include <cmath>
 #include <cstring>
-#include <getopt.h>
 #include <iostream>
-#include <queue>
-#include <regex.h>
-#include <stdio.h>
 #include <string>
-#include <sys/stat.h>
-#include <sys/types.h>
+
+extern "C" {
 #include <fcntl.h>
-#include <unistd.h>
-#include <limits>
-#include <cstdint>
-#include <client/user_functions.hpp>
+#include <stdlib.h>
+}
 
 using namespace std;
 
@@ -53,17 +47,15 @@ write_file(std::string filename) {
     cout << "FD open  " << fd << endl;
 
     char* bufwrite = (char*) malloc(10);
-    strncpy(bufwrite, "testing", 7);
-
+    strncpy(bufwrite, "testing", 8);
 
     int size = gkfs::syscall::gkfs_write(fd, bufwrite, 7);
 
-    cout << "Writting size " << size << endl;
+    cout << "Written size " << size << endl;
 
     free(bufwrite);
     gkfs::syscall::gkfs_close(fd);
 }
-
 
 void
 read_file(std::string filename) {

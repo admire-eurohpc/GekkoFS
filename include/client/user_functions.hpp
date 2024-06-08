@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2022, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2022, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -29,10 +29,14 @@
 
 #ifndef GEKKOFS_USER_FUNCTIONS_HPP
 #define GEKKOFS_USER_FUNCTIONS_HPP
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <string>
 #include <cstdint>
+#include <vector>
+
+extern "C" {
+#include <sys/types.h>
+#include <sys/stat.h>
+}
 
 struct linux_dirent64;
 
