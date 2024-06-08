@@ -306,6 +306,7 @@ include_directories(
 
 add_subdirectory(src)
 add_subdirectory(include)
+add_subdirectory(examples)
 
 ### Mark any CMake variables imported from {fmt} and spdlog as advanced, so
 ### that they don't appear in cmake-gui or ccmake. Similarly for FETCHCONTENT
@@ -346,7 +347,6 @@ if (GKFS_BUILD_TESTS)
     message(STATUS "[gekkofs] Guided distributor tests: ${GKFS_TESTS_GUIDED_DISTRIBUTION}")
 
     add_subdirectory(tests)
-    add_subdirectory(examples)
 else()
     unset(GKFS_TESTS_INTERFACE CACHE)
 endif()
