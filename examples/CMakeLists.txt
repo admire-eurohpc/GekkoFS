@@ -26,11 +26,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-set (CMAKE_CXX_STANDARD 17)
-add_executable(sfind sfind.cpp)
-
-if(GKFS_INSTALL_TESTS)
-    install(TARGETS sfind 
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-endif()
+add_subdirectory(gfind)
+add_subdirectory(user_library)

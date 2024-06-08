@@ -37,12 +37,12 @@ project(
 
 enable_testing()
 
-#if (NOT CMAKE_COMPILER_IS_GNUCC)
-#   message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
-#endif ()
-#if (NOT CMAKE_COMPILER_IS_GNUCXX)
-#    message(FATAL_ERROR "The choosen C++ compiler is not g++ and is not supported")
-#endif ()
+if (NOT CMAKE_COMPILER_IS_GNUCC)
+    message(FATAL_ERROR "The choosen C compiler is not gcc and is not supported")
+endif ()
+if (NOT CMAKE_COMPILER_IS_GNUCXX)
+    message(FATAL_ERROR "The choosen C++ compiler is not g++ and is not supported")
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -346,7 +346,7 @@ if (GKFS_BUILD_TESTS)
     message(STATUS "[gekkofs] Guided distributor tests: ${GKFS_TESTS_GUIDED_DISTRIBUTION}")
 
     add_subdirectory(tests)
-    add_subdirectory(examples/gfind)
+    add_subdirectory(examples)
 else()
     unset(GKFS_TESTS_INTERFACE CACHE)
 endif()
