@@ -1394,6 +1394,28 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
     return written;
 }
 
+/**
+ * @brief Closes an fd. To be used externally
+ *
+ * @param fd
+ * @return int
+ */
+int
+gkfs_close(unsigned int fd) {
+    if(CTX->file_map()->exist(fd)) {
+        // No call to the daemon is required
+        CTX->file_map()->remove(fd);
+        return 0;
+    }
+
+    if(CTX->is_internal_fd(fd)) {
+        // the client application (for some reason) is trying to close an
+        // internal fd: ignore it
+        return 0;
+    }
+
+    return -1;
+}
 
 #ifdef HAS_SYMLINKS
 #ifdef GKFS_ENABLE_UNUSED_FUNCTIONS
@@ -1481,6 +1503,28 @@ gkfs_readlink(const std::string& path, char* buf, int bufsize) {
 }
 #endif
 #endif
+
+
+std::vector<std::string>
+gkfs_get_file_list(const std::string& path) {
+    auto ret = gkfs::rpc::forward_get_dirents(path);
+    auto err = ret.first;
+    if(err) {
+        errno = err;
+        return {};
+    }
+
+    auto open_dir = ret.second;
+
+    std::vector<std::string> file_list;
+    unsigned int pos = 0;
+
+    while(pos < open_dir->size()) {
+        auto de = open_dir->getdent(pos++);
+        file_list.push_back(de.name());
+    }
+    return file_list;
+}
 
 } // namespace gkfs::syscall
 

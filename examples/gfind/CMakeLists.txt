@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2021, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2021, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -26,7 +26,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 add_executable(sfind sfind.cpp)
 
 if(GKFS_INSTALL_TESTS)

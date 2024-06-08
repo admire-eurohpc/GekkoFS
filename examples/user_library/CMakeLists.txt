@@ -26,58 +26,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 
-# common sources to both gkfs_intercept and gkfwd_intercept
+set(CMAKE_CXX_STANDARD 17)
+add_executable(gkfs_lib_example gkfs_lib_example.cpp)
 
-target_sources(
-  gkfs_intercept
-  PUBLIC gkfs_functions.hpp
-         env.hpp
-         hooks.hpp
-         intercept.hpp
-         logging.hpp
-         make_array.hpp
-         open_file_map.hpp
-         open_dir.hpp
-         path.hpp
-         preload.hpp
-         preload_context.hpp
-         preload_util.hpp
-         rpc/rpc_types.hpp
-         rpc/forward_management.hpp
-         rpc/forward_metadata.hpp
-         rpc/forward_data.hpp
-         syscalls/args.hpp
-         syscalls/decoder.hpp
-         syscalls/errno.hpp
-         syscalls/rets.hpp
-         syscalls/syscall.hpp
-         syscalls/detail/syscall_info.h
+target_link_libraries(gkfs_lib_example
+    PRIVATE gkfs_user_lib
 )
-
-target_sources(
-  gkfs_user_lib
-  PUBLIC gkfs_functions.hpp
-         env.hpp
-         hooks.hpp
-         intercept.hpp
-         logging.hpp
-         make_array.hpp
-         open_file_map.hpp
-         open_dir.hpp
-         path.hpp
-         preload.hpp
-         preload_context.hpp
-         preload_util.hpp
-         rpc/rpc_types.hpp
-         rpc/forward_management.hpp
-         rpc/forward_metadata.hpp
-         rpc/forward_data.hpp
-         syscalls/args.hpp
-         syscalls/decoder.hpp
-         syscalls/errno.hpp
-         syscalls/rets.hpp
-         syscalls/syscall.hpp
-         syscalls/detail/syscall_info.h
-         void_syscall_intercept.hpp
-         user_functions.hpp
-)
+if (GKFS_INSTALL_TESTS)
+    install(TARGETS gkfs_lib_example
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif ()

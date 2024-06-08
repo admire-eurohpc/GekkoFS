@@ -91,17 +91,10 @@ hook_close(int fd) {
 
     LOG(DEBUG, "{}() called with fd: {}", __func__, fd);
 
-    if(CTX->file_map()->exist(fd)) {
-        // No call to the daemon is required
-        CTX->file_map()->remove(fd);
-        return 0;
-    }
+    auto ret = gkfs::syscall::gkfs_close(fd);
 
-    if(CTX->is_internal_fd(fd)) {
-        // the client application (for some reason) is trying to close an
-        // internal fd: ignore it
+    if(ret == 0)
         return 0;
-    }
 
     return syscall_no_intercept_wrapper(SYS_close, fd);
 }

@@ -6,15 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### New
+- Adding user library `gkfs_user_lib` that can be used to directly link to an application ([!171](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/171)).
+- FMT10 and date removal, several dependencies updated. ([!172](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/172)).
+- Fused GekkoFWD and GekkoFS. GekkoFWD is enabled with the `--enable-following` in the server configuration and the ENV variable
+    `LIBGKFS_FORWARDING_MAP_FILE` in the clients. ([!170](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/170)).
 - Replication without using the server. NUM_REPL (0 < NUM_REPL < num_servers) env variable defines the number of 
 replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)).
-- Modified write and reads to use a bitset instead of the traditional hash per chunk in the server.
-- Added reattemp support in get_fs_config to other servers, when the initial server fails.
-- Fused GekkoFWD and GekkoFS. GekkoFWD is enabled with the `--enable-following` in the server configuration and the ENV variable
-`LIBGKFS_FORWARDING_MAP_FILE` in the clients. ([!170](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/170)).
-- FMT10 and date removal, several dependencies updated. ([!172](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/172)).
+  - Modified write and reads to use a bitset instead of the traditional hash per chunk in the server.
+  - Added reattemp support in get_fs_config to other servers, when the initial server fails.
 
-### New
+
 ### Changed
 ### Removed
 ### Fixed

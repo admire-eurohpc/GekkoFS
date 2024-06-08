@@ -27,26 +27,63 @@
   SPDX-License-Identifier: LGPL-3.0-or-later
 */
 
-#ifndef IOINTERCEPT_PRELOAD_HPP
-#define IOINTERCEPT_PRELOAD_HPP
+#ifndef GEKKOFS_USER_FUNCTIONS_HPP
+#define GEKKOFS_USER_FUNCTIONS_HPP
+#include <string>
+#include <cstdint>
+#include <vector>
 
-#include <client/preload_context.hpp>
-#include <common/env_util.hpp>
-#include <client/env.hpp>
-#define EUNKNOWN (-1)
+extern "C" {
+#include <sys/types.h>
+#include <sys/stat.h>
+}
 
-#define CTX gkfs::preload::PreloadContext::getInstance()
-namespace gkfs::preload {
-void
-init_ld_env_if_needed();
-} // namespace gkfs::preload
+struct linux_dirent64;
 
-#ifndef BYPASS_SYSCALL
-void
-init_preload() __attribute__((constructor));
+namespace gkfs::syscall {
 
-void
-destroy_preload() __attribute__((destructor));
-#endif
+int
+gkfs_open(const std::string& path, mode_t mode, int flags);
 
-#endif // IOINTERCEPT_PRELOAD_HPP
+int
+gkfs_create(const std::string& path, mode_t mode);
+
+int
+gkfs_remove(const std::string& path);
+
+ssize_t
+gkfs_write(int fd, const void* buf, size_t count);
+
+ssize_t
+gkfs_read(int fd, void* buf, size_t count);
+
+int
+gkfs_close(unsigned int fd);
+
+off64_t
+gkfs_lseek(unsigned int fd, off64_t offset, unsigned int whence);
+
+ssize_t
+gkfs_pwrite_ws(int fd, const void* buf, size_t count, off64_t offset);
+
+ssize_t
+gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
+
+int
+gkfs_stat(const std::string& path, struct stat* buf, bool follow_links = true);
+
+int
+gkfs_remove(const std::string& path);
+
+std::vector<std::string>
+gkfs_get_file_list(const std::string& path);
+} // namespace gkfs::syscall
+
+
+extern "C" int
+gkfs_init();
+
+extern "C" int
+gkfs_end();
+
+#endif // GEKKOFS_USER_FUNCTIONS_HPP

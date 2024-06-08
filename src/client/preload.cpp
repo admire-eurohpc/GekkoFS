@@ -67,8 +67,10 @@ exit_error_msg(int errcode, const string& msg) {
     // if we don't disable interception before calling ::exit()
     // syscall hooks may find an inconsistent in shared state
     // (e.g. the logger) and thus, crash
-    gkfs::preload::stop_interception();
-    CTX->disable_interception();
+    if(CTX->interception_enabled()) {
+        gkfs::preload::stop_interception();
+        CTX->disable_interception();
+    }
     ::exit(errcode);
 }
 
@@ -314,9 +316,42 @@ destroy_preload() {
     ld_network_service.reset();
     LOG(DEBUG, "RPC subsystem shut down");
 
-    gkfs::preload::stop_interception();
-    CTX->disable_interception();
-    LOG(DEBUG, "Syscall interception stopped");
+    if(CTX->interception_enabled()) {
+        gkfs::preload::stop_interception();
+        CTX->disable_interception();
+        LOG(DEBUG, "Syscall interception stopped");
+    }
 
     LOG(INFO, "All subsystems shut down. Client shutdown complete.");
+}
+
+
+/**
+ * @brief External functions to call linking the library
+ *
+ */
+extern "C" int
+gkfs_init() {
+    CTX->init_logging();
+
+    // from here ownwards it is safe to print messages
+    LOG(DEBUG, "Logging subsystem initialized");
+
+    gkfs::preload::init_environment();
+
+    return 0;
+}
+
+
+extern "C" int
+gkfs_end() {
+    CTX->clear_hosts();
+    LOG(DEBUG, "Peer information deleted");
+
+    ld_network_service.reset();
+    LOG(DEBUG, "RPC subsystem shut down");
+
+    LOG(INFO, "All subsystems shut down. Client shutdown complete.");
+
+    return 0;
 }
