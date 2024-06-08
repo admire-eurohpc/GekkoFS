@@ -73,6 +73,7 @@ target_sources(
 )
 
 target_compile_definitions(gkfs_user_lib PUBLIC BYPASS_SYSCALL)
+target_link_options(gkfs_user_lib PRIVATE -z noexecstack)
 
 if(GKFS_ENABLE_AGIOS)
   target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
