@@ -48,7 +48,7 @@ wgetdeps=(
 clonedeps=(
     ["libfabric%verbs"]="HEAD@v1.17.0"
     ["mercury"]="v2.3.0"
-    ["margo"]="v0.14.1"
+    ["margo"]="v0.15.0"
     ["syscall_intercept"]="2c8765fa292bc9c28a22624c528580d54658813d"
 )
 
