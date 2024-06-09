@@ -72,8 +72,9 @@ rpc_srv_get_fs_config(hg_handle_t handle) {
     out.blocks_state = static_cast<hg_bool_t>(GKFS_DATA->blocks_state());
     out.uid = getuid();
     out.gid = getgid();
-    GKFS_DATA->spdlogger()->debug("{}() Sending output configs back to library",
-                                  __func__);
+    GKFS_DATA->spdlogger()->debug(
+            "{}() Sending output configs back to library. mountdir '{}' rootdir '{}'",
+            __func__, out.mountdir, out.rootdir);
     auto hret = margo_respond(handle, &out);
     if(hret != HG_SUCCESS) {
         GKFS_DATA->spdlogger()->error(

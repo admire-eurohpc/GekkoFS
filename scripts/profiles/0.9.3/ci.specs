@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2021, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2021, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -44,9 +44,9 @@ wgetdeps=(
 
 # Dependencies that must be cloned
 clonedeps=(
-    ["libfabric"]="HEAD@v1.13.2"
-    ["mercury"]="v2.1.0"
-    ["margo"]="v0.9.6"
+    ["libfabric"]="HEAD@v1.17.0"
+    ["mercury"]="v2.3.1"
+    ["margo"]="v0.15.0"
     ["syscall_intercept"]="2c8765fa292bc9c28a22624c528580d54658813d"
     ["agios"]="c26a6544200f823ebb8f890dd94e653d148bf226@development"
     ["parallax"]="ffdea6e820f5c4c2d33e60d9a4b15ef9e6bbcfdd"

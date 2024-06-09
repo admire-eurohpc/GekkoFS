@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2021, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2021, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -37,21 +37,22 @@ comment="Dependencies for Mogon 2 supercomputer"
 
 # Dependencies that must be downloaded directly
 wgetdeps=(
-    ["lz4"]="1.9.3"
+    ["lz4"]="1.9.4"
     ["capstone"]="4.0.2"
     ["argobots"]="1.1"
     ["rocksdb"]="8.10.0"
     ["psm2"]="11.2.185"
-    ["json-c"]="0.15-20200726"
+    ["json-c"]="0.17-20230812"
 )
 
 # Dependencies that must be cloned
 clonedeps=(
-    ["libfabric"]="HEAD@v1.13.2"
-    ["mercury"]="v2.1.0"
-    ["margo"]="v0.9.6"
+    ["libfabric"]="HEAD@v1.20.1"
+    ["mercury"]="v2.3.1"
+    ["margo"]="v0.15.0"
     ["syscall_intercept"]="2c8765fa292bc9c28a22624c528580d54658813d"
-    ["parallax"]="c130decd7a71c60c20b98d6a23924f05f754c3cd"
+    ["date"]="e7e1482087f58913b80a20b04d5c58d9d6d90155"
+#    ["parallax"]="c130decd7a71c60c20b98d6a23924f05f754c3cd"
 )
 
 # Extra arguments for git clone
@@ -66,7 +67,7 @@ clonedeps_patches=(
 
 # Ordering that MUST be followed when downloading
 order=(
-    "lz4" "capstone" "json-c" "psm2" "libfabric" "mercury" "argobots" "margo" "rocksdb" "syscall_intercept" "parallax"
+    "lz4" "capstone" "json-c" "libfabric" "mercury" "argobots" "margo" "rocksdb" "syscall_intercept" "date"
 )
 
 # Extra arguments passed to the installation script. As such, they can
@@ -78,5 +79,6 @@ order=(
 #  - CORES: the number of cores to use when building
 #  - PERFORM_TEST: whether tests for the package should be executed
 extra_install_args=(
-    ["libfabric"]="--enable-psm2=yes --with-psm2-src=${SOURCE_DIR}/psm2"
+    ["libfabric"]="--enable-psm2=yes --enable-opx=yes"
+#    ["libfabric"]="--enable-psm2=yes --with-psm2-src=${SOURCE_DIR}/psm2"
 )
