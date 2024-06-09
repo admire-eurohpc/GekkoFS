@@ -147,7 +147,7 @@ find_package(PkgConfig REQUIRED)
 
 ### Mercury
 message(STATUS "[${PROJECT_NAME}] Checking for Mercury")
-find_package(Mercury 2.0.1 REQUIRED)
+find_package(Mercury 2.2.0 REQUIRED)
 
 ### Argobots
 message(STATUS "[${PROJECT_NAME}] Checking for Argobots")
@@ -155,7 +155,7 @@ find_package(Argobots 1.1 REQUIRED)
 
 ### Margo
 message(STATUS "[${PROJECT_NAME}] Checking for Margo")
-find_package(Margo 0.9.6 REQUIRED)
+find_package(Margo 0.14.0 REQUIRED)
 
 ### syscall-intercept
 message(STATUS "[${PROJECT_NAME}] Checking for syscall_intercept")
