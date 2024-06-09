@@ -11,13 +11,13 @@ copy-scripts:
 	cp -R $(GIT_ROOT)/scripts $(CWD)/scripts
 
 build: copy-scripts
-	docker build -t gekkofs/deps:0.9.3 .
+	docker build -t gekkofs/deps:0.9.3-rc1 .
 
 build-amd64: copy-scripts
-	docker build --platform amd64 -t gekkofs/deps:0.9.3 .
+	docker build --platform amd64 -t gekkofs/deps:0.9.3-rc1 .
 
 build-aarch64: copy-scripts
-	docker build --platform aarch64 -t gekkofs/deps:0.9.3 .
+	docker build --platform aarch64 -t gekkofs/deps:0.9.3-rc1 .
 
 remove-scripts:
 	- rm -rf $(CWD)/scripts

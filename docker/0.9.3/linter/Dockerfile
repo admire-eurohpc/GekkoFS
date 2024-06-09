@@ -1,4 +1,4 @@
-FROM gekkofs/core:0.9.3
+FROM gekkofs/core:0.9.3-rc1
 
 LABEL Description="Debian-based environment to check the formatting of GekkoFS code"
 

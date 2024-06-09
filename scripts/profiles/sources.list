@@ -39,7 +39,7 @@ sources=(
     ["argobots"]="https://github.com/pmodels/argobots/archive/v{{VERSION}}.tar.gz"
     ["rocksdb"]="https://github.com/facebook/rocksdb/archive/v{{VERSION}}.tar.gz"
     ["rocksdb%experimental"]="https://github.com/facebook/rocksdb/archive/v{{VERSION}}.tar.gz"
-    ["psm2"]="https://github.com/intel/opa-psm2/archive/PSM2_{{VERSION}}.tar.gz"
+    ["psm2"]="https://github.com/cornelisnetworks/opa-psm2/archive/PSM2_{{VERSION}}.tar.gz"
     ["bmi"]="https://github.com/radix-io/bmi/"
     ["libfabric"]="https://github.com/ofiwg/libfabric.git"
     ["libfabric%experimental"]="https://github.com/ofiwg/libfabric.git"
@@ -53,6 +53,7 @@ sources=(
     ["parallax"]="https://github.com/CARV-ICS-FORTH/parallax.git"
     ["prometheus-cpp"]="https://github.com/jupp0r/prometheus-cpp/releases/download/{{VERSION}}/prometheus-cpp-with-submodules.tar.gz"
     ["curl"]="https://curl.se/download/curl-{{VERSION}}.tar.gz"
+    ["ucx"]="https://github.com/openucx/ucx/archive/{{VERSION}}.tar.gz"
 )
 
 
