@@ -1,4 +1,4 @@
-FROM gekkofs/deps:0.9.3
+FROM gekkofs/deps:0.9.3-rc1
 
 LABEL Description="Debian-based environment to test GekkoFS"
 
