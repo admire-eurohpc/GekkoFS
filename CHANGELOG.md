@@ -8,6 +8,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added intercepton of `fadvise64()` and
+  `fallocate()` ([!161](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/161)).
 - Added user library `gkfs_user_lib` that can be used to directly link to an
   application ([!171](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/171)).
 - FMT10 and date removal, several dependencies updated. ([!172](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/172)).
