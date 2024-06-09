@@ -7,7 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 ### New
-- Adding user library `gkfs_user_lib` that can be used to directly link to an application ([!171](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/171)).
+
+- Added user library `gkfs_user_lib` that can be used to directly link to an
+  application ([!171](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/171)).
 - FMT10 and date removal, several dependencies updated. ([!172](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/172)).
 - Fused GekkoFWD and GekkoFS. GekkoFWD is enabled with the `--enable-following` in the server configuration and the ENV variable
     `LIBGKFS_FORWARDING_MAP_FILE` in the clients. ([!170](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/170)).
@@ -18,6 +20,12 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 
 
 ### Changed
+
+- Updated GekkoFS dependencies migrating to
+  margo-shim-hg ([!165](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/165)).
+  - Improves RPC stability
+  - Removes manual updates to Mercury public IDs from Hermes-Mercury to Margo
+
 ### Removed
 ### Fixed
 
