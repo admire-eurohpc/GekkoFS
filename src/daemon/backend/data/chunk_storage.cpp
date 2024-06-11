@@ -36,7 +36,7 @@
 #include <common/path_util.hpp>
 
 #include <cerrno>
-
+#include <algorithm>
 #include <filesystem>
 #include <spdlog/spdlog.h>
 
