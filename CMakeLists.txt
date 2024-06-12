@@ -320,6 +320,9 @@ include_directories(
 add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(examples)
+if (GKFS_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif ()
 
 ### Mark any CMake variables imported from {fmt} and spdlog as advanced, so
 ### that they don't appear in cmake-gui or ccmake. Similarly for FETCHCONTENT

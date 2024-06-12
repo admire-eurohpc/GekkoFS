@@ -315,8 +315,8 @@ destroy_preload() {
         destroy_forwarding_mapper();
     }
 #ifdef GKFS_ENABLE_CLIENT_METRICS
-//    CTX->write_metrics().flush_msgpack();
-//    CTX->read_metrics().flush_msgpack();
+    CTX->write_metrics().flush_msgpack();
+    CTX->read_metrics().flush_msgpack();
 #endif
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");

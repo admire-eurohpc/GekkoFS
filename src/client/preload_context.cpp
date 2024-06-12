@@ -130,9 +130,9 @@ PreloadContext::init_metrics() {
                 gkfs::env::get_var(gkfs::env::METRICS_PATH,
                                    gkfs::config::metrics::client_metrics_path);
         std::filesystem::create_directories(metrics_path);
-        write_metrics_->path(metrics_path);
+        write_metrics_->path(metrics_path, "write");
         LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
-        read_metrics_->path(metrics_path);
+        read_metrics_->path(metrics_path, "read");
         LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
         // TODO metrics interval
     }

@@ -44,7 +44,7 @@ enum class client_metric_type { write, read };
 class ClientMetrics {
 
 public:
-    std::mutex mtx_{};
+    //    std::mutex mtx_{};
     //    std::thread thread_{};
 
     std::chrono::time_point<std::chrono::system_clock> init_t_;
@@ -92,7 +92,7 @@ public:
     path() const;
 
     void
-    path(const std::string& path, const std::string& prefix = "");
+    path(const std::string& path, const std::string prefix = "");
 };
 
 } // namespace gkfs::messagepack

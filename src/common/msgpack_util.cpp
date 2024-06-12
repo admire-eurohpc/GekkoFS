@@ -1,31 +1,32 @@
 /*
-Copyright 2018-2023, Barcelona Supercomputing Center (BSC), Spain
-Copyright 2015-2023, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2023, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2023, Johannes Gutenberg Universitaet Mainz, Germany
 
-This software was partially supported by the
-                      EC H2020 funded project NEXTGenIO (Project ID: 671951,
-www.nextgenio.eu).
+  This software was partially supported by the
+  EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
 
-              This software was partially supported by the
-              ADA-FS project under the SPPEXA project funded by the DFG.
+  This software was partially supported by the
+  ADA-FS project under the SPPEXA project funded by the DFG.
 
-                        This file is part of GekkoFS.
+  This file is part of GekkoFS' POSIX interface.
 
-                        GekkoFS is free software: you can redistribute it and/or
-modify it under the terms of the GNU General Public License as published by the
-Free Software Foundation, either version 3 of the License, or (at your option)
-any later version.
+  GekkoFS' POSIX interface is free software: you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of the License,
+  or (at your option) any later version.
 
-                                               GekkoFS is distributed in the
-hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+  GekkoFS' POSIX interface is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with GekkoFS.  If not, see <https://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public License
+  along with GekkoFS' POSIX interface.  If not, see
+  <https://www.gnu.org/licenses/>.
 
-SPDX-License-Identifier: GPL-3.0-or-later
+  SPDX-License-Identifier: LGPL-3.0-or-later
 */
+
 
 #include <common/msgpack_util.hpp>
 #include <common/rpc/rpc_util.hpp>
@@ -107,7 +108,7 @@ ClientMetrics::path() const {
     return path_;
 }
 void
-ClientMetrics::path(const string& path, const string& prefix) {
+ClientMetrics::path(const string& path, const string prefix) {
     const std::time_t t = std::chrono::system_clock::to_time_t(init_t_);
     std::stringstream init_t_stream;
     init_t_stream << std::put_time(std::localtime(&t), "%F_%T");

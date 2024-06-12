@@ -227,6 +227,13 @@ gkfs_define_option(
   DEFAULT_VALUE OFF
 )
 
+# build tools
+gkfs_define_option(
+    GKFS_BUILD_TOOLS
+    HELP_TEXT "Enable ${PROJECT_NAME} tools compilation"
+    DEFAULT_VALUE OFF
+)
+
 cmake_dependent_option(GKFS_INSTALL_TESTS "Install GekkoFS self tests" OFF "GKFS_BUILD_TESTS" OFF)
 
 
