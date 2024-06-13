@@ -874,7 +874,8 @@ gkfs_dup2(const int oldfd, const int newfd) {
  * @return written size or -1 on error
  */
 ssize_t
-gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off64_t offset, bool update_pos) {
+gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
+              off64_t offset, bool update_pos) {
     if(file.type() != gkfs::filemap::FileType::regular) {
         assert(file.type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot write to directory");
@@ -954,7 +955,8 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off6
  * @return written size or -1 on error
  */
 ssize_t
-gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count, off64_t offset, bool update_pos) {
+gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
+              off64_t offset, bool update_pos) {
 #ifdef GKFS_ENABLE_CLIENT_METRICS
     auto start_t = std::chrono::high_resolution_clock::now();
     auto written = gkfs_do_write(file, buf, count, offset, update_pos);
@@ -1069,7 +1071,8 @@ gkfs_writev(int fd, const struct iovec* iov, int iovcnt) {
  * @return read size or -1 on error
  */
 ssize_t
-gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count, off64_t offset) {
+gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
+             off64_t offset) {
     if(file.type() != gkfs::filemap::FileType::regular) {
         assert(file.type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot read from directory");
@@ -1119,7 +1122,8 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count, off64
  * @return read size or -1 on error
  */
 ssize_t
-gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count, off64_t offset) {
+gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
+             off64_t offset) {
 #ifdef GKFS_ENABLE_CLIENT_METRICS
     auto start_t = std::chrono::high_resolution_clock::now();
     auto read = gkfs_do_read(file, buf, count, offset);
