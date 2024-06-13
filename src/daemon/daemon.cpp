@@ -373,9 +373,7 @@ agios_initialize() {
  */
 void
 destroy_enviroment() {
-    GKFS_DATA->spdlogger()->debug("{}() Removing mount directory", __func__);
     std::error_code ecode;
-    fs::remove_all(GKFS_DATA->mountdir(), ecode);
     GKFS_DATA->spdlogger()->debug("{}() Freeing I/O executions streams",
                                   __func__);
     for(unsigned int i = 0; i < RPC_DATA->io_streams().size(); i++) {
