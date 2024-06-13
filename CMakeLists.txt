@@ -31,7 +31,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(
     GekkoFS
-    VERSION 0.9.2
+    VERSION 0.9.3
     LANGUAGES ASM CXX C
 )
 
@@ -170,7 +170,7 @@ endif()
 if (GKFS_ENABLE_CLIENT_METRICS)
     ### zeromq: required for sending client metrics to FTIO
     message(STATUS "[${PROJECT_NAME}] Checking for cppzmq")
-    find_package(cppzmq)
+    find_package(cppzmq REQUIRED)
 endif ()
 
 ### Metadata backends
@@ -224,6 +224,7 @@ find_package(Filesystem REQUIRED)
 set(GKFS_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/external)
 
 ### {fmt}: required for sensible output formatting
+set(FMT_INSTALL OFF)
 include_from_source(fmt
   MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
   SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
