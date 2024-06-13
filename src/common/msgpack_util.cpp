@@ -40,6 +40,7 @@
 #include <config.hpp>
 
 extern "C" {
+#include <unistd.h>
 #include <fcntl.h>
 }
 
