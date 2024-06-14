@@ -128,5 +128,7 @@ if (GKFS_ENABLE_CLIENT_METRICS)
         Msgpack::Msgpack
         cppzmq
         rpc_utils
+        PRIVATE
+        fmt::fmt
     )
 endif ()

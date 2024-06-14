@@ -300,12 +300,10 @@ init_preload() {
 
     gkfs::preload::start_interception();
     errno = oerrno;
-#ifdef GKFS_ENABLE_CLIENT_METRICS
     if(!CTX->init_metrics()) {
         exit_error_msg(EXIT_FAILURE,
                        "Unable to initialize client metrics. Exiting...");
     }
-#endif
 }
 
 /**

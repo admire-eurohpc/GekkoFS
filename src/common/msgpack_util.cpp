@@ -33,11 +33,16 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <mutex>
+#include <ratio>
+#include <sstream>
 #include <thread>
 #include <chrono>
 
 #include <config.hpp>
+#include <zmq.hpp>
+#include <fmt/format.h>
 
 extern "C" {
 #include <unistd.h>
@@ -94,11 +99,7 @@ ClientMetrics::add_event(
     auto start_offset =
             std::chrono::duration<double, std::micro>(start - init_t_);
     auto end_offset = std::chrono::duration<double, std::micro>(end - init_t_);
-    auto duration = std::chrono::duration<double, std::micro>(end_offset -
-                                                              start_offset);
     msgpack_data_.total_bytes_ += size;
-    //    auto size_mib = size / (1024 * 1024);      // in MiB
-    //    auto duration_s = duration.count() / 1000; // in seconds
     // throw away decimals
     msgpack_data_.start_t_.emplace_back(
             static_cast<size_t>(start_offset.count()));
@@ -133,12 +134,16 @@ ClientMetrics::flush_msgpack() {
         auto fd =
                 open(flush_path_.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0666);
         if(fd < 0) {
-            //        cout << "error open" << endl;
-            exit(1);
+            std::cerr << "Error opening file to flush client metrics\n";
+            return;
         }
-        write(fd, data.data(), data.size());
-        //    auto written = write(fd, data.data(), data.size());
-        //    cout << "written: " << written << endl;
+        size_t written_total = 0;
+        auto size = data.size();
+        auto buf = data.data();
+        do {
+            written_total +=
+                    write(fd, buf + written_total, size - written_total);
+        } while(written_total != size);
         close(fd);
     } else {
         zmq::message_t message(data.size());
@@ -146,7 +151,7 @@ ClientMetrics::flush_msgpack() {
         memcpy(message.data(), data.data(), data.size());
         // non-blocking zmq send
         if(zmq_flush_socket_->send(message, zmq::send_flags::none) == -1) {
-            std::cerr << "Failed to send zmq message" << std::endl;
+            std::cerr << "Failed to send zmq message\n";
         }
     }
     reset_metrics();
@@ -195,9 +200,9 @@ ClientMetrics::path(const string& path, const string prefix) {
     const std::time_t t = std::chrono::system_clock::to_time_t(init_t_);
     std::stringstream init_t_stream;
     init_t_stream << std::put_time(std::localtime(&t), "%F_%T");
-    flush_path_ = path + "/" + prefix + "_" + init_t_stream.str() + "_" +
-                  msgpack_data_.hostname_ + "_" +
-                  to_string(msgpack_data_.pid_) + ".msgpack";
+    flush_path_ = fmt::format("{}/{}_{}_{}_{}.msgpack", path, prefix,
+                              init_t_stream.str(), msgpack_data_.hostname_,
+                              msgpack_data_.pid_);
 }
 int
 ClientMetrics::flush_count() const {
