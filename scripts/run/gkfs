@@ -141,9 +141,18 @@ start_daemon() {
         fi
     else
         NODE_NUM=1
+        if [[ ${USE_PROXY} == true ]]; then
+            NODE_NUM_PROXY=$NODE_NUM
+        fi
     fi
 
     if [[ ${VERBOSE} == true ]]; then
+        echo -e "${C_AST_GREEN}-------------------CLIENT SETTINGS------------------------"
+        echo -e "${C_AST_GREEN}Set env variables for client: "
+        echo -e "LD_PRELOAD=${PRELOAD_LIB}"
+        echo -e "LIBGKFS_HOSTS_FILE=${HOSTSFILE}"
+        echo -e "LIBGKFS_PROXY_PID_FILE=${PROXY_LOCAL_PID_FILE}"
+        echo -e "${C_AST_GREEN}----------------------------------------------------------"
         echo -e "${C_AST_GREEN}mountdir: ${MOUNTDIR}"
         echo -e "${C_AST_GREEN}rootdir: ${ROOTDIR}"
         echo -e "${C_AST_GREEN}node_num: ${NODE_NUM}"
@@ -393,6 +402,15 @@ RUN_FOREGROUND=false
 DAEMON_AFFINITY_=${DAEMON_AFFINITY}
 PROXY_AFFINITY_=${PROXY_AFFINITY}
 USE_PROXY=${USE_PROXY}
+# use absolute paths for everything
+DAEMON_BIN=$(readlink -f ${DAEMON_BIN})
+PROXY_BIN=$(readlink -f ${PROXY_BIN})
+PRELOAD_LIB=$(readlink -f ${PRELOAD_LIB})
+HOSTSFILE=$(readlink -f ${HOSTSFILE})
+PROXY_LOCAL_PID_FILE=$(readlink -f ${PROXY_LOCAL_PID_FILE})
+SRUN_DAEMON_PID_FILE=$(readlink -f ${SRUN_DAEMON_PID_FILE})
+SRUN_PROXY_PID_FILE=$(readlink -f ${SRUN_PROXY_PID_FILE})
+
 # parse input
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
