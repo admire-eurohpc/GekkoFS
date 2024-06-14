@@ -33,7 +33,9 @@
 #include <client/logging.hpp>
 #include <client/gkfs_functions.hpp>
 #include <client/rpc/forward_metadata.hpp>
+#include <client/rpc/forward_metadata_proxy.hpp>
 #include <client/rpc/forward_data.hpp>
+#include <client/rpc/forward_data_proxy.hpp>
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
@@ -299,24 +301,33 @@ gkfs_create(const std::string& path, mode_t mode) {
             return -1;
     }
 
-    if(check_parent_dir(path)) {
-        return -1;
-    }
-    // Write to all replicas, at least one need to success
-    bool success = false;
-    for(auto copy = 0; copy < CTX->get_replicas() + 1; copy++) {
-        auto err = gkfs::rpc::forward_create(path, mode, copy);
+    // if(check_parent_dir(path)) {
+    //     return -1;
+    // }
+    int err = 0;
+    if(gkfs::config::proxy::fwd_create && CTX->use_proxy()) {
+        // no replication support for proxy
+        err = gkfs::rpc::forward_create_proxy(path, mode);
         if(err) {
             errno = err;
-        } else {
-            success = true;
-            errno = 0;
+            return -1;
+        }
+    } else {
+        // Write to all replicas, at least one need to success
+        bool success = false;
+        for(auto copy = 0; copy < CTX->get_replicas() + 1; copy++) {
+            err = gkfs::rpc::forward_create(path, mode, copy);
+            if(err) {
+                errno = err;
+            } else {
+                success = true;
+                errno = 0;
+            }
+        }
+        if(!success) {
+            return -1;
         }
     }
-    if(!success) {
-        return -1;
-    }
-
     return 0;
 }
 
@@ -363,8 +374,12 @@ gkfs_remove(const std::string& path) {
     }
 #endif // HAS_RENAME
 #endif // HAS_SYMLINKS
-
-    auto err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    int err = 0;
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_remove_proxy(path);
+    } else {
+        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    }
     if(err) {
         errno = err;
         return -1;
@@ -593,8 +608,12 @@ gkfs_statx(int dirfs, const std::string& path, int flags, unsigned int mask,
  */
 int
 gkfs_statfs(struct statfs* buf) {
-
-    auto ret = gkfs::rpc::forward_get_chunk_stat();
+    pair<int, rpc::ChunkStat> ret;
+    if(gkfs::config::proxy::fwd_chunk_stat && CTX->use_proxy()) {
+        ret = gkfs::rpc::forward_get_chunk_stat_proxy();
+    } else {
+        ret = gkfs::rpc::forward_get_chunk_stat();
+    }
     auto err = ret.first;
     if(err) {
         LOG(ERROR, "{}() Failure with error: '{}'", err);
@@ -887,8 +906,14 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     auto write_size = 0;
     auto num_replicas = CTX->get_replicas();
 
-    auto ret_offset = gkfs::rpc::forward_update_metadentry_size(
-            *path, count, offset, is_append, num_replicas);
+    pair<int, long> ret_offset;
+    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size_proxy(
+                *path, count, offset, is_append);
+    } else {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size(
+                *path, count, offset, is_append, num_replicas);
+    }
     auto err = ret_offset.first;
     if(err) {
         LOG(ERROR, "update_metadentry_size() failed with err '{}'", err);
@@ -910,7 +935,13 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
         offset = ret_offset.second;
     }
 
-    auto ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
+    pair<int, long> ret_write;
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy() &&
+       count > gkfs::config::proxy::fwd_io_count_threshold) {
+        ret_write = gkfs::rpc::forward_write_proxy(*path, buf, offset, count);
+    } else {
+        ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
+    }
     err = ret_write.first;
     write_size = ret_write.second;
 
@@ -1085,24 +1116,29 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
     if constexpr(gkfs::config::io::zero_buffer_before_read) {
         memset(buf, 0, sizeof(char) * count);
     }
-    std::pair<int, off_t> ret;
-    std::set<int8_t> failed; // set with failed targets.
-    if(CTX->get_replicas() != 0) {
 
-        ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
-                                      CTX->get_replicas(), failed);
-        while(ret.first == EIO) {
+    pair<int, long> ret;
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy() &&
+       count > gkfs::config::proxy::fwd_io_count_threshold) {
+        ret = gkfs::rpc::forward_read_proxy(file.path(), buf, offset, count);
+    } else {
+        std::set<int8_t> failed; // set with failed targets.
+        if(CTX->get_replicas() != 0) {
+
             ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
                                           CTX->get_replicas(), failed);
-            LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
-                ret.first);
+            while(ret.first == EIO) {
+                ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
+                                              CTX->get_replicas(), failed);
+                LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
+                    ret.first);
+            }
+
+        } else {
+            ret = gkfs::rpc::forward_read(file.path(), buf, offset, count, 0,
+                                          failed);
         }
-
-    } else {
-        ret = gkfs::rpc::forward_read(file.path(), buf, offset, count, 0,
-                                      failed);
     }
-
     auto err = ret.first;
     if(err) {
         LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'", err);
@@ -1586,7 +1622,14 @@ extern "C" int
 gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
                         unsigned int count, int server) {
 
-    auto ret = gkfs::rpc::forward_get_dirents_single(path, server);
+    pair<int, vector<tuple<const basic_string<char>, bool, size_t, time_t>>>
+            ret{};
+    if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
+        ret = gkfs::rpc::forward_get_dirents_single_proxy(path, server);
+    } else {
+        ret = gkfs::rpc::forward_get_dirents_single(path, server);
+    }
+
     auto err = ret.first;
     if(err) {
         errno = err;

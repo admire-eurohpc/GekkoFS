@@ -56,7 +56,10 @@ namespace gkfs::rpc {
  */
 int
 forward_create(const std::string& path, const mode_t mode, const int copy) {
-
+    if(gkfs::config::proxy::fwd_create && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -88,7 +91,10 @@ forward_create(const std::string& path, const mode_t mode, const int copy) {
  */
 int
 forward_stat(const std::string& path, string& attr, const int copy) {
-
+    if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -130,6 +136,10 @@ forward_stat(const std::string& path, string& attr, const int copy) {
  */
 int
 forward_remove(const std::string& path, const int8_t num_copies) {
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     int64_t size = 0;
     uint32_t mode = 0;
 
@@ -283,7 +293,10 @@ forward_remove(const std::string& path, const int8_t num_copies) {
  */
 int
 forward_decr_size(const std::string& path, size_t length, const int copy) {
-
+    if(CTX->use_proxy()) {
+        LOG(WARNING, "{} is run due to missing proxy implementation!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -515,7 +528,10 @@ pair<int, off64_t>
 forward_update_metadentry_size(const string& path, const size_t size,
                                const off64_t offset, const bool append_flag,
                                const int num_copies) {
-
+    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     std::vector<hermes::rpc_handle<gkfs::rpc::update_metadentry_size>> handles;
 
     for(auto copy = 0; copy < num_copies + 1; copy++) {
@@ -579,7 +595,10 @@ forward_update_metadentry_size(const string& path, const size_t size,
  */
 pair<int, off64_t>
 forward_get_metadentry_size(const std::string& path, const int copy) {
-
+    if(CTX->use_proxy()) {
+        LOG(WARNING, "{} is run due to missing proxy implementation!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -614,6 +633,11 @@ forward_get_metadentry_size(const std::string& path, const int copy) {
  */
 pair<int, shared_ptr<gkfs::filemap::OpenDir>>
 forward_get_dirents(const string& path) {
+
+    if(CTX->use_proxy()) {
+        LOG(WARNING, "{} is run due to missing proxy implementation!",
+            __func__);
+    }
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 
@@ -760,6 +784,11 @@ forward_get_dirents(const string& path) {
  */
 pair<int, vector<tuple<const std::string, bool, size_t, time_t>>>
 forward_get_dirents_single(const string& path, int server) {
+
+    if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 

@@ -30,9 +30,7 @@
 
 using namespace std;
 
-namespace gkfs {
-
-namespace daemon {
+namespace gkfs::daemon {
 
 // Getter/Setter
 
@@ -44,6 +42,16 @@ RPCData::server_rpc_mid() {
 void
 RPCData::server_rpc_mid(margo_instance* server_rpc_mid) {
     RPCData::server_rpc_mid_ = server_rpc_mid;
+}
+
+margo_instance*
+RPCData::proxy_server_rpc_mid() {
+    return proxy_server_rpc_mid_;
+}
+
+void
+RPCData::proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid) {
+    RPCData::proxy_server_rpc_mid_ = proxy_server_rpc_mid;
 }
 
 ABT_pool
@@ -76,6 +84,16 @@ RPCData::self_addr_str(const std::string& addr_str) {
     self_addr_str_ = addr_str;
 }
 
+const std::string&
+RPCData::self_proxy_addr_str() const {
+    return self_proxy_addr_str_;
+}
+
+void
+RPCData::self_proxy_addr_str(const std::string& proxy_addr_str) {
+    self_proxy_addr_str_ = proxy_addr_str;
+}
+
 const std::shared_ptr<gkfs::rpc::Distributor>&
 RPCData::distributor() const {
     return distributor_;
@@ -87,6 +105,4 @@ RPCData::distributor(
     distributor_ = distributor;
 }
 
-
-} // namespace daemon
-} // namespace gkfs
+} // namespace gkfs::daemon

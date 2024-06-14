@@ -785,6 +785,13 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
                     reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
             break;
 
+        case SYS_lgetxattr:
+            *result = gkfs::hook::hook_lgetxattr(
+                    reinterpret_cast<const char*>(arg0),
+                    reinterpret_cast<const char*>(arg1),
+                    reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
+            break;
+
         case SYS_fallocate:
             *result = gkfs::hook::hook_fallocate(
                     static_cast<int>(arg0), static_cast<int>(arg1),

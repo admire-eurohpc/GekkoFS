@@ -350,6 +350,41 @@ PreloadContext::relativize_path(const char* raw_path,
     return gkfs::path::resolve(path, relative_path, resolve_last_link);
 }
 
+const std::string&
+PreloadContext::proxy_address_str() const {
+    return proxy_address_str_;
+}
+
+void
+PreloadContext::proxy_address_str(const std::string& proxy_address_str) {
+    proxy_address_str_ = proxy_address_str;
+}
+
+const hermes::endpoint&
+PreloadContext::proxy_host() const {
+    return proxy_host_;
+}
+
+void
+PreloadContext::proxy_host(const hermes::endpoint& proxy_host) {
+    proxy_host_ = proxy_host;
+}
+
+void
+PreloadContext::clear_proxy_host() {
+    proxy_host_ = {};
+}
+
+bool
+PreloadContext::use_proxy() const {
+    return use_proxy_;
+}
+
+void
+PreloadContext::use_proxy(bool use_proxy) {
+    use_proxy_ = use_proxy;
+}
+
 const std::shared_ptr<gkfs::filemap::OpenFileMap>&
 PreloadContext::file_map() const {
     return ofm_;

@@ -206,6 +206,9 @@ int
 hook_getxattr(const char* path, const char* name, void* value, size_t size);
 
 int
+hook_lgetxattr(const char* path, const char* name, void* value, size_t size);
+
+int
 hook_fallocate(int fd, int mode, off_t offset, off_t len);
 
 int

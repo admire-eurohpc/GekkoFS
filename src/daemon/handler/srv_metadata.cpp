@@ -311,7 +311,8 @@ rpc_srv_remove_data(hg_handle_t handle) {
 
     // Remove all chunks for that file
     try {
-        GKFS_DATA->storage()->destroy_chunk_space(in.path);
+        if(!gkfs::config::limbo_mode)
+            GKFS_DATA->storage()->destroy_chunk_space(in.path);
         out.err = 0;
     } catch(const gkfs::data::ChunkStorageException& e) {
         GKFS_DATA->spdlogger()->error(
@@ -435,8 +436,9 @@ rpc_srv_update_metadentry_size(hg_handle_t handle) {
         out.err = EBUSY;
     }
 
-    GKFS_DATA->spdlogger()->debug("{}() Sending output '{}'", __func__,
-                                  out.err);
+    GKFS_DATA->spdlogger()->debug(
+            "{}() Sending output err '{}' ret_offset '{}'", __func__, out.err,
+            out.ret_offset);
     auto hret = margo_respond(handle, &out);
     if(hret != HG_SUCCESS) {
         GKFS_DATA->spdlogger()->error("{}() Failed to respond", __func__);

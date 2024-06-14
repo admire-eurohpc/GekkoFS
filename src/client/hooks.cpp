@@ -983,6 +983,20 @@ hook_getxattr(const char* path, const char* name, void* value, size_t size) {
     return syscall_no_intercept_wrapper(SYS_getxattr, path, name, value, size);
 }
 
+int
+hook_lgetxattr(const char* path, const char* name, void* value, size_t size) {
+
+    LOG(DEBUG, "{}() called with path '{}' name '{}' value '{}' size '{}'",
+        __func__, path, name, fmt::ptr(value), size);
+
+    std::string rel_path;
+    if(CTX->relativize_path(path, rel_path)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_lgetxattr, path, name, value,
+                                            size);
+}
+
 
 int
 hook_fallocate(int fd, int mode, off_t offset, off_t len) {

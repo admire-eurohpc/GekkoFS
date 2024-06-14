@@ -61,6 +61,7 @@ class async_engine;
 }
 
 extern std::unique_ptr<hermes::async_engine> ld_network_service;
+extern std::unique_ptr<hermes::async_engine> ld_proxy_service;
 
 // function definitions
 namespace gkfs::utils {
@@ -89,6 +90,13 @@ read_hosts_file();
 void
 connect_to_hosts(const std::vector<std::pair<std::string, std::string>>& hosts);
 
+void
+check_for_proxy();
+
+void
+lookup_proxy_addr();
+
 } // namespace gkfs::utils
+
 
 #endif // GEKKOFS_PRELOAD_UTIL_HPP

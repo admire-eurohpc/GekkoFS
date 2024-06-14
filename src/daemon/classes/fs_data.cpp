@@ -131,6 +131,15 @@ FsData::rpc_protocol(const std::string& rpc_protocol) {
 }
 
 const std::string&
+FsData::proxy_rpc_protocol() const {
+    return proxy_rpc_protocol_;
+}
+void
+FsData::proxy_rpc_protocol(const std::string& proxy_rpc_protocol) {
+    proxy_rpc_protocol_ = proxy_rpc_protocol;
+}
+
+const std::string&
 FsData::bind_addr() const {
     return bind_addr_;
 }
@@ -138,6 +147,16 @@ FsData::bind_addr() const {
 void
 FsData::bind_addr(const std::string& addr) {
     bind_addr_ = addr;
+}
+
+const std::string&
+FsData::bind_proxy_addr() const {
+    return bind_proxy_addr_;
+}
+
+void
+FsData::bind_proxy_addr(const std::string& proxy_addr) {
+    bind_proxy_addr_ = proxy_addr;
 }
 
 const std::string&

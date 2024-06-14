@@ -49,8 +49,10 @@ target_sources(gkfs_intercept
           preload_util.cpp
           rpc/rpc_types.cpp
           rpc/forward_data.cpp
+          rpc/forward_data_proxy.cpp
           rpc/forward_management.cpp
           rpc/forward_metadata.cpp
+          rpc/forward_metadata_proxy.cpp
           syscalls/detail/syscall_info.c)
 
 target_sources(
@@ -67,8 +69,10 @@ target_sources(
           preload_util.cpp
           rpc/rpc_types.cpp
           rpc/forward_data.cpp
+	      rpc/forward_data_proxy.cpp
           rpc/forward_management.cpp
           rpc/forward_metadata.cpp
+		  rpc/forward_metadata_proxy.cpp
           syscalls/detail/syscall_info.c syscalls/util.S
 )
 

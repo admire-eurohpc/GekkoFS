@@ -382,6 +382,7 @@ ChunkReadOperation::read_nonblock(size_t idx, const uint64_t chunk_id,
     task_arg.size = size;
     task_arg.off = offset;
     task_arg.eventual = task_eventuals_[idx];
+    task_arg.bulk_transfer_done = false;
 
     abt_err = ABT_task_create(RPC_DATA->io_pool(), read_file_abt,
                               &task_args_[idx], &abt_tasks_[idx]);
@@ -407,60 +408,141 @@ ChunkReadOperation::wait_for_tasks_and_push_back(const bulk_args& args) {
      * longer be executed as the data would be corrupted The loop continues
      * until all eventuals have been cleaned and freed.
      */
-    for(uint64_t idx = 0; idx < task_args_.size(); idx++) {
-        ssize_t* task_size = nullptr;
-        auto abt_err =
-                ABT_eventual_wait(task_eventuals_[idx], (void**) &task_size);
-        if(abt_err != ABT_SUCCESS) {
-            GKFS_DATA->spdlogger()->error(
-                    "ChunkReadOperation::{}() Error when waiting on ABT eventual",
-                    __func__);
-            io_err = EIO;
-            ABT_eventual_free(&task_eventuals_[idx]);
-            continue;
-        }
-        // error occured. stop processing but clean up
-        if(io_err != 0) {
-            ABT_eventual_free(&task_eventuals_[idx]);
-            continue;
-        }
-        assert(task_size != nullptr);
-        if(*task_size < 0) {
-            // sparse regions do not have chunk files and are therefore skipped
-            if(-(*task_size) == ENOENT) {
+    // TODO refactor both if/else. They have redundant code.
+    if(gkfs::config::io::spin_lock_read) {
+        uint64_t bulk_transfer_cnt = 0;
+        do {
+            for(uint64_t idx = 0; idx < task_args_.size(); idx++) {
+                if(task_args_[idx].bulk_transfer_done)
+                    continue;
+                ssize_t* task_size = nullptr;
+                int is_ready = 0;
+                auto abt_err = ABT_eventual_test(
+                        task_eventuals_[idx], (void**) &task_size, &is_ready);
+                if(abt_err != ABT_SUCCESS) {
+                    GKFS_DATA->spdlogger()->error(
+                            "ChunkReadOperation::{}() Error when testing on ABT eventual",
+                            __func__);
+                    io_err = EIO;
+                    bulk_transfer_cnt = task_args_.size();
+                    ABT_eventual_free(&task_eventuals_[idx]);
+                    continue;
+                }
+                // not ready yet, try next
+                if(is_ready == ABT_FALSE)
+                    continue;
+                // error occured. stop processing but clean up
+                if(io_err != 0) {
+                    task_args_[idx].bulk_transfer_done = true;
+                    bulk_transfer_cnt++;
+                    ABT_eventual_free(&task_eventuals_[idx]);
+                    continue;
+                }
+                assert(task_size != nullptr);
+                if(*task_size < 0) {
+                    // sparse regions do not have chunk files and are therefore
+                    // skipped
+                    if(-(*task_size) == ENOENT) {
+                        task_args_[idx].bulk_transfer_done = true;
+                        bulk_transfer_cnt++;
+                        ABT_eventual_free(&task_eventuals_[idx]);
+                        continue;
+                    }
+                    io_err = -(*task_size); // make error code > 0
+                } else if(*task_size == 0) {
+                    // read size of 0 is not an error and can happen because
+                    // reading the end-of-file
+                    task_args_[idx].bulk_transfer_done = true;
+                    bulk_transfer_cnt++;
+                    ABT_eventual_free(&task_eventuals_[idx]);
+                    continue;
+                } else {
+                    // successful case, push read data back to client
+                    GKFS_DATA->spdlogger()->trace(
+                            "ChunkReadOperation::{}() BULK_TRANSFER_PUSH file '{}' chnkid '{}' origin offset '{}' local offset '{}' transfersize '{}'",
+                            __func__, path_, args.chunk_ids->at(idx),
+                            args.origin_offsets->at(idx),
+                            args.local_offsets->at(idx), *task_size);
+                    assert(task_args_[idx].chnk_id == args.chunk_ids->at(idx));
+                    auto margo_err = margo_bulk_transfer(
+                            args.mid, HG_BULK_PUSH, args.origin_addr,
+                            args.origin_bulk_handle,
+                            args.origin_offsets->at(idx),
+                            args.local_bulk_handle, args.local_offsets->at(idx),
+                            *task_size);
+                    if(margo_err != HG_SUCCESS) {
+                        GKFS_DATA->spdlogger()->error(
+                                "ChunkReadOperation::{}() Failed to margo_bulk_transfer with margo err: '{}'",
+                                __func__, margo_err);
+                        io_err = EBUSY;
+                        continue;
+                    }
+                    total_read += *task_size;
+                }
+                task_args_[idx].bulk_transfer_done = true;
+                bulk_transfer_cnt++;
+                ABT_eventual_free(&task_eventuals_[idx]);
+            }
+        } while(bulk_transfer_cnt != task_args_.size());
+    } else {
+        for(uint64_t idx = 0; idx < task_args_.size(); idx++) {
+            ssize_t* task_size = nullptr;
+            auto abt_err = ABT_eventual_wait(task_eventuals_[idx],
+                                             (void**) &task_size);
+            if(abt_err != ABT_SUCCESS) {
+                GKFS_DATA->spdlogger()->error(
+                        "ChunkReadOperation::{}() Error when waiting on ABT eventual",
+                        __func__);
+                io_err = EIO;
                 ABT_eventual_free(&task_eventuals_[idx]);
                 continue;
             }
-            io_err = -(*task_size); // make error code > 0
-        } else if(*task_size == 0) {
-            // read size of 0 is not an error and can happen because reading the
-            // end-of-file
-            ABT_eventual_free(&task_eventuals_[idx]);
-            continue;
-        } else {
-            // successful case, push read data back to client
-            GKFS_DATA->spdlogger()->trace(
-                    "ChunkReadOperation::{}() BULK_TRANSFER_PUSH file '{}' chnkid '{}' origin offset '{}' local offset '{}' transfersize '{}'",
-                    __func__, path_, args.chunk_ids->at(idx),
-                    args.origin_offsets->at(idx), args.local_offsets->at(idx),
-                    *task_size);
-            assert(task_args_[idx].chnk_id == args.chunk_ids->at(idx));
-            auto margo_err = margo_bulk_transfer(
-                    args.mid, HG_BULK_PUSH, args.origin_addr,
-                    args.origin_bulk_handle, args.origin_offsets->at(idx),
-                    args.local_bulk_handle, args.local_offsets->at(idx),
-                    *task_size);
-            if(margo_err != HG_SUCCESS) {
-                GKFS_DATA->spdlogger()->error(
-                        "ChunkReadOperation::{}() Failed to margo_bulk_transfer with margo err: '{}'",
-                        __func__, margo_err);
-                io_err = EBUSY;
+            // error occured. stop processing but clean up
+            if(io_err != 0) {
+                ABT_eventual_free(&task_eventuals_[idx]);
                 continue;
             }
-            total_read += *task_size;
+            assert(task_size != nullptr);
+            if(*task_size < 0) {
+                // sparse regions do not have chunk files and are therefore
+                // skipped
+                if(-(*task_size) == ENOENT) {
+                    ABT_eventual_free(&task_eventuals_[idx]);
+                    continue;
+                }
+                io_err = -(*task_size); // make error code > 0
+            } else if(*task_size == 0) {
+                // read size of 0 is not an error and can happen because reading
+                // the end-of-file
+                ABT_eventual_free(&task_eventuals_[idx]);
+                continue;
+            } else {
+                // successful case, push read data back to client
+                GKFS_DATA->spdlogger()->trace(
+                        "ChunkReadOperation::{}() BULK_TRANSFER_PUSH file '{}' chnkid '{}' origin offset '{}' local offset '{}' transfersize '{}'",
+                        __func__, path_, args.chunk_ids->at(idx),
+                        args.origin_offsets->at(idx),
+                        args.local_offsets->at(idx), *task_size);
+                assert(task_args_[idx].chnk_id == args.chunk_ids->at(idx));
+                auto margo_err = margo_bulk_transfer(
+                        args.mid, HG_BULK_PUSH, args.origin_addr,
+                        args.origin_bulk_handle, args.origin_offsets->at(idx),
+                        args.local_bulk_handle, args.local_offsets->at(idx),
+                        *task_size);
+                if(margo_err != HG_SUCCESS) {
+                    GKFS_DATA->spdlogger()->error(
+                            "ChunkReadOperation::{}() Failed to margo_bulk_transfer with margo err: '{}'",
+                            __func__, margo_err);
+                    io_err = EBUSY;
+                    continue;
+                }
+                total_read += *task_size;
+            }
+            ABT_eventual_free(&task_eventuals_[idx]);
         }
-        ABT_eventual_free(&task_eventuals_[idx]);
     }
+
+
     // in case of error set read size to zero as data would be corrupted
     if(io_err != 0)
         total_read = 0;

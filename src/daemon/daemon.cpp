@@ -59,6 +59,7 @@
 #include <fstream>
 #include <csignal>
 #include <condition_variable>
+#include <cstdlib>
 
 extern "C" {
 #include <unistd.h>
@@ -84,6 +85,8 @@ struct cli_options {
     string parallax_size;
     string stats_file;
     string prometheus_gateway;
+    string proxy_protocol;
+    string proxy_listen;
 };
 
 /**
@@ -232,6 +235,101 @@ init_rpc_server() {
     register_server_rpcs(mid);
 }
 
+void
+register_proxy_server_rpcs(margo_instance_id mid) {
+    //    MARGO_REGISTER(mid, gkfs::rpc::tag::write, rpc_write_data_in_t,
+    //                   rpc_data_out_t, rpc_srv_write);
+    //    MARGO_REGISTER(mid, gkfs::rpc::tag::read, rpc_read_data_in_t,
+    //                   rpc_data_out_t, rpc_srv_read);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::get_chunk_stat, rpc_chunk_stat_in_t,
+                   rpc_chunk_stat_out_t, rpc_srv_get_chunk_stat);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::create, rpc_mk_node_in_t, rpc_err_out_t,
+                   rpc_srv_create);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::stat, rpc_path_only_in_t,
+                   rpc_stat_out_t, rpc_srv_stat);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::remove_metadata, rpc_rm_node_in_t,
+                   rpc_rm_metadata_out_t, rpc_srv_remove_metadata);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::remove_data, rpc_rm_node_in_t,
+                   rpc_err_out_t, rpc_srv_remove_data);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::update_metadentry_size,
+                   rpc_update_metadentry_size_in_t,
+                   rpc_update_metadentry_size_out_t,
+                   rpc_srv_update_metadentry_size);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::get_dirents_extended,
+                   rpc_get_dirents_in_t, rpc_get_dirents_out_t,
+                   rpc_srv_get_dirents_extended);
+    // proxy daemon specific RPCs
+    MARGO_REGISTER(mid, gkfs::rpc::tag::proxy_daemon_write,
+                   rpc_proxy_daemon_write_in_t, rpc_data_out_t,
+                   rpc_srv_proxy_write);
+    MARGO_REGISTER(mid, gkfs::rpc::tag::proxy_daemon_read,
+                   rpc_proxy_daemon_read_in_t, rpc_data_out_t,
+                   rpc_srv_proxy_read);
+}
+
+
+void
+init_proxy_rpc_server() {
+    // TODO currently copy-paste. redundant function. fix.
+    hg_addr_t addr_self;
+    hg_size_t addr_self_cstring_sz = 128;
+    char addr_self_cstring[128];
+    struct hg_init_info hg_options = HG_INIT_INFO_INITIALIZER;
+    hg_options.auto_sm = GKFS_DATA->use_auto_sm() ? HG_TRUE : HG_FALSE;
+    hg_options.stats = HG_FALSE;
+    if(gkfs::rpc::protocol::ofi_psm2 == GKFS_DATA->proxy_rpc_protocol())
+        hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
+    // Start Margo (this will also initialize Argobots and Mercury internally)
+    auto margo_config = fmt::format(
+            R"({{ "use_progress_thread" : true, "rpc_thread_count" : {} }})",
+            gkfs::config::rpc::proxy_handler_xstreams);
+    struct margo_init_info args = {nullptr};
+    args.json_config = margo_config.c_str();
+    args.hg_init_info = &hg_options;
+    auto* mid = margo_init_ext(GKFS_DATA->bind_proxy_addr().c_str(),
+                               MARGO_SERVER_MODE, &args);
+    //    hg_options.na_class = nullptr;
+    //    if(gkfs::rpc::protocol::ofi_psm2 == GKFS_DATA->proxy_rpc_protocol())
+    //        hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
+    //    // Start Margo (this will also initialize Argobots and Mercury
+    //    internally) auto mid =
+    //    margo_init_opt(GKFS_DATA->bind_proxy_addr().c_str(),
+    //                              MARGO_SERVER_MODE, &hg_options, HG_TRUE,
+    //                              gkfs::config::rpc::proxy_handler_xstreams);
+    if(mid == MARGO_INSTANCE_NULL) {
+        throw runtime_error("Failed to initialize the Margo proxy RPC server");
+    }
+    // Figure out what address this server is listening on (must be freed when
+    // finished)
+    auto hret = margo_addr_self(mid, &addr_self);
+    if(hret != HG_SUCCESS) {
+        margo_finalize(mid);
+        throw runtime_error("Failed to retrieve proxy server RPC address");
+    }
+    // Convert the address to a cstring (with \0 terminator).
+    hret = margo_addr_to_string(mid, addr_self_cstring, &addr_self_cstring_sz,
+                                addr_self);
+    if(hret != HG_SUCCESS) {
+        margo_addr_free(mid, addr_self);
+        margo_finalize(mid);
+        throw runtime_error(
+                "Failed to convert proxy server RPC address to string");
+    }
+    margo_addr_free(mid, addr_self);
+
+    std::string addr_self_str(addr_self_cstring);
+    RPC_DATA->self_proxy_addr_str(addr_self_str);
+
+    GKFS_DATA->spdlogger()->info("{}() Accepting proxy RPCs on address {}",
+                                 __func__, addr_self_cstring);
+
+    // Put context and class into RPC_data object
+    RPC_DATA->proxy_server_rpc_mid(mid);
+
+    // register RPCs
+    register_proxy_server_rpcs(mid);
+}
+
 /**
  * @brief Initializes the daemon environment and setting up its subroutines.
  * @internal
@@ -306,6 +404,35 @@ init_environment() {
         GKFS_DATA->spdlogger()->error(
                 "{}() Failed to initialize RPC server: {}", __func__, e.what());
         throw;
+    }
+
+    // init margo for proxy RPC
+
+    if(!GKFS_DATA->bind_proxy_addr().empty()) {
+        GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ... ", __func__);
+        try {
+            auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>();
+            RPC_DATA->distributor(distributor);
+        } catch(const std::exception& e) {
+            GKFS_DATA->spdlogger()->error(
+                    "{}() Failed to initialize Distributor: {}", __func__,
+                    e.what());
+            throw;
+        }
+        GKFS_DATA->spdlogger()->debug("{}() Distributed running.", __func__);
+
+        GKFS_DATA->spdlogger()->debug(
+                "{}() Initializing proxy RPC server: '{}'", __func__,
+                GKFS_DATA->bind_proxy_addr());
+        try {
+            init_proxy_rpc_server();
+        } catch(const std::exception& e) {
+            GKFS_DATA->spdlogger()->error(
+                    "{}() Failed to initialize proxy RPC server: {}", __func__,
+                    e.what());
+            throw;
+        }
+        GKFS_DATA->spdlogger()->debug("{}() Proxy RPC server running.", __func__);
     }
 
     // Init Argobots ESs to drive IO
@@ -517,6 +644,49 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
     GKFS_DATA->rpc_protocol(rpc_protocol);
     GKFS_DATA->bind_addr(fmt::format("{}://{}", rpc_protocol, addr));
 
+    // proxy-daemon interface which is optional (mostly copy-paste from above
+    // for now TODO)
+    string proxy_addr{};
+    string proxy_protocol{};
+    if(desc.count("--proxy-protocol")) {
+        proxy_protocol = opts.proxy_protocol;
+        auto protocol_found = false;
+        for(const auto& valid_protocol :
+            gkfs::rpc::protocol::all_remote_protocols) {
+            if(proxy_protocol == valid_protocol) {
+                protocol_found = true;
+                break;
+            }
+        }
+        if(!protocol_found)
+            throw runtime_error(fmt::format(
+                    "Given RPC protocol '{}' not supported for proxy. Check --help for supported protocols.",
+                    rpc_protocol));
+        if(desc.count("--proxy-listen")) {
+            proxy_addr = opts.proxy_listen;
+            // ofi+verbs requires an empty proxy_addr to bind to the ib
+            // interface
+            if(proxy_protocol == string(gkfs::rpc::protocol::ofi_verbs)) {
+                /*
+                 * FI_VERBS_IFACE : The prefix or the full name of the network
+                 * interface associated with the verbs device (default: ib)
+                 * Mercury does not allow to bind to an address when ofi+verbs
+                 * is used
+                 */
+                if(!secure_getenv("FI_VERBS_IFACE"))
+                    setenv("FI_VERBS_IFACE", proxy_addr.c_str(), 1);
+                proxy_addr = ""s;
+            }
+        } else {
+            if(proxy_protocol != string(gkfs::rpc::protocol::ofi_verbs))
+                proxy_addr = gkfs::rpc::get_my_hostname(true);
+        }
+        GKFS_DATA->proxy_rpc_protocol(proxy_protocol);
+        GKFS_DATA->bind_proxy_addr(
+                fmt::format("{}://{}", proxy_protocol, proxy_addr));
+    }
+
+
     string hosts_file;
     if(desc.count("--hosts-file")) {
         hosts_file = opts.hosts_file;
@@ -527,11 +697,22 @@ parse_input(const cli_options& opts, const CLI::App& desc) {
     GKFS_DATA->hosts_file(hosts_file);
 
     assert(desc.count("--mountdir"));
-    auto mountdir = opts.mountdir;
-    // Create mountdir. We use this dir to get some information on the
-    // underlying fs with statfs in gkfs_statfs
-    fs::create_directories(mountdir);
-    GKFS_DATA->mountdir(fs::canonical(mountdir).native());
+    // Store mountdir and ensure parent dir exists as it is required for path
+    // resolution on the client
+    try {
+        fs::path mountdir(opts.mountdir);
+        auto mountdir_parent = fs::canonical(mountdir.parent_path());
+        GKFS_DATA->mountdir(fmt::format("{}/{}", mountdir_parent.native(),
+                                        mountdir.filename().native()));
+        GKFS_DATA->spdlogger()->info("{}() Mountdir '{}'", __func__,
+                                     GKFS_DATA->mountdir());
+    } catch(const std::exception& e) {
+        auto emsg = fmt::format(
+                "Parent directory for given mountdir does not exist. err '{}' Exiting ...",
+                e.what());
+        cerr << emsg << endl;
+        exit(EXIT_FAILURE);
+    }
 
     assert(desc.count("--rootdir"));
     auto rootdir = opts.rootdir;
@@ -790,6 +971,12 @@ main(int argc, const char* argv[]) {
                 "--prometheus-gateway", opts.prometheus_gateway,
                 "Defines the prometheus gateway <ip:port> (Default 127.0.0.1:9091).");
     #endif
+    desc.add_option(
+            "--proxy-protocol,-p", opts.proxy_protocol,
+            "Starts an additional RPC server for proxy communication. Choose between: ofi+sockets, ofi+psm2, ofi+verbs. Default: Disabled");
+    desc.add_option(
+            "--proxy-listen,-L", opts.proxy_listen,
+            "Address or interface to bind the proxy rpc server on (see listen above)");
 
     desc.add_flag("--version", "Print version and exit.");
     // clang-format on

@@ -126,4 +126,40 @@ MERCURY_GEN_PROC(
         ((hg_int32_t) (err))((hg_uint64_t) (chunk_size))(
                 (hg_uint64_t) (chunk_total))((hg_uint64_t) (chunk_free)))
 
+// client <-> proxy
+MERCURY_GEN_PROC(rpc_client_proxy_write_in_t,
+                 ((hg_const_string_t) (path))(
+                         (int64_t) (offset)) // file offset, NOT chunk offset
+                 ((hg_uint64_t) (write_size))((hg_bulk_t) (bulk_handle)))
+
+MERCURY_GEN_PROC(rpc_client_proxy_read_in_t,
+                 ((hg_const_string_t) (path))(
+                         (int64_t) (offset)) // file offset, NOT chunk offset
+                 ((hg_uint64_t) (read_size))((hg_bulk_t) (bulk_handle)))
+
+// proxy <-> daemon
+
+MERCURY_GEN_PROC(
+        rpc_proxy_daemon_write_in_t,
+        ((hg_const_string_t) (path))((int64_t) (offset))(
+                (hg_uint64_t) (host_id))((hg_uint64_t) (host_size))(
+                (hg_uint64_t) (chunk_n))((hg_uint64_t) (chunk_start))(
+                (hg_uint64_t) (chunk_end))((hg_uint64_t) (total_chunk_size))(
+                (hg_bulk_t) (bulk_handle)))
+
+MERCURY_GEN_PROC(
+        rpc_proxy_daemon_read_in_t,
+        ((hg_const_string_t) (path))((int64_t) (offset))(
+                (hg_uint64_t) (host_id))((hg_uint64_t) (host_size))(
+                (hg_uint64_t) (chunk_n))((hg_uint64_t) (chunk_start))(
+                (hg_uint64_t) (chunk_end))((hg_uint64_t) (total_chunk_size))(
+                (hg_bulk_t) (bulk_handle)))
+
+MERCURY_GEN_PROC(rpc_proxy_test_in_t, ((hg_const_string_t) (path)))
+
+MERCURY_GEN_PROC(rpc_proxy_get_dirents_in_t,
+                 ((hg_const_string_t) (path))((int32_t) (server))(
+                         (hg_bulk_t) (bulk_handle)))
+
+
 #endif // LFS_RPC_TYPES_HPP

@@ -34,6 +34,12 @@
 namespace gkfs::rpc {
 
 using chnk_id_t = unsigned long;
+struct ChunkStat {
+    unsigned long chunk_size;
+    unsigned long chunk_total;
+    unsigned long chunk_free;
+};
+
 
 namespace tag {
 
@@ -55,6 +61,20 @@ constexpr auto write = "rpc_srv_write_data";
 constexpr auto read = "rpc_srv_read_data";
 constexpr auto truncate = "rpc_srv_trunc_data";
 constexpr auto get_chunk_stat = "rpc_srv_chunk_stat";
+// IPC communication between client and proxy
+constexpr auto client_proxy_create = "proxy_rpc_srv_create";
+constexpr auto client_proxy_stat = "proxy_rpc_srv_stat";
+constexpr auto client_proxy_remove = "proxy_rpc_srv_remove";
+constexpr auto client_proxy_update_size =
+        "proxy_rpc_srv_update_metadentry_size";
+constexpr auto client_proxy_write = "proxy_rpc_srv_write_data";
+constexpr auto client_proxy_read = "proxy_rpc_srv_read_data";
+constexpr auto client_proxy_chunk_stat = "proxy_rpc_srv_chunk_stat";
+constexpr auto client_proxy_get_dirents_extended =
+        "proxy_rpc_srv_get_dirents_extended";
+// Specific RPCs between daemon and proxy
+constexpr auto proxy_daemon_write = "proxy_daemon_rpc_srv_write_data";
+constexpr auto proxy_daemon_read = "proxy_daemon_rpc_srv_read_data";
 } // namespace tag
 
 namespace protocol {

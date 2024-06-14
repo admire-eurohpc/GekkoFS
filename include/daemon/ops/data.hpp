@@ -302,7 +302,8 @@ private:
         size_t size;                  //!< size to read from chunk
         off64_t off;                  //!< offset for individual chunk
         ABT_eventual eventual;        //!< Attached eventual
-    };                                //!< Struct for an chunk read operation
+        bool bulk_transfer_done = false;
+    }; //!< Struct for an chunk read operation
 
     std::vector<struct chunk_read_args> task_args_; //!< tasklet input structs
     /**

@@ -31,6 +31,7 @@
 #include <client/env.hpp>
 #include <client/logging.hpp>
 #include <client/rpc/forward_metadata.hpp>
+#include <client/rpc/forward_metadata_proxy.hpp>
 
 #include <common/rpc/distributor.hpp>
 #include <common/rpc/rpc_util.hpp>
@@ -61,7 +62,8 @@ namespace {
  * @throws std::runtime_error
  */
 hermes::endpoint
-lookup_endpoint(const std::string& uri, std::size_t max_retries = 3) {
+lookup_endpoint(const std::string& uri, bool use_proxy = false,
+                std::size_t max_retries = 3) {
 
     LOG(DEBUG, "Looking up address \"{}\"", uri);
 
@@ -71,7 +73,10 @@ lookup_endpoint(const std::string& uri, std::size_t max_retries = 3) {
 
     do {
         try {
-            return ld_network_service->lookup(uri);
+            if(use_proxy)
+                return ld_proxy_service->lookup(uri);
+            else
+                return ld_network_service->lookup(uri);
         } catch(const exception& ex) {
             error_msg = ex.what();
 
@@ -149,7 +154,7 @@ load_hostfile(const std::string& path) {
                                         path, strerror(errno)));
     }
     vector<pair<string, string>> hosts;
-    const regex line_re("^(\\S+)\\s+(\\S+)$",
+    const regex line_re("^(\\S+)\\s+(\\S+)\\s*(\\S*)$",
                         regex::ECMAScript | regex::optimize);
     string line;
     string host;
@@ -199,26 +204,35 @@ namespace gkfs::utils {
 optional<gkfs::metadata::Metadata>
 get_metadata(const string& path, bool follow_links) {
     std::string attr;
-    auto err = gkfs::rpc::forward_stat(path, attr, 0);
-    // TODO: retry on failure
-
-    if(err) {
-        auto copy = 1;
-        while(copy < CTX->get_replicas() + 1 && err) {
-            LOG(ERROR, "Retrying Stat on replica {} {}", copy, follow_links);
-            err = gkfs::rpc::forward_stat(path, attr, copy);
-            copy++;
-        }
+    int err{};
+    if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_stat_proxy(path, attr);
+    } else {
+        err = gkfs::rpc::forward_stat(path, attr, 0);
+        // TODO: retry on failure
         if(err) {
-            errno = err;
-            return {};
+            auto copy = 1;
+            while(copy < CTX->get_replicas() + 1 && err) {
+                LOG(ERROR, "Retrying Stat on replica {} {}", copy,
+                    follow_links);
+                err = gkfs::rpc::forward_stat(path, attr, copy);
+                copy++;
+            }
         }
+    }
+    if(err) {
+        errno = err;
+        return {};
     }
 #ifdef HAS_SYMLINKS
     if(follow_links) {
         gkfs::metadata::Metadata md{attr};
         while(md.is_link()) {
-            err = gkfs::rpc::forward_stat(md.target_path(), attr, 0);
+            if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
+                err = gkfs::rpc::forward_stat_proxy(md.target_path(), attr);
+            } else {
+                err = gkfs::rpc::forward_stat(md.target_path(), attr, 0);
+            }
             if(err) {
                 errno = err;
                 return {};
@@ -427,6 +441,73 @@ connect_to_hosts(const vector<pair<string, string>>& hosts) {
     }
 
     CTX->hosts(addrs);
+}
+
+/**
+ * Looks for a proxy pid file. If it exists, we set address string in preload
+ * context.
+ */
+void
+check_for_proxy() {
+    auto pid_path = gkfs::env::get_var(gkfs::env::PROXY_PID_FILE,
+                                       gkfs::config::proxy::pid_path);
+    ifstream ifs(pid_path, ::ifstream::in);
+    if(!ifs) {
+        LOG(INFO, "Proxy pid file NOT FOUND. Proxy will NOT be used!");
+        return;
+    }
+    /*
+     * read two lines in pid file
+     * 1. line: process id (used to check for process existence)
+     * 2. line: na_sm address to connect to (which will be returned)
+     */
+    if(ifs) {
+        // get PID
+        string running_pid;
+        if(getline(ifs, running_pid) && !running_pid.empty()) {
+            // check if process exists without killing it. Signal 0 doesn't
+            // kill
+            if(0 != ::kill(::stoi(running_pid), 0)) {
+                LOG(WARNING,
+                    "Proxy pid file '{}' found but process with pid '{}' was not found. Will NOT use proxy",
+                    pid_path, running_pid);
+                return;
+            }
+        } else {
+            LOG(WARNING,
+                "Proxy pid file '{}' first line is empty. Will NOT use proxy",
+                pid_path);
+            return;
+        }
+        // get proxy address
+        string proxy_address{};
+        if(getline(ifs, proxy_address) && !proxy_address.empty()) {
+            CTX->proxy_address_str(proxy_address);
+        } else {
+            LOG(WARNING,
+                "Proxy pid file '{}' second line is empty. Will NOT use proxy",
+                pid_path);
+            return;
+        }
+    } else {
+        LOG(WARNING,
+            "Proxy pid file '{}' was found but cannot be opened. Will NOT use proxy.",
+            pid_path);
+        return;
+    }
+    LOG(INFO, "Proxy is enabled and will be used!");
+    CTX->use_proxy(true);
+}
+
+/**
+ * Lookup proxy address via hermes RPC client
+ * @throws runtime_error
+ */
+void
+lookup_proxy_addr() {
+    auto addr = lookup_endpoint(CTX->proxy_address_str(), true);
+    LOG(DEBUG, "Found proxy peer: {}", addr.to_string());
+    CTX->proxy_host(addr);
 }
 
 } // namespace gkfs::utils
