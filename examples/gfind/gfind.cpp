@@ -378,7 +378,6 @@ int process(char *processor_name, int world_rank, int world_size,
 
   // INIT PFIND
   memset(&runtime, 0, sizeof(pfind_runtime_options_t));
-  int ret;
   /* Get timestamp file */
   if (opt->timestamp_file) {
     if (pfind_rank == 0) {
@@ -393,7 +392,6 @@ int process(char *processor_name, int world_rank, int world_size,
     MPI_Bcast(&runtime.ctime_min, 1, MPI_INT, 0, pfind_com);
   }
 
-  auto iterations = 0;
   if (world_rank == 0) {
     queue<string> dirs;
     string workdir = opt->workdir;
