@@ -209,6 +209,14 @@ pfind_options_t *pfind_parse_args(int argc, char **argv, int force_print_help){
       }
       argv[i][0] = 0;
       argv[++i][0] = 0;
+    } else if(strcmp(argv[i], "-M") == 0) {
+        res->mountdir = strdup(argv[i + 1]);
+        argv[i][0] = 0;
+        argv[++i][0] = 0;
+    } else if(strcmp(argv[i], "-S") == 0) {
+        res->num_servers = atoi(argv[i + 1]);
+        argv[i][0] = 0;
+        argv[++i][0] = 0;
     } else if (!firstarg) {
       firstarg = strdup(argv[i]);
       argv[i][0] = 0;
@@ -263,12 +271,12 @@ pfind_options_t *pfind_parse_args(int argc, char **argv, int force_print_help){
     case 's':
       res->stonewall_timer = atol(optarg);
       break;
-    case 'S':
-      res->num_servers = atoi(optarg);
-      break;
-    case 'M':
-      res->mountdir = strdup(optarg);
-      break;
+      //    case 'S':
+      //      res->num_servers = atoi(optarg);
+      //      break;
+      //    case 'M':
+      //      res->mountdir = strdup(optarg);
+      //      break;
     case 'v':
       res->verbosity++;
       break;

@@ -200,6 +200,14 @@ pfind_options_t *pfind_parse_args(int argc, char **argv, int force_print_help,
       }
       argv[i][0] = 0;
       argv[++i][0] = 0;
+    } else if(strcmp(argv[i], "-M") == 0) {
+        res->mountdir = strdup(argv[i + 1]);
+        argv[i][0] = 0;
+        argv[++i][0] = 0;
+    } else if(strcmp(argv[i], "-S") == 0) {
+        res->num_servers = atoi(argv[i + 1]);
+        argv[i][0] = 0;
+        argv[++i][0] = 0;
     } else if (!firstarg) {
       firstarg = strdup(argv[i]);
       argv[i][0] = 0;
@@ -254,12 +262,12 @@ pfind_options_t *pfind_parse_args(int argc, char **argv, int force_print_help,
     case 's':
       res->stonewall_timer = atol(optarg);
       break;
-    case 'S':
-      res->num_servers = atoi(optarg);
-      break;
-    case 'M':
-      res->mountdir = strdup(optarg);
-      break;
+      //    case 'S':
+      //      res->num_servers = atoi(optarg);
+      //      break;
+      //    case 'M':
+      //      res->mountdir = strdup(optarg);
+      //      break;
     case 'v':
       res->verbosity++;
       break;
@@ -303,9 +311,9 @@ string recv_newPath() {
   MPI_Bcast(&count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (count == 0)
     return "Terminate";
-  char buf[count];
-  MPI_Bcast(buf, count, MPI_CHAR, 0, MPI_COMM_WORLD);
-  return buf;
+  std::vector<char> buf(count);
+  MPI_Bcast(buf.data(), count, MPI_CHAR, 0, MPI_COMM_WORLD);
+  return std::string(buf.begin(), buf.end());
 }
 
 /* Client Processing a path.
@@ -325,13 +333,13 @@ void dirProcess(const string path, unsigned long long &checked,
   // cout << "PROCESSING " << world_rank << "/"<< world_size << " = " << path <<
   // endl;
 
-  
+
   int servers_per_node = ceil(opt->num_servers / (world_size - 1));
   if (servers_per_node == 0)
      servers_per_node++;
   for (int it = 0; it < servers_per_node; it++) {
       auto server = (world_rank - 1) * servers_per_node + it;
-      if (server >= opt->num_servers)
+      if (server >= (unsigned int) opt->num_servers)
         break;
 
       unsigned long long total_size = 0;
@@ -340,7 +348,7 @@ void dirProcess(const string path, unsigned long long &checked,
           (sizeof(struct dirent_extended) + 255) * 1024 * 100, server);
       struct dirent_extended *temp = getdir;
 
-      while (total_size < n) {
+      while (total_size < (unsigned long long) n) {
         if (strlen(temp->d_name) == 0)
           break;
         total_size += temp->d_reclen;
@@ -401,35 +409,36 @@ int process(char *processor_name, int world_rank, int world_size,
     dirs.push(workdir);
 
     do {
+        std::string processpath = dirs.front();
+        dirs.pop();
+        send_newPath(processpath);
 
-      string processpath = dirs.front();
-      dirs.pop();
-      // DISTRIBUTE WORK
-      send_newPath(processpath);
-      auto received_strings = true;
-      // We need to gather new directories found (we use send-recv)
-      for (auto i = 1; i < world_size; i++) {
-        received_strings = true;
-        while (received_strings) {
-          received_strings = false;
-          //	cout << " Checking from " << i << endl;
-          MPI_Status mpistatus;
-          MPI_Probe(i, 0, MPI_COMM_WORLD, &mpistatus);
-          int count;
-          MPI_Get_count(&mpistatus, MPI_CHAR, &count);
-          char buf[count];
-          MPI_Recv(&buf, count, MPI_CHAR, i, 0, MPI_COMM_WORLD, &mpistatus);
-          if (count == 0) {
-            continue;
-          }
-          // cout << " Receiving from " << i << " ---- " << buf << endl;
-          string s = buf;
-          dirs.push(s);
-          received_strings = true;
+        auto received_strings = true;
+
+        for (auto i = 1; i < world_size; i++) {
+            received_strings = true;
+            while (received_strings) {
+                received_strings = false;
+
+                MPI_Status mpistatus;
+                MPI_Probe(i, 0, MPI_COMM_WORLD, &mpistatus);
+
+                int count;
+                MPI_Get_count(&mpistatus, MPI_CHAR, &count);
+
+                std::vector<char> buf(count);
+                MPI_Recv(buf.data(), count, MPI_CHAR, i, 0, MPI_COMM_WORLD, &mpistatus);
+
+                if (count == 0) {
+                    continue;
+                }
+                std::string s(buf.begin(), buf.end());
+                dirs.push(s);
+                received_strings = true;
+            }
         }
-      }
-      // cout << "NO more paths " << dirs.size() << endl;
     } while (!dirs.empty());
+
 
     auto count = 0;
     MPI_Bcast(&count, 1, MPI_INT, 0, MPI_COMM_WORLD);
