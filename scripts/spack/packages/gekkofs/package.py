@@ -20,15 +20,16 @@ class Gekkofs(CMakePackage):
     isolation from each other with regards to I/O, which reduces interferences and improves performance."""
     homepage = "https://storage.bsc.es/gitlab/hpc/gekkofs"
     git = "https://storage.bsc.es/gitlab/hpc/gekkofs.git"
-    url = "https://storage.bsc.es/projects/gekkofs/releases/gekkofs-v0.9.1.tar.gz"
+    url = "https://storage.bsc.es/projects/gekkofs/releases/gekkofs-v0.9.2.tar.gz"
 
     maintainers = ['marc_vef', 'ramon_nou']
     # set various versions
     version('latest', branch='master', submodules=True)
     version('0.9.0', sha256='f6f7ec9735417d71d68553b6a4832e2c23f3e406d8d14ffb293855b8aeec4c3a', deprecated=True)
     version('0.9.1', sha256='1772b8a9d4777eca895f88cea6a1b4db2fda62e382ec9f73508e38e9d205d5f7')
+    version('0.9.2', sha256='30e0fb225e890b89eaddd930a10845d549c8f5be7aa4670e2cb97d4aaa3eb459')
     # apply patches
-    patch('date-tz.patch')
+    patch('date-tz.patch', when='@0.9.0:@0.9.2')
     # set arguments
     variant('build_type',
             default='Release',
@@ -52,15 +53,20 @@ class Gekkofs(CMakePackage):
     depends_on('syscall-intercept@arm', when='compile=arm')
     depends_on('syscall-intercept@powerpc', when='compile=powerpc')
     depends_on('syscall-intercept@x86', when='compile=x86')
-    depends_on('date cxxstd=14 +shared +tz tzdb=system')
     depends_on('opa-psm2@11.2.185', when='+dedicated_psm2')
     # 0.9.0 specific
-    depends_on('libfabric@1.13.2', when='@0.9:,latest')
-    depends_on('mercury@2.1.0 -debug +ofi -mpi -bmi +sm +shared +boostsys -checksum', when='@0.9:,latest')
-    depends_on('mochi-margo@0.9.6', when='@0.9:,latest')
+    depends_on('date cxxstd=14 +shared +tz tzdb=system', when='@0.9.0,@0.9.1,@0.9.2')
+    depends_on('libfabric@1.13.2', when='@0.9.0,@0.9.1,@0.9.2')
+    depends_on('mercury@2.1.0 -debug +ofi -mpi -bmi +sm +shared +boostsys -checksum', when='@0.9.0,@0.9.1,@0.9.2')
+    depends_on('mochi-margo@0.9.6', when='@0.9.0,@0.9.1,@0.9.2')
     depends_on('rocksdb@6.20.3 -shared +static +lz4 -snappy -zlib -zstd -bz2 +rtti', when='@0.9.0')
     # 0.9.1 specific
-    depends_on('rocksdb@6.26.1 -shared +static +lz4 -snappy -zlib -zstd -bz2 +rtti', when='@0.9.1:,latest')
+    depends_on('rocksdb@6.26.1 -shared +static +lz4 -snappy -zlib -zstd -bz2 +rtti', when='@0.9.1:,@0.9.2:')
+    # 0.9.3 specific
+    depends_on('libfabric@1.20.1', when='latest')
+    depends_on('mercury@2.3.1 -debug +ofi -mpi -bmi +sm +shared +boostsys -checksum', when='latest')
+    depends_on('mochi-margo@0.15.0', when='latest')
+    depends_on('rocksdb@8.10.1 -shared +static +lz4 -snappy -zlib -zstd -bz2 +rtti', when='latest')
 
     # Additional features
     # Agios I/O forwarding
