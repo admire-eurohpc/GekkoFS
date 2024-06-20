@@ -64,10 +64,10 @@ off64_t
 gkfs_lseek(unsigned int fd, off64_t offset, unsigned int whence);
 
 ssize_t
-gkfs_pwrite_ws(int fd, const void* buf, size_t count, off64_t offset);
+gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset);
 
 ssize_t
-gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
+gkfs_pread(int fd, void* buf, size_t count, off64_t offset);
 
 int
 gkfs_stat(const std::string& path, struct stat* buf, bool follow_links = true);

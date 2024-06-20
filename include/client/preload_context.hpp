@@ -51,6 +51,9 @@ class Distributor;
 namespace log {
 struct logger;
 }
+namespace messagepack {
+class ClientMetrics;
+}
 
 namespace preload {
 /*
@@ -107,6 +110,10 @@ private:
     std::string hostname;
     int replicas_;
 
+    std::shared_ptr<gkfs::messagepack::ClientMetrics> write_metrics_;
+    std::shared_ptr<gkfs::messagepack::ClientMetrics> read_metrics_;
+
+
 public:
     static PreloadContext*
     getInstance() {
@@ -119,8 +126,13 @@ public:
     void
     operator=(PreloadContext const&) = delete;
 
+    ~PreloadContext();
+
     void
     init_logging();
+
+    bool
+    init_metrics();
 
     void
     mountdir(const std::string& path);
@@ -223,6 +235,12 @@ public:
 
     int
     get_replicas();
+
+    const std::shared_ptr<gkfs::messagepack::ClientMetrics>
+    write_metrics();
+
+    const std::shared_ptr<gkfs::messagepack::ClientMetrics>
+    read_metrics();
 };
 
 } // namespace preload

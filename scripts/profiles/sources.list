@@ -54,6 +54,8 @@ sources=(
     ["prometheus-cpp"]="https://github.com/jupp0r/prometheus-cpp/releases/download/{{VERSION}}/prometheus-cpp-with-submodules.tar.gz"
     ["curl"]="https://curl.se/download/curl-{{VERSION}}.tar.gz"
     ["ucx"]="https://github.com/openucx/ucx/archive/{{VERSION}}.tar.gz"
+    ["libzmq"]="https://github.com/zeromq/libzmq/archive/v{{VERSION}}.tar.gz"
+    ["cppzmq"]="https://github.com/zeromq/cppzmq/archive/v{{VERSION}}.tar.gz"
 )
 
 

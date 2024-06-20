@@ -36,6 +36,9 @@ namespace gkfs::env {
 std::string
 get_var(const std::string& name, const std::string& default_value = "");
 
+bool
+var_is_set(const std::string& name);
+
 } // namespace gkfs::env
 
 #endif // GKFS_COMMON_ENV_UTIL_HPP

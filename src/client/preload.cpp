@@ -36,6 +36,9 @@
 
 #include <common/rpc/distributor.hpp>
 #include <common/common_defs.hpp>
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+#include <common/msgpack_util.hpp>
+#endif
 
 #include <ctime>
 #include <cstdlib>
@@ -297,6 +300,10 @@ init_preload() {
 
     gkfs::preload::start_interception();
     errno = oerrno;
+    if(!CTX->init_metrics()) {
+        exit_error_msg(EXIT_FAILURE,
+                       "Unable to initialize client metrics. Exiting...");
+    }
 }
 
 /**
@@ -310,6 +317,13 @@ destroy_preload() {
     if(!forwarding_map_file.empty()) {
         destroy_forwarding_mapper();
     }
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+    LOG(INFO, "Flushing final metrics...");
+    CTX->write_metrics()->flush_msgpack();
+    CTX->read_metrics()->flush_msgpack();
+    LOG(INFO, "Metrics flushed. Total flush operations: {}",
+        CTX->write_metrics()->flush_count());
+#endif
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");
 

@@ -31,7 +31,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(
     GekkoFS
-    VERSION 0.9.2
+    VERSION 0.9.3
     LANGUAGES ASM CXX C
 )
 
@@ -167,6 +167,12 @@ if (GKFS_ENABLE_AGIOS)
     find_package(AGIOS REQUIRED)
 endif()
 
+if (GKFS_ENABLE_CLIENT_METRICS)
+    ### zeromq: required for sending client metrics to FTIO
+    message(STATUS "[${PROJECT_NAME}] Checking for cppzmq")
+    find_package(cppzmq REQUIRED)
+endif ()
+
 ### Metadata backends
 if(GKFS_ENABLE_ROCKSDB)
     message(STATUS "[${PROJECT_NAME}] Checking for RocksDB")
@@ -218,6 +224,7 @@ find_package(Filesystem REQUIRED)
 set(GKFS_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/external)
 
 ### {fmt}: required for sensible output formatting
+set(FMT_INSTALL OFF)
 include_from_source(fmt
   MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
   SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
@@ -244,6 +251,15 @@ include_from_source(cli11
   GIT_TAG v2.2.0
   )
 
+if (GKFS_ENABLE_CLIENT_METRICS)
+    ### MessagePack: used for monitoring information on the client
+    include_from_source(MessagePack
+        MESSAGE "[${PROJECT_NAME}] Searching for MessagePackCPP"
+        SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/MessagePack
+        GIT_REPOSITORY https://github.com/GekkoFS/MessagePackCPP
+        GIT_TAG 51655ec8f2b8fed84f685e3bcf8f226b139a263b # latest HEAD
+    )
+endif ()
 
 ################################################################################
 ## Check configured variables/options and act accordingly
@@ -302,11 +318,15 @@ set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 include_directories(
     ${INCLUDE_DIR}
     ${CMAKE_BINARY_DIR}/include
+    /usr/include
 )
 
 add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(examples)
+if (GKFS_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif ()
 
 ### Mark any CMake variables imported from {fmt} and spdlog as advanced, so
 ### that they don't appear in cmake-gui or ccmake. Similarly for FETCHCONTENT

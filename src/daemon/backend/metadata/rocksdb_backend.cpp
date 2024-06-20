@@ -34,7 +34,7 @@
 #include <common/metadata.hpp>
 #include <common/path_util.hpp>
 #include <iostream>
-#include <daemon/backend/metadata/rocksdb_backend.hpp>
+#include <ctime>
 extern "C" {
 #include <sys/stat.h>
 }
@@ -244,6 +244,15 @@ RocksDBBackend::increase_size_impl(const std::string& key, size_t io_size,
         if(!s.ok()) {
             throw_status_excpt(s);
         }
+        if constexpr(gkfs::config::metadata::use_mtime) {
+            // get current time and update mtime for this file
+            time_t now = time(nullptr);
+            auto t_op = UpdateTimeOperand(now);
+            s = db_->Merge(write_opts_, key, t_op.serialize());
+            if(!s.ok()) {
+                throw_status_excpt(s);
+            }
+        }
     }
     return out_offset;
 }
@@ -262,6 +271,15 @@ RocksDBBackend::decrease_size_impl(const std::string& key, size_t size) {
     auto s = db_->Merge(write_opts_, key, uop.serialize());
     if(!s.ok()) {
         throw_status_excpt(s);
+    }
+    if constexpr(gkfs::config::metadata::use_mtime) {
+        // get current time and update mtime for this file
+        time_t now = time(nullptr);
+        auto t_op = UpdateTimeOperand(now);
+        s = db_->Merge(write_opts_, key, t_op.serialize());
+        if(!s.ok()) {
+            throw_status_excpt(s);
+        }
     }
 }
 

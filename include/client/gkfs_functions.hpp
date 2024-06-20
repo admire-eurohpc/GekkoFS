@@ -105,11 +105,15 @@ gkfs_readlink(const std::string& path, char* buf, int bufsize);
 #endif
 
 ssize_t
-gkfs_pwrite(std::shared_ptr<gkfs::filemap::OpenFile> file, const char* buf,
-            size_t count, off64_t offset, bool update_pos = false);
+gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
+              off64_t offset, bool update_pos);
 
 ssize_t
-gkfs_pwrite_ws(int fd, const void* buf, size_t count, off64_t offset);
+gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
+              off64_t offset, bool update_pos = false);
+
+ssize_t
+gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset);
 
 ssize_t
 gkfs_write(int fd, const void* buf, size_t count);
@@ -121,11 +125,15 @@ ssize_t
 gkfs_writev(int fd, const struct iovec* iov, int iovcnt);
 
 ssize_t
-gkfs_pread(std::shared_ptr<gkfs::filemap::OpenFile> file, char* buf,
-           size_t count, off64_t offset);
+gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
+             off64_t offset);
 
 ssize_t
-gkfs_pread_ws(int fd, void* buf, size_t count, off64_t offset);
+gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
+             off64_t offset);
+
+ssize_t
+gkfs_pread(int fd, void* buf, size_t count, off64_t offset);
 
 ssize_t
 gkfs_read(int fd, void* buf, size_t count);

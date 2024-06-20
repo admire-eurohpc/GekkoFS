@@ -227,6 +227,13 @@ gkfs_define_option(
   DEFAULT_VALUE OFF
 )
 
+# build tools
+gkfs_define_option(
+    GKFS_BUILD_TOOLS
+    HELP_TEXT "Enable ${PROJECT_NAME} tools compilation"
+    DEFAULT_VALUE OFF
+)
+
 cmake_dependent_option(GKFS_INSTALL_TESTS "Install GekkoFS self tests" OFF "GKFS_BUILD_TESTS" OFF)
 
 
@@ -356,4 +363,13 @@ gkfs_define_option(
   DESCRIPTION "If GKFS_ENABLE_FORWARDING is ON, use AGIOS for scheduling I/Os"
 )
 
+################################################################################
+# MSGPack client metrics
+################################################################################
 
+gkfs_define_option(
+    GKFS_ENABLE_CLIENT_METRICS
+    HELP_TEXT "Enable client metrics via MSGPack"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "If GKFS_ENABLE_CLIENT_METRICS is ON, use MSGPack to dump client read/write metrics"
+)

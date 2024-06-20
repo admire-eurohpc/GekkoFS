@@ -36,10 +36,15 @@
 
 #include <common/env_util.hpp>
 #include <common/path_util.hpp>
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+#include <common/msgpack_util.hpp>
+#endif
+
 #include <config.hpp>
 #include <hermes.hpp>
 
 #include <cassert>
+#include <filesystem>
 
 #ifndef BYPASS_SYSCALL
 #include <libsyscall_intercept_hook_point.h>
@@ -72,6 +77,10 @@ PreloadContext::PreloadContext()
     PreloadContext::set_replicas(
             std::stoi(gkfs::env::get_var(gkfs::env::NUM_REPL, "0")));
 }
+
+// Destructor set here to allow unique_ptr of forward declared classes in the
+// header. T must be complete at the point of deletion.
+PreloadContext::~PreloadContext() = default;
 
 void
 PreloadContext::init_logging() {
@@ -109,6 +118,74 @@ PreloadContext::init_logging() {
                                     log_filter, log_verbosity
 #endif
     );
+}
+
+bool
+PreloadContext::init_metrics() {
+#ifdef GKFS_ENABLE_CLIENT_METRICS
+    auto flush_interval = std::stoi(gkfs::env::get_var(
+            gkfs::env::METRICS_FLUSH_INTERVAL,
+            std::to_string(gkfs::config::client_metrics::flush_interval)));
+    if(gkfs::env::var_is_set(gkfs::env::METRICS_IP_PORT)) {
+        write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::write,
+                gkfs::messagepack::client_metric_flush_type::socket,
+                flush_interval);
+        read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::read,
+                gkfs::messagepack::client_metric_flush_type::socket,
+                flush_interval);
+        if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
+            LOG(INFO,
+                "Client metrics enabled with ZeroMQ flushing. Initializing...");
+            write_metrics_->enable();
+            read_metrics_->enable();
+            auto metrics_ip = gkfs::env::get_var(gkfs::env::METRICS_IP_PORT);
+            write_metrics_->zmq_connect(metrics_ip);
+            if(!write_metrics_->zmq_is_connected()) {
+                LOG(ERROR, "Client write metrics failed to connect to : {}",
+                    metrics_ip);
+                return false;
+            }
+            LOG(INFO, "Client write metrics connected to : {}", metrics_ip);
+            read_metrics_->zmq_connect(metrics_ip);
+            if(!read_metrics_->zmq_is_connected()) {
+                LOG(ERROR, "Client read metrics failed to connect to : {}",
+                    metrics_ip);
+                return false;
+            }
+            LOG(INFO, "Client read metrics connected to : {}", metrics_ip);
+        }
+    } else {
+        write_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::write,
+                gkfs::messagepack::client_metric_flush_type::file,
+                flush_interval);
+        read_metrics_ = std::make_unique<gkfs::messagepack::ClientMetrics>(
+                gkfs::messagepack::client_metric_io_type::read,
+                gkfs::messagepack::client_metric_flush_type::file,
+                flush_interval);
+        if(gkfs::env::var_is_set(gkfs::env::ENABLE_METRICS)) {
+            LOG(INFO,
+                "Client metrics enabled with file flushing. Initializing...");
+            write_metrics_->enable();
+            read_metrics_->enable();
+            if(!gkfs::env::var_is_set(gkfs::env::METRICS_PATH)) {
+                LOG(WARNING, "No metrics path set. Using default path at {}",
+                    gkfs::config::client_metrics::flush_path);
+            }
+            auto metrics_path = gkfs::env::get_var(
+                    gkfs::env::METRICS_PATH,
+                    gkfs::config::client_metrics::flush_path);
+            std::filesystem::create_directories(metrics_path);
+            write_metrics_->path(metrics_path, "write");
+            LOG(INFO, "Client write metrics path: {}", write_metrics_->path());
+            read_metrics_->path(metrics_path, "read");
+            LOG(INFO, "Client read metrics path: {}", read_metrics_->path());
+        }
+    }
+#endif
+    return true;
 }
 
 void
@@ -452,7 +529,6 @@ PreloadContext::unprotect_user_fds() {
     internal_fds_must_relocate_ = true;
 }
 
-
 std::string
 PreloadContext::get_hostname() {
     return hostname;
@@ -466,6 +542,16 @@ PreloadContext::set_replicas(const int repl) {
 int
 PreloadContext::get_replicas() {
     return replicas_;
+}
+
+const std::shared_ptr<messagepack::ClientMetrics>
+PreloadContext::write_metrics() {
+    return write_metrics_;
+}
+
+const std::shared_ptr<messagepack::ClientMetrics>
+PreloadContext::read_metrics() {
+    return read_metrics_;
 }
 
 } // namespace preload

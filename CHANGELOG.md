@@ -8,6 +8,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added client-side metrics including the periodic export to a file or ZeroMQ sink via the TCP
+  protocol ([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
+  - CMake option added to enable this optional feature `-DGKFS_ENABLE_CLIENT_METRICS=ON`
+  - A new CMake option `-DGKFS_BUILD_TOOLS=ON` was added which includes a ZeroMQ server to capture client-side metrics
+  - The `libzmq` and `cppzmq` dependencies are required and can be found in the `default_zmq` profile.
+  - Added new environment variables for the GekkoFS client:
+    - `LIBGKFS_ENABLE_METRICS=ON` enables capturing client-side metrics
+    - `LIBGKFS_METRICS_FLUSH_INTERVAL=10` sets the flush interval to 10 seconds (defaults to 5). All client metrics are
+      flushed when the process ends.
+    - `LIBGKFS_METRICS_PATH=<path>` sets the path to flush client-metrics (defaults to `/tmp/gkfs_client_metrics`).
+    - `LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555` enables flushing to a set ZeroMQ server. This option disables flushing to
+      a file.
+- Added the dependency profile for MOGON-NHR ([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
+- Added UCX and libfabric tcp support ([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
 - Added intercepton of `fadvise64()` and
   `fallocate()` ([!161](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/161)).
 - Added user library `gkfs_user_lib` that can be used to directly link to an
@@ -30,6 +44,9 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 
 ### Removed
 ### Fixed
+
+- An issue that updated the last modified time of a file during `stat` operations was
+  fixed([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
 
 ## [0.9.2] - 2024-02
 

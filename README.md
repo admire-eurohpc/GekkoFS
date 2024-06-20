@@ -310,7 +310,7 @@ instead or in addition to the output file. It must be enabled at compile time vi
 argument `-DGKFS_ENABLE_PROMETHEUS` and the daemon argument `--enable-prometheus`. The corresponding statistics are then
 pushed to the Prometheus instance.
 
-## Advanced experimental features
+## Advanced and experimental features
 
 ### Rename
 
@@ -326,6 +326,51 @@ The user can enable the data replication feature by setting the replication envi
 `LIBGKFS_NUM_REPL=<num repl>`.
 The number of replicas should go from `0` to the `number of servers - 1`. The replication environment variable can be
 set up for each client independently.
+
+### Client metrics via MessagePack and ZeroMQ
+
+GekkoFS clients support capturing the I/O traces of each individual process and periodically exporting them to a given
+file or ZeroMQ sink via the TCP protocol.
+To use this feature, the corresponding ZeroMQ (`libzmq` and `cppzmq`) dependencies are required which can be found in
+the `default_zmq` dependency profile.
+In addition, GekkoFS must be compiled with client metrics enabled (disabled by default) via the CMake argument
+`-DGKFS_ENABLE_CLIENT_METRICS=ON`.
+
+Client metrics are individually enabled per GekkoFS client process via the following environment variables:
+
+- `LIBGKFS_ENABLE_METRICS=ON` enables capturing client-side metrics.
+- `LIBGKFS_METRICS_FLUSH_INTERVAL=10` sets the flush interval to 10 seconds (defaults to 5). All outstanding client
+  metrics are flushed when the process ends.
+- `LIBGKFS_METRICS_PATH=<path>` sets the path to flush client-metrics (defaults to `/tmp/gkfs_client_metrics`).
+- `LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555` enables flushing to a set ZeroMQ server. This option disables flushing to a
+  file.
+
+The ZeroMQ export can be tested via the `gkfs_clientmetrics2json` application which is built when enabling the CMake
+option `-DGKFS_BUILD_TOOLS=ON`:
+
+- Starting the ZeroMQ server: `gkfs_clientmetrics2json tcp://127.0.0.1:5555`
+- `gkfs_clientmetrics2json <path>` can also be used to unpack the Messagepack export from a file.
+  Examplarily output with the ZeroMQ sink enabled when running:
+  `LD_PRELOAD=libgkfs_intercept.so LIBGKFS_ENABLE_METRICS=ON LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555 gkfs cp testfile /tmp/gkfs_mountdir/testfile`:
+
+```bash
+~ $ gkfs_clientmetrics2json tcp://127.0.0.1:5555
+Binding to: tcp://127.0.0.1:5555
+Waiting for message...
+
+Received message with size 68
+Generated JSON:
+[extra]avg_thruput_mib: [221.93,175.87,266.81,135.69]
+end_t_micro: [8008,12396,16006,18454]
+flush_t: 18564
+hostname: "evie"
+io_type: "w"
+pid: 1259304
+req_size: [524288,524288,524288,229502]
+start_t_micro: [5755,9553,14132,16841]
+total_bytes: 1802366
+total_iops: 4
+```
 
 ## Acknowledgment
 
