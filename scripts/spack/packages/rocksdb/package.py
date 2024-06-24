@@ -17,10 +17,12 @@ class Rocksdb(MakefilePackage):
 
     version("master", git=git, branch="master", submodules=True)
     version("9.2.1", sha256="bb20fd9a07624e0dc1849a8e65833e5421960184f9c469d508b58ed8f40a780f")
+    version("8.10.2", sha256="44b6ec2f4723a0d495762da245d4a59d38704e0d9d3d31c45af4014bee853256")
     version("8.6.7", sha256="cdb2fc3c6a556f20591f564cb8e023e56828469aa3f76e1d9535c443ba1f0c1a")
     version("8.1.1", sha256="9102704e169cfb53e7724a30750eeeb3e71307663852f01fa08d5a320e6155a8")
     version("7.7.3", sha256="b8ac9784a342b2e314c821f6d701148912215666ac5e9bdbccd93cf3767cb611")
     version("7.2.2", sha256="c4ea6bd2e3ffe3f0f8921c699234d59108c9122d61b0ba2aa78358642a7b614e")
+    version('6.26.1', sha256='5aeb94677bdd4ead46eb4cefc3dbb5943141fb3ce0ba627cfd8cbabeed6475e7')
     version("6.20.3", sha256="c6502c7aae641b7e20fafa6c2b92273d935d2b7b2707135ebd9a67b092169dca")
     version("6.19.3", sha256="5c19ffefea2bbe4c275d0c60194220865f508f371c64f42e802b4a85f065af5b")
     version("6.11.4", sha256="6793ef000a933af4a834b59b0cd45d3a03a3aac452a68ae669fb916ddd270532")
