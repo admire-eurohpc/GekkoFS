@@ -9,6 +9,9 @@ import re
 import spack.platforms.cray
 from spack.package import *
 
+#################################
+# NOTE: This is a copy from the main tree which causes errors with UCX. This was fixed in this version.
+################################
 
 class Libfabric(AutotoolsPackage):
     """The Open Fabrics Interfaces (OFI) is a framework focused on exporting
