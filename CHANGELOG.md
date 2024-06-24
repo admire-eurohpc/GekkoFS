@@ -41,6 +41,8 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
   margo-shim-hg ([!165](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/165)).
   - Improves RPC stability
   - Removes manual updates to Mercury public IDs from Hermes-Mercury to Margo
+- Updated Spack to support the latest version ([!190](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/190)).
+
 
 ### Removed
 ### Fixed
