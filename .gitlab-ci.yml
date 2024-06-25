@@ -110,7 +110,7 @@ gkfs:integration:
   needs: ['gkfs']
   parallel:
     matrix:
-      - SUBTEST: [ data, status, syscalls, directories, operations, position, shell, rename, forwarding]
+      - SUBTEST: [ data, status, syscalls, directories, operations, position, shell, rename ]
 
   script:
     ## run tests
@@ -150,6 +150,53 @@ gkfs:integration:
     reports:
       junit: ${BUILD_PATH}/tests/integration/report.xml
 
+
+gkfwd:integration:
+  stage: test
+  image: gekkofs/testing:0.9.3-exp
+  interruptible: true
+  needs: ['gkfwd']
+  parallel:
+    matrix:
+      - SUBTEST: [ forwarding ]
+
+  script:
+    ## run tests
+    - export PATH=${PATH}:/usr/local/bin
+    - mkdir -p ${BUILD_PATH}/tests/run
+    - cd ${BUILD_PATH}/tests/integration
+    - ${PYTEST} -v -n $(nproc)
+          ${INTEGRATION_TESTS_BIN_PATH}/${SUBTEST}
+          --basetemp=${BUILD_PATH}/tests/run/${SUBTEST}
+          --junit-xml=report.xml
+
+    ## capture coverage information for this test and write it to
+    ## $COVERAGE_PATH/$SUBTEST.info
+    - cd ${CI_PROJECT_DIR}
+    - cmake --preset ci-coverage
+          -DCOVERAGE_OUTPUT_DIR=${COVERAGE_PATH}
+          -DCOVERAGE_CAPTURE_TRACEFILE=${COVERAGE_PATH}/${SUBTEST}.info
+    ## Since the pipeline recreates the source tree, the access times for .gcno
+    ## files are newer than those of .gcda files. This makes gcov emit a
+    ## warning for each file which slows it down. Updating the timestamps
+    ## avoids this
+    - find ${BUILD_PATH} -name "*.gcno" -exec touch {} \;
+    - cmake --build ${BUILD_PATH} --target coverage-capture
+
+  # fix relative paths so that GitLab can find the correct files
+  after_script:
+    - perl -i.orig
+          -pe 's%file="(.*?)"%file="tests/integration/$1"%;'
+          -pe 's%(../)+install/share/gkfwd/%%g;'
+          ${BUILD_PATH}/tests/integration/report.xml
+
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - ${BUILD_PATH}
+    reports:
+      junit: ${BUILD_PATH}/tests/integration/report.xml
 
 
 
@@ -253,7 +300,7 @@ coverage:
   image: gekkofs/testing:0.9.3-exp
 #  needs: [ 'coverage:baseline', 'gkfs:integration', 'gkfwd:integration',
 #           'gkfs:unit' ]
-  needs: [ 'coverage:baseline', 'gkfs:integration', 'gkfs:unit', 'gkfs:integration']
+  needs: [ 'coverage:baseline', 'gkfs:integration', 'gkfs:unit', 'gkfwd:integration']
   script:
     - cd ${CI_PROJECT_DIR}
     - cmake
