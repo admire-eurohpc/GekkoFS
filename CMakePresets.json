@@ -78,7 +78,7 @@
         "GKFS_ENABLE_PROMETHEUS": true,
         "GKFS_RENAME_SUPPORT": true,
         "GKFS_MAX_OPEN_FDS": "10000",
-        "GKFS_MAX_INTERNAL_FDS": "1024"
+        "GKFS_MAX_INTERNAL_FDS": "1024",
         "GKFS_ENABLE_EC": true
       }
     },
