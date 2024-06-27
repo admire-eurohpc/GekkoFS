@@ -415,9 +415,11 @@ init_environment() {
     // init margo for proxy RPC
 
     if(!GKFS_DATA->bind_proxy_addr().empty()) {
-        GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ... ", __func__);
+        GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ... ",
+                                      __func__);
         try {
-            auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>();
+            auto distributor =
+                    std::make_shared<gkfs::rpc::SimpleHashDistributor>();
             RPC_DATA->distributor(distributor);
         } catch(const std::exception& e) {
             GKFS_DATA->spdlogger()->error(
@@ -438,7 +440,8 @@ init_environment() {
                     e.what());
             throw;
         }
-        GKFS_DATA->spdlogger()->debug("{}() Proxy RPC server running.", __func__);
+        GKFS_DATA->spdlogger()->debug("{}() Proxy RPC server running.",
+                                      __func__);
     }
 
     // Init Argobots ESs to drive IO

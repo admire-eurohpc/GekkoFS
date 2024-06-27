@@ -206,7 +206,8 @@ forward_get_dirents_single_proxy(const string& path, int server) {
             new char[gkfs::config::rpc::dirents_buff_size_proxy]);
 
     // We use the full size per server...
-    const std::size_t per_host_buff_size = gkfs::config::rpc::dirents_buff_size_proxy;
+    const std::size_t per_host_buff_size =
+            gkfs::config::rpc::dirents_buff_size_proxy;
     auto output_ptr = make_unique<
             vector<tuple<const std::string, bool, size_t, time_t>>>();
 

@@ -2379,8 +2379,7 @@ struct write_data_proxy {
             : m_path(other.path), m_offset(other.offset),
               m_write_size(other.write_size), m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_client_proxy_write_in_t() {
+        explicit operator rpc_client_proxy_write_in_t() {
             return {m_path.c_str(), m_offset, m_write_size,
                     hg_bulk_t(m_buffers)};
         }
@@ -2519,8 +2518,7 @@ struct read_data_proxy {
             : m_path(other.path), m_offset(other.offset),
               m_read_size(other.read_size), m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_client_proxy_read_in_t() {
+        explicit operator rpc_client_proxy_read_in_t() {
             return {m_path.c_str(), m_offset, m_read_size,
                     hg_bulk_t(m_buffers)};
         }
@@ -2652,8 +2650,7 @@ struct trunc_data_proxy {
             : m_path(other.path), m_current_size(other.current_size),
               m_length(other.length) {}
 
-        explicit
-        operator rpc_client_proxy_trunc_in_t() {
+        explicit operator rpc_client_proxy_trunc_in_t() {
             return {
                     m_path.c_str(),
                     m_current_size,
@@ -2768,8 +2765,7 @@ struct chunk_stat_proxy {
         explicit input(const rpc_chunk_stat_in_t& other)
             : m_dummy(other.dummy) {}
 
-        explicit
-        operator rpc_chunk_stat_in_t() {
+        explicit operator rpc_chunk_stat_in_t() {
             return {m_dummy};
         }
 
@@ -2908,8 +2904,7 @@ struct create_proxy {
         explicit input(const rpc_mk_node_in_t& other)
             : m_path(other.path), m_mode(other.mode) {}
 
-        explicit
-        operator rpc_mk_node_in_t() {
+        explicit operator rpc_mk_node_in_t() {
             return {m_path.c_str(), m_mode};
         }
 
@@ -3018,8 +3013,7 @@ struct stat_proxy {
 
         explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_path_only_in_t() {
+        explicit operator rpc_path_only_in_t() {
             return {m_path.c_str()};
         }
 
@@ -3138,8 +3132,7 @@ struct remove_proxy {
 
         explicit input(const rpc_rm_node_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_rm_node_in_t() {
+        explicit operator rpc_rm_node_in_t() {
             return {m_path.c_str()};
         }
 
@@ -3254,8 +3247,7 @@ struct decr_size_proxy {
         explicit input(const rpc_trunc_in_t& other)
             : m_path(other.path), m_length(other.length) {}
 
-        explicit
-        operator rpc_trunc_in_t() {
+        explicit operator rpc_trunc_in_t() {
             return {m_path.c_str(), m_length};
         }
 
@@ -3364,8 +3356,7 @@ struct get_metadentry_size_proxy {
 
         explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_path_only_in_t() {
+        explicit operator rpc_path_only_in_t() {
             return {m_path.c_str()};
         }
 
@@ -3500,8 +3491,7 @@ struct update_metadentry_size_proxy {
             : m_path(other.path), m_size(other.size), m_offset(other.offset),
               m_append(other.append) {}
 
-        explicit
-        operator rpc_update_metadentry_size_in_t() {
+        explicit operator rpc_update_metadentry_size_in_t() {
             return {m_path.c_str(), m_size, m_offset, m_append};
         }
 
@@ -3635,8 +3625,7 @@ struct get_dirents_extended_proxy {
             : m_path(other.path), m_server(other.server),
               m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_proxy_get_dirents_in_t() {
+        explicit operator rpc_proxy_get_dirents_in_t() {
             return {m_path.c_str(), m_server, hg_bulk_t(m_buffers)};
         }
 

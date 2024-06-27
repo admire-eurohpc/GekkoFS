@@ -993,8 +993,7 @@ hook_lgetxattr(const char* path, const char* name, void* value, size_t size) {
     if(CTX->relativize_path(path, rel_path)) {
         return -ENOTSUP;
     }
-    return syscall_no_intercept_wrapper(SYS_lgetxattr, path, name, value,
-                                            size);
+    return syscall_no_intercept_wrapper(SYS_lgetxattr, path, name, value, size);
 }
 
 
