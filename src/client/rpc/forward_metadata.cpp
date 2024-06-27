@@ -782,7 +782,7 @@ forward_get_dirents(const string& path) {
  * reusing the forward_get_dirents code. As we only need a server, we could
  * simplify the code removing the asynchronous part.
  */
-pair<int, vector<tuple<const std::string, bool, size_t, time_t>>>
+pair<int, unique_ptr<vector<tuple<const std::string, bool, size_t, time_t>>>>
 forward_get_dirents_single(const string& path, int server) {
 
     if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
@@ -805,7 +805,8 @@ forward_get_dirents_single(const string& path, int server) {
 
     // We use the full size per server...
     const std::size_t per_host_buff_size = gkfs::config::rpc::dirents_buff_size;
-    vector<tuple<const std::string, bool, size_t, time_t>> output;
+    auto output_ptr = make_unique<
+            vector<tuple<const std::string, bool, size_t, time_t>>>();
 
     // expose local buffers for RMA from servers
     std::vector<hermes::exposed_memory> exposed_buffers;
@@ -819,7 +820,7 @@ forward_get_dirents_single(const string& path, int server) {
     } catch(const std::exception& ex) {
         LOG(ERROR, "{}() Failed to expose buffers for RMA. err '{}'", __func__,
             ex.what());
-        return make_pair(EBUSY, output);
+        return make_pair(EBUSY, std::move(output_ptr));
     }
 
     auto err = 0;
@@ -899,9 +900,10 @@ forward_get_dirents_single(const string& path, int server) {
         auto name = std::string(names_ptr);
         // number of characters in entry + \0 terminator
         names_ptr += name.size() + 1;
-        output.emplace_back(std::forward_as_tuple(name, ftype, size, ctime));
+        output_ptr->emplace_back(
+                std::forward_as_tuple(name, ftype, size, ctime));
     }
-    return make_pair(err, output);
+    return make_pair(err, std::move(output_ptr));
 }
 
 

@@ -36,7 +36,8 @@ forward_update_metadentry_size_proxy(const std::string& path, const size_t size,
 std::pair<int, off64_t>
 forward_get_metadentry_size_proxy(const std::string& path);
 
-std::pair<int, std::vector<std::tuple<const std::string, bool, size_t, time_t>>>
+std::pair<int, std::unique_ptr<std::vector<
+                       std::tuple<const std::string, bool, size_t, time_t>>>>
 forward_get_dirents_single_proxy(const std::string& path, int server);
 
 } // namespace gkfs::rpc

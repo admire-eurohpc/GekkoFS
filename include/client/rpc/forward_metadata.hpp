@@ -84,7 +84,8 @@ forward_get_metadentry_size(const std::string& path, const int copy);
 std::pair<int, std::shared_ptr<gkfs::filemap::OpenDir>>
 forward_get_dirents(const std::string& path);
 
-std::pair<int, std::vector<std::tuple<const std::string, bool, size_t, time_t>>>
+std::pair<int, std::unique_ptr<std::vector<
+                       std::tuple<const std::string, bool, size_t, time_t>>>>
 forward_get_dirents_single(const std::string& path, int server);
 
 #ifdef HAS_SYMLINKS

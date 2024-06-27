@@ -190,7 +190,7 @@ forward_get_metadentry_size_proxy(const std::string& path) {
     }
 }
 
-pair<int, vector<tuple<const std::string, bool, size_t, time_t>>>
+pair<int, unique_ptr<vector<tuple<const std::string, bool, size_t, time_t>>>>
 forward_get_dirents_single_proxy(const string& path, int server) {
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
@@ -221,7 +221,7 @@ forward_get_dirents_single_proxy(const string& path, int server) {
     } catch(const std::exception& ex) {
         LOG(ERROR, "{}() Failed to expose buffers for RMA. err '{}'", __func__,
             ex.what());
-        return make_pair(EBUSY, output);
+        return make_pair(EBUSY, std::move(output_ptr));
     }
 
     auto err = 0;
@@ -301,9 +301,10 @@ forward_get_dirents_single_proxy(const string& path, int server) {
         auto name = std::string(names_ptr);
         // number of characters in entry + \0 terminator
         names_ptr += name.size() + 1;
-        output.emplace_back(std::forward_as_tuple(name, ftype, size, ctime));
+        output_ptr->emplace_back(
+                std::forward_as_tuple(name, ftype, size, ctime));
     }
-    return make_pair(err, output);
+    return make_pair(err, std::move(output_ptr));
 }
 
 } // namespace rpc

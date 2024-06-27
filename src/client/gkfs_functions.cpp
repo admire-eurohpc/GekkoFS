@@ -301,9 +301,9 @@ gkfs_create(const std::string& path, mode_t mode) {
             return -1;
     }
 
-    // if(check_parent_dir(path)) {
-    //     return -1;
-    // }
+    if(check_parent_dir(path)) {
+        return -1;
+    }
     int err = 0;
     if(gkfs::config::proxy::fwd_create && CTX->use_proxy()) {
         // no replication support for proxy
@@ -1662,7 +1662,8 @@ extern "C" int
 gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
                         unsigned int count, int server) {
 
-    pair<int, vector<tuple<const basic_string<char>, bool, size_t, time_t>>>
+    pair<int, unique_ptr<vector<
+                      tuple<const basic_string<char>, bool, size_t, time_t>>>>
             ret{};
     if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
         ret = gkfs::rpc::forward_get_dirents_single_proxy(path, server);
@@ -1676,7 +1677,7 @@ gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
         return -1;
     }
 
-    auto open_dir = ret.second;
+    auto& open_dir = *ret.second;
     unsigned int pos = 0;
     unsigned int written = 0;
     struct dirent_extended* current_dirp = nullptr;
