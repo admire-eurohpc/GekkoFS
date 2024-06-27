@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2020, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2020, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -89,13 +89,6 @@ init_ipc_server() {
     args.hg_init_info = &hg_options;
     auto* mid = margo_init_ext(gkfs::rpc::protocol::na_sm, MARGO_SERVER_MODE,
                                &args);
-
-    //    hg_options.na_class = nullptr;
-    //    // Start Margo (this will also initialize Argobots and Mercury
-    //    internally) auto mid = margo_init_opt(gkfs::rpc::protocol::na_sm,
-    //    MARGO_SERVER_MODE,
-    //                              &hg_options, HG_TRUE,
-    //                              gkfs::config::rpc::proxy_handler_xstreams);
     if(mid == MARGO_INSTANCE_NULL) {
         throw runtime_error("Failed to initialize the Margo IPC server");
     }
@@ -183,14 +176,6 @@ init_rpc_client(const string& protocol) {
     args.json_config = margo_config.c_str();
     args.hg_init_info = &hg_options;
     auto* mid = margo_init_ext(protocol.c_str(), MARGO_CLIENT_MODE, &args);
-
-    //    hg_options.na_class = nullptr;
-    //    if(gkfs::rpc::protocol::ofi_psm2 == protocol.c_str())
-    //        hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
-    //    // Start Margo (this will also initialize Argobots and Mercury
-    //    internally) auto mid = margo_init_opt(protocol.c_str(),
-    //    MARGO_CLIENT_MODE, &hg_options,
-    //                              HG_TRUE, 0);
     if(mid == MARGO_INSTANCE_NULL) {
         throw runtime_error("Failed to initialize the Margo RPC client");
     }

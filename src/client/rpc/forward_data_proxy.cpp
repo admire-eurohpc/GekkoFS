@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2020, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2020, Johannes Gutenberg Universitaet Mainz, Germany
+  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
+  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -40,7 +40,6 @@ forward_write_proxy(const string& path, const void* buf, off64_t offset,
                     size_t write_size) {
     LOG(DEBUG, "Using write proxy for path '{}' offset '{}' size '{}' ...",
         path, offset, write_size);
-    // TODO mostly copy pasta from forward_data.
     assert(write_size > 0);
 
     // Calculate chunkid boundaries and numbers so that daemons know in

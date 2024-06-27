@@ -237,10 +237,6 @@ init_rpc_server() {
 
 void
 register_proxy_server_rpcs(margo_instance_id mid) {
-    //    MARGO_REGISTER(mid, gkfs::rpc::tag::write, rpc_write_data_in_t,
-    //                   rpc_data_out_t, rpc_srv_write);
-    //    MARGO_REGISTER(mid, gkfs::rpc::tag::read, rpc_read_data_in_t,
-    //                   rpc_data_out_t, rpc_srv_read);
     MARGO_REGISTER(mid, gkfs::rpc::tag::get_chunk_stat, rpc_chunk_stat_in_t,
                    rpc_chunk_stat_out_t, rpc_srv_get_chunk_stat);
     MARGO_REGISTER(mid, gkfs::rpc::tag::create, rpc_mk_node_in_t, rpc_err_out_t,
@@ -294,14 +290,6 @@ init_proxy_rpc_server() {
     args.hg_init_info = &hg_options;
     auto* mid = margo_init_ext(GKFS_DATA->bind_proxy_addr().c_str(),
                                MARGO_SERVER_MODE, &args);
-    //    hg_options.na_class = nullptr;
-    //    if(gkfs::rpc::protocol::ofi_psm2 == GKFS_DATA->proxy_rpc_protocol())
-    //        hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
-    //    // Start Margo (this will also initialize Argobots and Mercury
-    //    internally) auto mid =
-    //    margo_init_opt(GKFS_DATA->bind_proxy_addr().c_str(),
-    //                              MARGO_SERVER_MODE, &hg_options, HG_TRUE,
-    //                              gkfs::config::rpc::proxy_handler_xstreams);
     if(mid == MARGO_INSTANCE_NULL) {
         throw runtime_error("Failed to initialize the Margo proxy RPC server");
     }

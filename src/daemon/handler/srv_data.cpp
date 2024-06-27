@@ -54,7 +54,6 @@
 #endif
 using namespace std;
 
-
 namespace {
 
 /**
@@ -673,6 +672,7 @@ rpc_srv_proxy_write(hg_handle_t handle) {
     /*
      * 1. Setup
      */
+    // TODO Proxy write does not support the chunk bitmap yet
     rpc_proxy_daemon_write_in_t in{};
     rpc_data_out_t out{};
     hg_bulk_t bulk_handle = nullptr;
@@ -975,6 +975,7 @@ rpc_srv_proxy_read(hg_handle_t handle) {
     /*
      * 1. Setup
      */
+    // TODO Proxy write does not support the chunk bitmap yet
     rpc_proxy_daemon_read_in_t in{};
     rpc_data_out_t out{};
     hg_bulk_t bulk_handle = nullptr;

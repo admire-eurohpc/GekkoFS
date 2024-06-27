@@ -71,7 +71,7 @@ constexpr auto zero_buffer_before_read = false;
  * regardless of their order minimizing the gap between bulk transfers.
  * Due to spinning in a loop this increases CPU utilization
  */
-constexpr auto spin_lock_read = true;
+constexpr auto spin_lock_read = false;
 } // namespace io
 
 namespace log {

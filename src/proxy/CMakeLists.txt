@@ -61,19 +61,4 @@ target_link_libraries(
     Threads::Threads
 )
 
-#set(PROXY_HEADERS
-#    ../../include/config.hpp
-#    ../../include/common/common_defs.hpp
-#    ../../include/common/rpc/rpc_types.hpp
-#    ../../include/common/rpc/rpc_util.hpp
-#    ../../include/proxy/env.hpp
-#    ../../include/proxy/proxy.hpp
-#    ../../include/proxy/proxy_data.hpp
-#    ../../include/proxy/util.hpp
-#    ../../include/proxy/rpc/forward_data.hpp
-#    ../../include/proxy/rpc/forward_metadata.hpp
-#    ../../include/proxy/rpc/rpc_defs.hpp
-#    ../../include/proxy/rpc/rpc_util.hpp
-#    )
-
 install(TARGETS gkfs_proxy RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
