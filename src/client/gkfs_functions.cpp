@@ -1332,75 +1332,74 @@ gkfs_opendir(const std::string& path) {
     // this is used in get_metadata() later to avoid stat RPCs
     if(CTX->use_cache()) {
         ret.second = make_shared<gkfs::filemap::OpenDir>(path);
-
-        std::vector<std::future<
+        if constexpr(gkfs::config::rpc::async_opendir) {
+            std::vector<std::future<
+                    pair<int, unique_ptr<vector<tuple<const basic_string<char>,
+                                                      bool, size_t, time_t>>>>>>
+                    futures;
+            // Launch RPC calls asynchronously
+            for(uint64_t i = 0; i < CTX->hosts().size(); i++) {
+                futures.push_back(std::async(std::launch::async, [&, i]() {
+                    if(gkfs::config::proxy::fwd_get_dirents_single &&
+                       CTX->use_proxy()) {
+                        return gkfs::rpc::forward_get_dirents_single_proxy(path,
+                                                                           i);
+                    } else {
+                        return gkfs::rpc::forward_get_dirents_single(path, i);
+                    }
+                }));
+            }
+            // Collect and process results
+            for(auto& fut : futures) {
+                auto res = fut.get(); // Wait for the RPC result
+                auto& open_dir = *res.second;
+                for(auto& dentry : open_dir) {
+                    // type returns as a boolean. true if it is a directory
+                    LOG(DEBUG, "name: {} type: {} size: {} ctime: {}",
+                        get<0>(dentry), get<1>(dentry), get<2>(dentry),
+                        get<3>(dentry));
+                    auto ftype = get<1>(dentry)
+                                         ? gkfs::filemap::FileType::directory
+                                         : gkfs::filemap::FileType::regular;
+                    // filename, is_dir, size, ctime
+                    ret.second->add(get<0>(dentry), ftype);
+                    CTX->cache()->insert(
+                            path, get<0>(dentry),
+                            gkfs::cache::cache_entry{ftype, get<2>(dentry),
+                                                     get<3>(dentry)});
+                }
+                ret.first = res.first;
+            }
+        } else {
+            for(uint64_t i = 0; i < CTX->hosts().size(); i++) {
                 pair<int, unique_ptr<vector<tuple<const basic_string<char>,
-                                                  bool, size_t, time_t>>>>>>
-                futures;
-        // Launch RPC calls asynchronously
-        for(uint64_t i = 0; i < CTX->hosts().size(); i++) {
-            futures.push_back(std::async(std::launch::async, [&, i]() {
+                                                  bool, size_t, time_t>>>>
+                        res{};
                 if(gkfs::config::proxy::fwd_get_dirents_single &&
                    CTX->use_proxy()) {
-                    return gkfs::rpc::forward_get_dirents_single_proxy(path, i);
+                    res = gkfs::rpc::forward_get_dirents_single_proxy(path, i);
                 } else {
-                    return gkfs::rpc::forward_get_dirents_single(path, i);
+                    res = gkfs::rpc::forward_get_dirents_single(path, i);
                 }
-            }));
-        }
-        // Collect and process results
-        for(auto& fut : futures) {
-            auto res = fut.get(); // Wait for the RPC result
-            auto& open_dir = *res.second;
-            for(auto& dentry : open_dir) {
-                // type returns as a boolean. true if it is a directory
-                LOG(DEBUG, "name: {} type: {} size: {} ctime: {}",
-                    get<0>(dentry), get<1>(dentry), get<2>(dentry),
-                    get<3>(dentry));
-                auto ftype = get<1>(dentry) ? gkfs::filemap::FileType::directory
-                                            : gkfs::filemap::FileType::regular;
-                // filename, is_dir, size, ctime
-                ret.second->add(get<0>(dentry), ftype);
-                CTX->cache()->insert(path, get<0>(dentry),
-                                     gkfs::cache::cache_entry{ftype,
-                                                              get<2>(dentry),
-                                                              get<3>(dentry)});
+                auto& open_dir = *res.second;
+                for(auto& dentry : open_dir) {
+                    //                    LOG(DEBUG, "name: {} type: {} size: {}
+                    //                    ctime {} ",
+                    //                        get<0>(dentry), get<1>(dentry),
+                    //                        get<2>(dentry), get<3>(dentry));
+                    auto ftype = get<1>(dentry)
+                                         ? gkfs::filemap::FileType::directory
+                                         : gkfs::filemap::FileType::regular;
+                    // filename, is_dir, size, ctime
+                    ret.second->add(get<0>(dentry), ftype);
+                    CTX->cache()->insert(
+                            path, get<0>(dentry),
+                            gkfs::cache::cache_entry{ftype, get<2>(dentry),
+                                                     get<3>(dentry)});
+                }
+                ret.first = res.first;
             }
-            ret.first = res.first;
         }
-        // TODO parallelize
-        //        for(uint64_t i = 0; i < CTX->hosts().size(); i++) {
-        //            pair<int, unique_ptr<vector<tuple<const
-        //            basic_string<char>, bool,
-        //                                              size_t, time_t>>>>
-        //                    res{};
-        //            if(gkfs::config::proxy::fwd_get_dirents_single &&
-        //               CTX->use_proxy()) {
-        //                res =
-        //                gkfs::rpc::forward_get_dirents_single_proxy(path, i);
-        //            } else {
-        //                res = gkfs::rpc::forward_get_dirents_single(path, i);
-        //            }
-        //            auto& open_dir = *res.second;
-        //            for(auto& dentry : open_dir) {
-        //                // type returns as a boolean. true if it is a
-        //                directory LOG(DEBUG, "name: {} type: {} size: {}
-        //                ctime: {}",
-        //                    get<0>(dentry), get<1>(dentry), get<2>(dentry),
-        //                    get<3>(dentry));
-        //                auto ftype = get<1>(dentry) ?
-        //                gkfs::filemap::FileType::directory
-        //                                            :
-        //                                            gkfs::filemap::FileType::regular;
-        //                // filename, is_dir, size, ctime
-        //                ret.second->add(get<0>(dentry), ftype);
-        //                CTX->cache()->insert(path, get<0>(dentry),
-        //                                     gkfs::cache::cache_entry{ftype,
-        //                                                              get<2>(dentry),
-        //                                                              get<3>(dentry)});
-        //            }
-        //            ret.first = res.first;
-        //        }
         //        CTX->cache()->dump_cache_to_log(path);
     } else {
         ret = gkfs::rpc::forward_get_dirents(path);
