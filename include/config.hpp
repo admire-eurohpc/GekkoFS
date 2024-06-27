@@ -137,6 +137,7 @@ namespace rpc {
 constexpr auto chunksize = 524288; // in bytes (e.g., 524288 == 512KB)
 // size of preallocated buffer to hold directory entries in rpc call
 constexpr auto dirents_buff_size = (8 * 1024 * 1024); // 8 mega
+constexpr auto dirents_buff_size_proxy = (128 * 1024 * 1024); // 8 mega
 /*
  * Indicates the number of concurrent progress to drive I/O operations of chunk
  * files to and from local file systems The value is directly mapped to created

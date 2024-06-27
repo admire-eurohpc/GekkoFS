@@ -203,11 +203,12 @@ forward_get_dirents_single_proxy(const string& path, int server) {
      * buffer. Moreover we don't need a zeroed buffer here.
      */
     auto large_buffer = std::unique_ptr<char[]>(
-            new char[gkfs::config::rpc::dirents_buff_size]);
+            new char[gkfs::config::rpc::dirents_buff_size_proxy]);
 
     // We use the full size per server...
-    const std::size_t per_host_buff_size = gkfs::config::rpc::dirents_buff_size;
-    vector<tuple<const std::string, bool, size_t, time_t>> output;
+    const std::size_t per_host_buff_size = gkfs::config::rpc::dirents_buff_size_proxy;
+    auto output_ptr = make_unique<
+            vector<tuple<const std::string, bool, size_t, time_t>>>();
 
     // expose local buffers for RMA from servers
     std::vector<hermes::exposed_memory> exposed_buffers;
