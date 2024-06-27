@@ -258,16 +258,25 @@ init_environment() {
 #endif
         CTX->distributor(distributor);
     }
-    if(gkfs::env::var_is_set(gkfs::env::DIR_CACHE)) {
+
+    if(gkfs::config::cache::use_dentry_cache &&
+       !gkfs::env::var_is_set(gkfs::env::DISABLE_DENTRY_CACHE)) {
         try {
-            LOG(INFO, "Initializing client caching...");
-            auto cache = std::make_shared<gkfs::cache::Cache>();
-            CTX->cache(cache);
-            LOG(INFO, "Client caching is enabled and will be used!");
-            CTX->use_cache(true);
+            LOG(INFO, "Initializing dentry caching...");
+            auto dentry_cache =
+                    std::make_shared<gkfs::cache::dir::DentryCache>();
+            CTX->dentry_cache(dentry_cache);
+            LOG(INFO, "dentry caching enabled.");
+            CTX->use_dentry_cache(true);
         } catch(const std::exception& e) {
             exit_error_msg(EXIT_FAILURE,
-                           "Failed to initialize cache: "s + e.what());
+                           "Failed to initialize dentry cache: "s + e.what());
+        }
+    } else {
+        if(gkfs::env::var_is_set(gkfs::env::DISABLE_DENTRY_CACHE)) {
+            LOG(INFO, "Dentry cache is disabled by environment variable.");
+        } else {
+            LOG(INFO, "Dentry cache is disabled by configuration.");
         }
     }
 

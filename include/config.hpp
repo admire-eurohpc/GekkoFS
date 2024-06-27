@@ -46,6 +46,14 @@ constexpr auto hostfile_path = "./gkfs_hosts.txt";
 // We do not default this, ENV variable always required.
 constexpr auto forwarding_file_path = "";
 
+namespace cache {
+// Optimization for readdir which avoids consecutive stat calls
+constexpr bool use_dentry_cache = true;
+// When enabled, the dentry cache is cleared when a directory is closed.
+// Disabling this may cause semantic issues.
+constexpr bool clear_dentry_cache_on_close = true;
+} // namespace cache
+
 namespace client_metrics {
 // Default directory where client metrics are stored. Can be set via
 // LIBGKFS_METRICS_PATH. Filename consists of starting time, pid, and hostname

@@ -60,7 +60,7 @@ static constexpr auto METRICS_IP_PORT = ADD_PREFIX("METRICS_IP_PORT");
 
 static constexpr auto NUM_REPL = ADD_PREFIX("NUM_REPL");
 static constexpr auto PROXY_PID_FILE = ADD_PREFIX("PROXY_PID_FILE");
-static constexpr auto DIR_CACHE = ADD_PREFIX("ENABLE_DIR_CACHE");
+static constexpr auto DISABLE_DENTRY_CACHE = ADD_PREFIX("DISABLE_DENTRY_CACHE");
 
 } // namespace gkfs::env
 

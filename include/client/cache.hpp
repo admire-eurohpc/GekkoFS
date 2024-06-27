@@ -42,16 +42,20 @@
 
 namespace gkfs::cache {
 
+namespace dir {
+
 struct cache_entry {
     gkfs::filemap::FileType file_type;
     uint64_t size;
     time_t ctime;
 };
 
-class Cache {
+class DentryCache {
 private:
+    // <dir_id, <name, cache_entry>>
     std::unordered_map<uint32_t, std::unordered_map<std::string, cache_entry>>
             entries_;
+    // <dir_path, dir_id>
     std::unordered_map<std::string, uint32_t> entry_dir_id_;
     std::mutex mtx_;
     std::hash<std::string> str_hash;
@@ -63,9 +67,9 @@ private:
     get_dir_id(const std::string& dir_path);
 
 public:
-    Cache() = default;
+    DentryCache() = default;
 
-    virtual ~Cache() = default;
+    virtual ~DentryCache() = default;
 
     void
     insert(const std::string& parent_dir, const std::string name,
@@ -83,6 +87,10 @@ public:
     void
     clear();
 };
+} // namespace dir
+
+//// <path<cnt, size>>
+// std::unordered_map<std::string, std::pair<size_t, size_t>> size_cache;
 
 
 } // namespace gkfs::cache

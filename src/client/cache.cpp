@@ -40,13 +40,15 @@
 
 namespace gkfs::cache {
 
+namespace dir {
+
 uint32_t
-Cache::gen_dir_id(const std::string& dir_path) {
+DentryCache::gen_dir_id(const std::string& dir_path) {
     return str_hash(dir_path);
 }
 
 uint32_t
-Cache::get_dir_id(const std::string& dir_path) {
+DentryCache::get_dir_id(const std::string& dir_path) {
     // check if id already exists in map and return
     if(entry_dir_id_.find(dir_path) != entry_dir_id_.end()) {
         return entry_dir_id_[dir_path];
@@ -59,15 +61,15 @@ Cache::get_dir_id(const std::string& dir_path) {
 
 
 void
-Cache::insert(const std::string& parent_dir, const std::string name,
-              const cache_entry value) {
+DentryCache::insert(const std::string& parent_dir, const std::string name,
+                    const cache_entry value) {
     std::lock_guard<std::mutex> const lock(mtx_);
     auto dir_id = get_dir_id(parent_dir);
     entries_[dir_id].emplace(name, value);
 }
 
 std::optional<cache_entry>
-Cache::get(const std::string& parent_dir, const std::string& name) {
+DentryCache::get(const std::string& parent_dir, const std::string& name) {
     std::lock_guard<std::mutex> const lock(mtx_);
     auto dir_id = get_dir_id(parent_dir);
     if(entries_[dir_id].find(name) != entries_[dir_id].end()) {
@@ -78,7 +80,7 @@ Cache::get(const std::string& parent_dir, const std::string& name) {
 }
 
 void
-Cache::clear_dir(const std::string& dir_path) {
+DentryCache::clear_dir(const std::string& dir_path) {
     std::lock_guard<std::mutex> const lock(mtx_);
 
     auto id_it = entry_dir_id_.find(dir_path);
@@ -93,7 +95,7 @@ Cache::clear_dir(const std::string& dir_path) {
 }
 
 void
-Cache::dump_cache_to_log(const std::string& dir_path) {
+DentryCache::dump_cache_to_log(const std::string& dir_path) {
     std::lock_guard<std::mutex> const lock(mtx_);
     auto id_it = entry_dir_id_.find(dir_path);
     if(id_it == entry_dir_id_.end()) {
@@ -113,10 +115,12 @@ Cache::dump_cache_to_log(const std::string& dir_path) {
 }
 
 void
-Cache::clear() {
+DentryCache::clear() {
     std::lock_guard<std::mutex> const lock(mtx_);
     entries_.clear();
     entry_dir_id_.clear();
 }
+
+} // namespace dir
 
 } // namespace gkfs::cache

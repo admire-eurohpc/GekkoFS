@@ -211,7 +211,7 @@ optional<gkfs::metadata::Metadata>
 get_metadata(const string& path, bool follow_links) {
     std::string attr;
     int err{};
-    if(CTX->use_cache()) {
+    if(CTX->use_dentry_cache()) {
         std::filesystem::path p(path);
         auto parent = p.parent_path().string();
         auto filename = p.filename().string();
@@ -219,7 +219,7 @@ get_metadata(const string& path, bool follow_links) {
         //        '{}'",
         //            __func__, path, p.parent_path().string(),
         //            p.filename().string());
-        auto cache_entry = CTX->cache()->get(parent, filename);
+        auto cache_entry = CTX->dentry_cache()->get(parent, filename);
         if(cache_entry) {
             //            LOG(INFO, "{}(): Cache hit for path '{}'", __func__,
             //            path);
