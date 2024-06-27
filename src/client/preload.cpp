@@ -33,6 +33,7 @@
 #include <client/rpc/forward_management.hpp>
 #include <client/preload_util.hpp>
 #include <client/intercept.hpp>
+#include <client/cache.hpp>
 
 #include <common/rpc/distributor.hpp>
 #include <common/common_defs.hpp>
@@ -256,6 +257,16 @@ init_environment() {
                 CTX->local_host_id(), CTX->hosts().size());
 #endif
         CTX->distributor(distributor);
+    }
+    try {
+        LOG(INFO, "Initializing client caching...");
+        auto cache = std::make_shared<gkfs::cache::Cache>();
+        CTX->cache(cache);
+        LOG(INFO, "Client caching is enabled and will be used!");
+        CTX->use_cache(true);
+    } catch(const std::exception& e) {
+        exit_error_msg(EXIT_FAILURE,
+                       "Failed to initialize cache: "s + e.what());
     }
 
     LOG(INFO, "Retrieving file system configuration...");

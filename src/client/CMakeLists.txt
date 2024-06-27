@@ -47,6 +47,7 @@ target_sources(gkfs_intercept
           preload.cpp
           preload_context.cpp
           preload_util.cpp
+	cache.cpp
           rpc/rpc_types.cpp
           rpc/forward_data.cpp
           rpc/forward_data_proxy.cpp
@@ -68,6 +69,7 @@ target_sources(
           preload_context.cpp
           preload_util.cpp
 	malleability.cpp
+	cache.cpp
           rpc/rpc_types.cpp
           rpc/forward_data.cpp
 	      rpc/forward_data_proxy.cpp

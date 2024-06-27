@@ -412,6 +412,26 @@ PreloadContext::fs_conf() const {
     return fs_conf_;
 }
 
+std::shared_ptr<gkfs::cache::Cache>
+PreloadContext::cache() const {
+    return cache_;
+}
+
+void
+PreloadContext::cache(std::shared_ptr<gkfs::cache::Cache> cache) {
+    cache_ = cache;
+}
+
+bool
+PreloadContext::use_cache() const {
+    return use_cache_;
+}
+
+void
+PreloadContext::use_cache(bool use_cache) {
+    use_cache_ = use_cache;
+}
+
 void
 PreloadContext::enable_interception() {
     interception_enabled_ = true;
