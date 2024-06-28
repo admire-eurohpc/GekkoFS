@@ -64,6 +64,12 @@ pair<int, ssize_t>
 forward_write(const string& path, const void* buf, const off64_t offset,
               const size_t write_size, const int8_t num_copies) {
 
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy()) {
+        LOG(WARNING,
+            "{} was called even though proxy should be used! Note: io threshold '{}' and rpc write size '{}'",
+            __func__, gkfs::config::proxy::fwd_io, write_size);
+    }
+
     // import pow2-optimized arithmetic functions
     using namespace gkfs::utils::arithmetic;
 
@@ -297,6 +303,12 @@ forward_read(const string& path, void* buf, const off64_t offset,
              const size_t read_size, const int8_t num_copies,
              std::set<int8_t>& failed) {
 
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy()) {
+        LOG(WARNING,
+            "{} was called even though proxy should be used! Note: io threshold '{}' and rpc read size '{}'",
+            __func__, gkfs::config::proxy::fwd_io, read_size);
+    }
+
     // import pow2-optimized arithmetic functions
     using namespace gkfs::utils::arithmetic;
 
@@ -504,6 +516,11 @@ int
 forward_truncate(const std::string& path, size_t current_size, size_t new_size,
                  const int8_t num_copies) {
 
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__, gkfs::config::proxy::fwd_truncate);
+    }
+
     // import pow2-optimized arithmetic functions
     using namespace gkfs::utils::arithmetic;
 
@@ -583,6 +600,11 @@ forward_truncate(const std::string& path, size_t current_size, size_t new_size,
 pair<int, ChunkStat>
 forward_get_chunk_stat() {
 
+    if(gkfs::config::proxy::fwd_chunk_stat && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
+
     std::vector<hermes::rpc_handle<gkfs::rpc::chunk_stat>> handles;
 
     auto err = 0;
@@ -624,7 +646,7 @@ forward_get_chunk_stat() {
 
         try {
             // XXX We might need a timeout here to not wait forever for an
-            // output that never comes?
+            // output that never comes? Yep. Seems to be an issue.
             out = handles[i].get().at(0);
 
             if(out.err()) {

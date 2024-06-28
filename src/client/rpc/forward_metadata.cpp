@@ -56,7 +56,10 @@ namespace gkfs::rpc {
  */
 int
 forward_create(const std::string& path, const mode_t mode, const int copy) {
-
+    if(gkfs::config::proxy::fwd_create && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -88,7 +91,10 @@ forward_create(const std::string& path, const mode_t mode, const int copy) {
  */
 int
 forward_stat(const std::string& path, string& attr, const int copy) {
-
+    if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -130,6 +136,10 @@ forward_stat(const std::string& path, string& attr, const int copy) {
  */
 int
 forward_remove(const std::string& path, const int8_t num_copies) {
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     int64_t size = 0;
     uint32_t mode = 0;
 
@@ -283,7 +293,10 @@ forward_remove(const std::string& path, const int8_t num_copies) {
  */
 int
 forward_decr_size(const std::string& path, size_t length, const int copy) {
-
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__, gkfs::config::proxy::fwd_truncate);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -515,7 +528,10 @@ pair<int, off64_t>
 forward_update_metadentry_size(const string& path, const size_t size,
                                const off64_t offset, const bool append_flag,
                                const int num_copies) {
-
+    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
     std::vector<hermes::rpc_handle<gkfs::rpc::update_metadentry_size>> handles;
 
     for(auto copy = 0; copy < num_copies + 1; copy++) {
@@ -579,7 +595,10 @@ forward_update_metadentry_size(const string& path, const size_t size,
  */
 pair<int, off64_t>
 forward_get_metadentry_size(const std::string& path, const int copy) {
-
+    if(CTX->use_proxy()) {
+        LOG(WARNING, "{} is run due to missing proxy implementation!",
+            __func__);
+    }
     auto endp = CTX->hosts().at(
             CTX->distributor()->locate_file_metadata(path, copy));
 
@@ -614,6 +633,11 @@ forward_get_metadentry_size(const std::string& path, const int copy) {
  */
 pair<int, shared_ptr<gkfs::filemap::OpenDir>>
 forward_get_dirents(const string& path) {
+
+    if(CTX->use_proxy()) {
+        LOG(WARNING, "{} is run due to missing proxy implementation!",
+            __func__);
+    }
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 
@@ -758,8 +782,13 @@ forward_get_dirents(const string& path) {
  * reusing the forward_get_dirents code. As we only need a server, we could
  * simplify the code removing the asynchronous part.
  */
-pair<int, vector<tuple<const std::string, bool, size_t, time_t>>>
+pair<int, unique_ptr<vector<tuple<const std::string, bool, size_t, time_t>>>>
 forward_get_dirents_single(const string& path, int server) {
+
+    if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
+        LOG(WARNING, "{} was called even though proxy should be used!",
+            __func__);
+    }
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 
@@ -776,7 +805,8 @@ forward_get_dirents_single(const string& path, int server) {
 
     // We use the full size per server...
     const std::size_t per_host_buff_size = gkfs::config::rpc::dirents_buff_size;
-    vector<tuple<const std::string, bool, size_t, time_t>> output;
+    auto output_ptr = make_unique<
+            vector<tuple<const std::string, bool, size_t, time_t>>>();
 
     // expose local buffers for RMA from servers
     std::vector<hermes::exposed_memory> exposed_buffers;
@@ -790,7 +820,7 @@ forward_get_dirents_single(const string& path, int server) {
     } catch(const std::exception& ex) {
         LOG(ERROR, "{}() Failed to expose buffers for RMA. err '{}'", __func__,
             ex.what());
-        return make_pair(EBUSY, output);
+        return make_pair(EBUSY, std::move(output_ptr));
     }
 
     auto err = 0;
@@ -870,9 +900,10 @@ forward_get_dirents_single(const string& path, int server) {
         auto name = std::string(names_ptr);
         // number of characters in entry + \0 terminator
         names_ptr += name.size() + 1;
-        output.emplace_back(std::forward_as_tuple(name, ftype, size, ctime));
+        output_ptr->emplace_back(
+                std::forward_as_tuple(name, ftype, size, ctime));
     }
-    return make_pair(err, output);
+    return make_pair(err, std::move(output_ptr));
 }
 
 

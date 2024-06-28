@@ -49,11 +49,13 @@ private:
     // Margo IDs. They can also be used to retrieve the Mercury classes and
     // contexts that were created at init time
     margo_instance_id server_rpc_mid_;
+    margo_instance_id proxy_server_rpc_mid_;
 
     // Argobots I/O pools and execution streams
     ABT_pool io_pool_;
     std::vector<ABT_xstream> io_streams_;
     std::string self_addr_str_;
+    std::string self_proxy_addr_str_;
     // Distributor
     std::shared_ptr<gkfs::rpc::Distributor> distributor_;
 
@@ -77,6 +79,12 @@ public:
     void
     server_rpc_mid(margo_instance* server_rpc_mid);
 
+    margo_instance*
+    proxy_server_rpc_mid();
+
+    void
+    proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid);
+
     ABT_pool
     io_pool() const;
 
@@ -93,7 +101,13 @@ public:
     self_addr_str() const;
 
     void
-    self_addr_str(const std::string& addr_stra);
+    self_addr_str(const std::string& addr_str);
+
+    const std::string&
+    self_proxy_addr_str() const;
+
+    void
+    self_proxy_addr_str(const std::string& proxy_addr_str);
 
     const std::shared_ptr<gkfs::rpc::Distributor>&
     distributor() const;

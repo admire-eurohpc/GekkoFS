@@ -69,7 +69,10 @@ private:
 
     // RPC management
     std::string rpc_protocol_{};
+    std::string proxy_rpc_protocol_{};
     std::string bind_addr_{};
+    std::string bind_proxy_addr_{}; // optional when used with running proxy.
+                                    // Remains empty if unused
     std::string hosts_file_{};
     bool use_auto_sm_;
 
@@ -173,10 +176,21 @@ public:
     rpc_protocol(const std::string& rpc_protocol);
 
     const std::string&
+    proxy_rpc_protocol() const;
+    void
+    proxy_rpc_protocol(const std::string& proxy_rpc_protocol);
+
+    const std::string&
     bind_addr() const;
 
     void
     bind_addr(const std::string& addr);
+
+    const std::string&
+    bind_proxy_addr() const;
+
+    void
+    bind_proxy_addr(const std::string& proxy_addr);
 
     const std::string&
     hosts_file() const;

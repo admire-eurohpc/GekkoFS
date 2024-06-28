@@ -50,6 +50,8 @@ namespace gkfs::utils {
 void
 populate_hosts_file() {
     const auto& hosts_file = GKFS_DATA->hosts_file();
+    const auto& daemon_addr = RPC_DATA->self_addr_str();
+    const auto& proxy_addr = RPC_DATA->self_proxy_addr_str();
     GKFS_DATA->spdlogger()->debug("{}() Populating hosts file: '{}'", __func__,
                                   hosts_file);
     ofstream lfstream(hosts_file, ios::out | ios::app);
@@ -63,8 +65,11 @@ populate_hosts_file() {
                     ? gkfs::rpc::get_my_hostname(true)
                     : fmt::format("{}#{}", gkfs::rpc::get_my_hostname(true),
                                   GKFS_DATA->rootdir_suffix());
-    lfstream << fmt::format("{} {}", hostname, RPC_DATA->self_addr_str())
-             << std::endl;
+    auto line_out = fmt::format("{} {}", hostname, daemon_addr);
+    if(!proxy_addr.empty())
+        line_out = fmt::format("{} {}", line_out, proxy_addr);
+    lfstream << line_out << std::endl;
+
     if(!lfstream) {
         throw runtime_error(
                 fmt::format("Failed to write on hosts file '{}': {}",

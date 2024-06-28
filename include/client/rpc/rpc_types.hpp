@@ -2294,6 +2294,1390 @@ struct chunk_stat {
     };
 };
 
+//==============================================================================
+// definitions for write_data
+struct write_data_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = write_data_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_client_proxy_write_in_t;
+    using mercury_output_type = rpc_data_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 20;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_write;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_client_proxy_write_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_data_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, int64_t offset, uint64_t write_size,
+              const hermes::exposed_memory& buffers)
+            : m_path(path), m_offset(offset), m_write_size(write_size),
+              m_buffers(buffers) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        int64_t
+        offset() const {
+            return m_offset;
+        }
+
+        uint64_t
+        write_size() const {
+            return m_write_size;
+        }
+
+        hermes::exposed_memory
+        buffers() const {
+            return m_buffers;
+        }
+
+        explicit input(const rpc_client_proxy_write_in_t& other)
+            : m_path(other.path), m_offset(other.offset),
+              m_write_size(other.write_size), m_buffers(other.bulk_handle) {}
+
+        explicit operator rpc_client_proxy_write_in_t() {
+            return {m_path.c_str(), m_offset, m_write_size,
+                    hg_bulk_t(m_buffers)};
+        }
+
+    private:
+        std::string m_path;
+        int64_t m_offset;
+        uint64_t m_write_size;
+        hermes::exposed_memory m_buffers;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_io_size() {}
+
+        output(int32_t err, size_t io_size) : m_err(err), m_io_size(io_size) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_data_out_t& out) {
+            m_err = out.err;
+            m_io_size = out.io_size;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        int64_t
+        io_size() const {
+            return m_io_size;
+        }
+
+    private:
+        int32_t m_err;
+        size_t m_io_size;
+    };
+};
+
+//==============================================================================
+// definitions for write_data
+struct read_data_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = read_data_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_client_proxy_read_in_t;
+    using mercury_output_type = rpc_data_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 21;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_read;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_client_proxy_read_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_data_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, int64_t offset, uint64_t read_size,
+              const hermes::exposed_memory& buffers)
+            : m_path(path), m_offset(offset), m_read_size(read_size),
+              m_buffers(buffers) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        int64_t
+        offset() const {
+            return m_offset;
+        }
+
+        uint64_t
+        read_size() const {
+            return m_read_size;
+        }
+
+        hermes::exposed_memory
+        buffers() const {
+            return m_buffers;
+        }
+
+        explicit input(const rpc_client_proxy_read_in_t& other)
+            : m_path(other.path), m_offset(other.offset),
+              m_read_size(other.read_size), m_buffers(other.bulk_handle) {}
+
+        explicit operator rpc_client_proxy_read_in_t() {
+            return {m_path.c_str(), m_offset, m_read_size,
+                    hg_bulk_t(m_buffers)};
+        }
+
+    private:
+        std::string m_path;
+        int64_t m_offset;
+        uint64_t m_read_size;
+        hermes::exposed_memory m_buffers;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_io_size() {}
+
+        output(int32_t err, size_t io_size) : m_err(err), m_io_size(io_size) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_data_out_t& out) {
+            m_err = out.err;
+            m_io_size = out.io_size;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        int64_t
+        io_size() const {
+            return m_io_size;
+        }
+
+    private:
+        int32_t m_err;
+        size_t m_io_size;
+    };
+};
+
+//==============================================================================
+// definitions for chunk_stat_proxy
+struct trunc_data_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = trunc_data_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_client_proxy_trunc_in_t;
+    using mercury_output_type = rpc_err_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 22;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_truncate;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_client_proxy_trunc_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_err_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, uint64_t current_size, uint64_t length)
+            : m_path(path), m_current_size(current_size), m_length(length) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        uint64_t
+        current_size() const {
+            return m_current_size;
+        }
+
+        uint64_t
+        length() const {
+            return m_length;
+        }
+
+        explicit input(const rpc_client_proxy_trunc_in_t& other)
+            : m_path(other.path), m_current_size(other.current_size),
+              m_length(other.length) {}
+
+        explicit operator rpc_client_proxy_trunc_in_t() {
+            return {
+                    m_path.c_str(),
+                    m_current_size,
+                    m_length,
+            };
+        }
+
+    private:
+        std::string m_path;
+        uint64_t m_current_size;
+        uint64_t m_length;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err() {}
+
+        output(int32_t err) : m_err(err) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_err_out_t& out) {
+            m_err = out.err;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+    private:
+        int32_t m_err;
+    };
+};
+
+//==============================================================================
+// definitions for chunk_stat_proxy
+struct chunk_stat_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = chunk_stat_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_chunk_stat_in_t;
+    using mercury_output_type = rpc_chunk_stat_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 23;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_chunk_stat;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_chunk_stat_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_chunk_stat_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(int32_t dummy) : m_dummy(dummy) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        int32_t
+        dummy() const {
+            return m_dummy;
+        }
+
+        explicit input(const rpc_chunk_stat_in_t& other)
+            : m_dummy(other.dummy) {}
+
+        explicit operator rpc_chunk_stat_in_t() {
+            return {m_dummy};
+        }
+
+    private:
+        int32_t m_dummy;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_chunk_size(), m_chunk_total(), m_chunk_free() {}
+
+        output(int32_t err, uint64_t chunk_size, uint64_t chunk_total,
+               uint64_t chunk_free)
+            : m_err(err), m_chunk_size(chunk_size), m_chunk_total(chunk_total),
+              m_chunk_free(chunk_free) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_chunk_stat_out_t& out) {
+            m_err = out.err;
+            m_chunk_size = out.chunk_size;
+            m_chunk_total = out.chunk_total;
+            m_chunk_free = out.chunk_free;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        uint64_t
+        chunk_size() const {
+            return m_chunk_size;
+        }
+
+        uint64_t
+        chunk_total() const {
+            return m_chunk_total;
+        }
+
+        uint64_t
+        chunk_free() const {
+            return m_chunk_free;
+        }
+
+    private:
+        int32_t m_err;
+        uint64_t m_chunk_size;
+        uint64_t m_chunk_total;
+        uint64_t m_chunk_free;
+    };
+};
+
+//==============================================================================
+// definitions for create
+struct create_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = create_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_mk_node_in_t;
+    using mercury_output_type = rpc_err_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 24;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_create;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_mk_node_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_err_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, uint32_t mode)
+            : m_path(path), m_mode(mode) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        uint32_t
+        mode() const {
+            return m_mode;
+        }
+
+        explicit input(const rpc_mk_node_in_t& other)
+            : m_path(other.path), m_mode(other.mode) {}
+
+        explicit operator rpc_mk_node_in_t() {
+            return {m_path.c_str(), m_mode};
+        }
+
+    private:
+        std::string m_path;
+        uint32_t m_mode;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err() {}
+
+        output(int32_t err) : m_err(err) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_err_out_t& out) {
+            m_err = out.err;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+    private:
+        int32_t m_err;
+    };
+};
+
+//==============================================================================
+// definitions for stat
+struct stat_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = stat_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_path_only_in_t;
+    using mercury_output_type = rpc_stat_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 25;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_stat;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_path_only_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_stat_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path) : m_path(path) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
+
+        explicit operator rpc_path_only_in_t() {
+            return {m_path.c_str()};
+        }
+
+    private:
+        std::string m_path;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_db_val() {}
+
+        output(int32_t err, const std::string& db_val)
+            : m_err(err), m_db_val(db_val) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_stat_out_t& out) {
+            m_err = out.err;
+
+            if(out.db_val != nullptr) {
+                m_db_val = out.db_val;
+            }
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        std::string
+        db_val() const {
+            return m_db_val;
+        }
+
+    private:
+        int32_t m_err;
+        std::string m_db_val;
+    };
+};
+
+//==============================================================================
+// definitions for remove
+struct remove_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = remove_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_rm_node_in_t;
+    using mercury_output_type = rpc_err_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 26;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_remove;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_rm_node_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_err_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path) : m_path(path) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        explicit input(const rpc_rm_node_in_t& other) : m_path(other.path) {}
+
+        explicit operator rpc_rm_node_in_t() {
+            return {m_path.c_str()};
+        }
+
+    private:
+        std::string m_path;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err() {}
+
+        output(int32_t err) : m_err(err) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_err_out_t& out) {
+            m_err = out.err;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+    private:
+        int32_t m_err;
+    };
+};
+
+//==============================================================================
+// definitions for decr_size_proxy
+struct decr_size_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = decr_size_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_trunc_in_t;
+    using mercury_output_type = rpc_err_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 27;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_decr_size;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_trunc_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_err_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, uint64_t length)
+            : m_path(path), m_length(length) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        uint64_t
+        length() const {
+            return m_length;
+        }
+
+        explicit input(const rpc_trunc_in_t& other)
+            : m_path(other.path), m_length(other.length) {}
+
+        explicit operator rpc_trunc_in_t() {
+            return {m_path.c_str(), m_length};
+        }
+
+    private:
+        std::string m_path;
+        uint64_t m_length;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err() {}
+
+        output(int32_t err) : m_err(err) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_err_out_t& out) {
+            m_err = out.err;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+    private:
+        int32_t m_err;
+    };
+};
+
+//==============================================================================
+// definitions for get_metadentry_size_proxy
+struct get_metadentry_size_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = get_metadentry_size_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_path_only_in_t;
+    using mercury_output_type = rpc_get_metadentry_size_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 28;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_get_size;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_path_only_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_get_metadentry_size_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path) : m_path(path) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
+
+        explicit operator rpc_path_only_in_t() {
+            return {m_path.c_str()};
+        }
+
+    private:
+        std::string m_path;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_ret_size() {}
+
+        output(int32_t err, int64_t ret_size)
+            : m_err(err), m_ret_size(ret_size) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_get_metadentry_size_out_t& out) {
+            m_err = out.err;
+            m_ret_size = out.ret_size;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        int64_t
+        ret_size() const {
+            return m_ret_size;
+        }
+
+    private:
+        int32_t m_err;
+        int64_t m_ret_size;
+    };
+};
+
+//==============================================================================
+// definitions for update_metadentry_size
+struct update_metadentry_size_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = update_metadentry_size_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_update_metadentry_size_in_t;
+    using mercury_output_type = rpc_update_metadentry_size_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 29;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name = gkfs::rpc::tag::client_proxy_update_size;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_update_metadentry_size_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_update_metadentry_size_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, uint64_t size, int64_t offset,
+              bool append)
+            : m_path(path), m_size(size), m_offset(offset), m_append(append) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        uint64_t
+        size() const {
+            return m_size;
+        }
+
+        int64_t
+        offset() const {
+            return m_offset;
+        }
+
+        bool
+        append() const {
+            return m_append;
+        }
+
+        explicit input(const rpc_update_metadentry_size_in_t& other)
+            : m_path(other.path), m_size(other.size), m_offset(other.offset),
+              m_append(other.append) {}
+
+        explicit operator rpc_update_metadentry_size_in_t() {
+            return {m_path.c_str(), m_size, m_offset, m_append};
+        }
+
+    private:
+        std::string m_path;
+        uint64_t m_size;
+        int64_t m_offset;
+        bool m_append;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_ret_size() {}
+
+        output(int32_t err, int64_t ret_size)
+            : m_err(err), m_ret_size(ret_size) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_update_metadentry_size_out_t& out) {
+            m_err = out.err;
+            m_ret_size = out.ret_offset;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        int64_t
+        ret_size() const {
+            return m_ret_size;
+        }
+
+    private:
+        int32_t m_err;
+        int64_t m_ret_size;
+    };
+};
+
+//==============================================================================
+// definitions for get_dirents_extended
+struct get_dirents_extended_proxy {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = get_dirents_extended_proxy;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = rpc_proxy_get_dirents_in_t;
+    using mercury_output_type = rpc_get_dirents_out_t;
+
+    // RPC public identifier
+    // (N.B: we reuse the same IDs assigned by Margo so that the daemon
+    // understands Hermes RPCs)
+    constexpr static const uint64_t public_id = 30;
+
+    // RPC internal Mercury identifier
+    constexpr static const hg_id_t mercury_id = 0;
+
+    // RPC name
+    constexpr static const auto name =
+            gkfs::rpc::tag::client_proxy_get_dirents_extended;
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb =
+            HG_GEN_PROC_NAME(rpc_proxy_get_dirents_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb =
+            HG_GEN_PROC_NAME(rpc_get_dirents_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& path, int32_t server,
+              const hermes::exposed_memory& buffers)
+            : m_path(path), m_server(server), m_buffers(buffers) {}
+
+        input(input&& rhs) = default;
+
+        input(const input& other) = default;
+
+        input&
+        operator=(input&& rhs) = default;
+
+        input&
+        operator=(const input& other) = default;
+
+        std::string
+        path() const {
+            return m_path;
+        }
+
+        int32_t
+        server() const {
+            return m_server;
+        }
+
+        hermes::exposed_memory
+        buffers() const {
+            return m_buffers;
+        }
+
+        explicit input(const rpc_proxy_get_dirents_in_t& other)
+            : m_path(other.path), m_server(other.server),
+              m_buffers(other.bulk_handle) {}
+
+        explicit operator rpc_proxy_get_dirents_in_t() {
+            return {m_path.c_str(), m_server, hg_bulk_t(m_buffers)};
+        }
+
+    private:
+        std::string m_path;
+        int32_t m_server;
+        hermes::exposed_memory m_buffers;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t
+        hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output() : m_err(), m_dirents_size() {}
+
+        output(int32_t err, size_t dirents_size)
+            : m_err(err), m_dirents_size(dirents_size) {}
+
+        output(output&& rhs) = default;
+
+        output(const output& other) = default;
+
+        output&
+        operator=(output&& rhs) = default;
+
+        output&
+        operator=(const output& other) = default;
+
+        explicit output(const rpc_get_dirents_out_t& out) {
+            m_err = out.err;
+            m_dirents_size = out.dirents_size;
+        }
+
+        int32_t
+        err() const {
+            return m_err;
+        }
+
+        size_t
+        dirents_size() const {
+            return m_dirents_size;
+        }
+
+    private:
+        int32_t m_err;
+        size_t m_dirents_size;
+    };
+};
+
 } // namespace gkfs::rpc
 
 

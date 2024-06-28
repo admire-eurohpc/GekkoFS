@@ -35,8 +35,12 @@
 #define CLIENT_ENV_PREFIX "LIBGKFS_"
 #define DAEMON_ENV_PREFIX "GKFS_DAEMON_"
 #define COMMON_ENV_PREFIX "GKFS_"
+#define PROXY_ENV_PREFIX  "GKFS_PROXY_"
 
 namespace gkfs::config {
+
+// writes to dev null instead of chunk space, read is reading /dev/zero
+constexpr bool limbo_mode = false;
 
 constexpr auto hostfile_path = "./gkfs_hosts.txt";
 // We do not default this, ENV variable always required.
@@ -56,14 +60,28 @@ namespace io {
  * If buffer is not zeroed, sparse regions contain invalid data.
  */
 constexpr auto zero_buffer_before_read = false;
+/*
+ * When the daemon handler serves a read request, it starts tasklets (for each
+ * chunk) from the io pool to read all chunks of that read request in parallel.
+ * Then another thread is waiting for the first tasklet to finish before
+ * initiating the bulk transfer back to the client for this chunk.
+ * This will continue in sequence, allowing gaps between bulk transfers while
+ * waiting. Although this is CPU efficient, it does not provide the highest I/O.
+ * if spin_lock_read is enabled it will try all tasklets if they are finished
+ * regardless of their order minimizing the gap between bulk transfers.
+ * Due to spinning in a loop this increases CPU utilization
+ */
+constexpr auto spin_lock_read = false;
 } // namespace io
 
 namespace log {
 constexpr auto client_log_path = "/tmp/gkfs_client.log";
 constexpr auto daemon_log_path = "/tmp/gkfs_daemon.log";
+constexpr auto proxy_log_path = "/tmp/gkfs_proxy.log";
 
 constexpr auto client_log_level = "info,errors,critical,hermes";
 constexpr auto daemon_log_level = 4; // info
+constexpr auto proxy_log_level = 4;  // info
 } // namespace log
 
 namespace metadata {
@@ -99,10 +117,27 @@ namespace data {
 constexpr auto chunk_dir = "chunks";
 } // namespace data
 
+namespace proxy {
+constexpr auto pid_path = "/tmp/gkfs_proxy.pid";
+constexpr auto fwd_create = true;
+constexpr auto fwd_stat = true;
+constexpr auto fwd_remove = true;
+constexpr auto fwd_get_size = true;
+constexpr auto fwd_update_size = true;
+constexpr auto fwd_io = true;
+constexpr auto fwd_truncate = true;
+constexpr auto fwd_chunk_stat = true;
+constexpr auto fwd_get_dirents_single = true;
+// Only use proxy for io if write/read size is higher than set value
+constexpr auto fwd_io_count_threshold = 0;
+
+} // namespace proxy
+
 namespace rpc {
 constexpr auto chunksize = 524288; // in bytes (e.g., 524288 == 512KB)
 // size of preallocated buffer to hold directory entries in rpc call
-constexpr auto dirents_buff_size = (8 * 1024 * 1024); // 8 mega
+constexpr auto dirents_buff_size = (8 * 1024 * 1024);         // 8 mega
+constexpr auto dirents_buff_size_proxy = (128 * 1024 * 1024); // 8 mega
 /*
  * Indicates the number of concurrent progress to drive I/O operations of chunk
  * files to and from local file systems The value is directly mapped to created
@@ -111,6 +146,8 @@ constexpr auto dirents_buff_size = (8 * 1024 * 1024); // 8 mega
 constexpr auto daemon_io_xstreams = 8;
 // Number of threads used for RPC handlers at the daemon
 constexpr auto daemon_handler_xstreams = 4;
+// Number of threads used for RPC handlers at the proxy
+constexpr auto proxy_handler_xstreams = 3;
 } // namespace rpc
 
 namespace rocksdb {

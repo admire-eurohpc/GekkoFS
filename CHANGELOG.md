@@ -8,6 +8,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added the GekkoFS proxy as an optional gateway between client and daemon. The proxy is started on each compute node
+  that houses clients ([!191](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/191)).
+  - Additional options for the GekkoFS daemon were added to integrate the GekkoFS proxy.
+  - The proxy introduced a new executable: `gkfs_proxy`.
+  - The `gkfs` run script has been significantly reworked to accommodate the proxy and a number of additional features,
+    e.g., CPU socket pinning.
+  - The environment variable `LIBGKFS_PROXY_PID_FILE` was added for clients when a non-default pid file path is in use.
 - Added client-side metrics including the periodic export to a file or ZeroMQ sink via the TCP
   protocol ([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
   - CMake option added to enable this optional feature `-DGKFS_ENABLE_CLIENT_METRICS=ON`

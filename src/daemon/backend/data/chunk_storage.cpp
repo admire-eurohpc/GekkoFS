@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <spdlog/spdlog.h>
+#include <config.hpp>
 
 extern "C" {
 #include <sys/statfs.h>
@@ -146,10 +147,14 @@ ChunkStorage::write_chunk(const string& file_path,
                           size_t size, off64_t offset) const {
 
     assert((offset + size) <= chunksize_);
-    // may throw ChunkStorageException on failure
-    init_chunk_space(file_path);
-
-    auto chunk_path = absolute(get_chunk_path(file_path, chunk_id));
+    string chunk_path{};
+    if(gkfs::config::limbo_mode) {
+        chunk_path = "/dev/null"s;
+    } else {
+        // may throw ChunkStorageException on failure
+        init_chunk_space(file_path);
+        chunk_path = absolute(get_chunk_path(file_path, chunk_id));
+    }
 
     FileHandle fh(open(chunk_path.c_str(), O_WRONLY | O_CREAT, 0640),
                   chunk_path);
@@ -195,7 +200,12 @@ ssize_t
 ChunkStorage::read_chunk(const string& file_path, gkfs::rpc::chnk_id_t chunk_id,
                          char* buf, size_t size, off64_t offset) const {
     assert((offset + size) <= chunksize_);
-    auto chunk_path = absolute(get_chunk_path(file_path, chunk_id));
+    string chunk_path{};
+    if(gkfs::config::limbo_mode) {
+        chunk_path = "/dev/zero"s;
+    } else {
+        chunk_path = absolute(get_chunk_path(file_path, chunk_id));
+    }
 
     FileHandle fh(open(chunk_path.c_str(), O_RDONLY), chunk_path);
     if(!fh.valid()) {

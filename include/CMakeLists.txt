@@ -32,5 +32,8 @@ add_subdirectory(common)
 add_subdirectory(daemon)
 # Client library
 add_subdirectory(client)
+# Proxy
+add_subdirectory(proxy)
 
 target_sources(gkfs_daemon PUBLIC config.hpp version.hpp.in)
+target_sources(gkfs_proxy PUBLIC config.hpp version.hpp.in)

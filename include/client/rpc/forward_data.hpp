@@ -30,16 +30,12 @@
 #ifndef GEKKOFS_CLIENT_FORWARD_DATA_HPP
 #define GEKKOFS_CLIENT_FORWARD_DATA_HPP
 
+#include <common/common_defs.hpp>
+
 #include <string>
 #include <memory>
 #include <set>
 namespace gkfs::rpc {
-
-struct ChunkStat {
-    unsigned long chunk_size;
-    unsigned long chunk_total;
-    unsigned long chunk_free;
-};
 
 // TODO once we have LEAF, remove all the error code returns and throw them as
 // an exception.

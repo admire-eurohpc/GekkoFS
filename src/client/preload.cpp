@@ -50,6 +50,7 @@
 using namespace std;
 
 std::unique_ptr<hermes::async_engine> ld_network_service; // extern variable
+std::unique_ptr<hermes::async_engine> ld_proxy_service;   // extern variable
 
 namespace {
 
@@ -104,6 +105,21 @@ init_hermes_client() {
                    ex.what());
         return false;
     }
+    if(CTX->use_proxy()) {
+        try {
+            LOG(INFO, "Initializing IPC proxy subsystem...");
+            hermes::engine_options opts{};
+            ld_proxy_service = std::make_unique<hermes::async_engine>(
+                    hermes::get_transport_type("na+sm"), opts, "", false, 1);
+            ld_proxy_service->run();
+        } catch(const std::exception& ex) {
+            fmt::print(stderr,
+                       "Failed to initialize Hermes IPC client for proxy {}\n",
+                       ex.what());
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -191,6 +207,9 @@ init_environment() {
                        "Failed to load hosts addresses: "s + e.what());
     }
 
+    LOG(INFO, "Checking for GKFS Proxy");
+    gkfs::utils::check_for_proxy();
+
     // initialize Hermes interface to Mercury
     LOG(INFO, "Initializing RPC subsystem...");
 
@@ -200,6 +219,10 @@ init_environment() {
 
     try {
         gkfs::utils::connect_to_hosts(hosts);
+        if(CTX->use_proxy()) {
+            LOG(INFO, "Connecting to proxy...");
+            gkfs::utils::lookup_proxy_addr();
+        }
     } catch(const std::exception& e) {
         exit_error_msg(EXIT_FAILURE,
                        "Failed to connect to hosts: "s + e.what());
@@ -327,6 +350,12 @@ destroy_preload() {
     CTX->clear_hosts();
     LOG(DEBUG, "Peer information deleted");
 
+    if(CTX->use_proxy()) {
+        CTX->clear_proxy_host();
+        LOG(DEBUG, "Shutting down IPC subsystem");
+        ld_proxy_service.reset();
+    }
+    LOG(DEBUG, "Shutting down RPC subsystem");
     ld_network_service.reset();
     LOG(DEBUG, "RPC subsystem shut down");
 

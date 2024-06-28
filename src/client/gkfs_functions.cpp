@@ -33,7 +33,9 @@
 #include <client/logging.hpp>
 #include <client/gkfs_functions.hpp>
 #include <client/rpc/forward_metadata.hpp>
+#include <client/rpc/forward_metadata_proxy.hpp>
 #include <client/rpc/forward_data.hpp>
+#include <client/rpc/forward_data_proxy.hpp>
 #include <client/open_dir.hpp>
 
 #include <common/path_util.hpp>
@@ -302,21 +304,30 @@ gkfs_create(const std::string& path, mode_t mode) {
     if(check_parent_dir(path)) {
         return -1;
     }
-    // Write to all replicas, at least one need to success
-    bool success = false;
-    for(auto copy = 0; copy < CTX->get_replicas() + 1; copy++) {
-        auto err = gkfs::rpc::forward_create(path, mode, copy);
+    int err = 0;
+    if(gkfs::config::proxy::fwd_create && CTX->use_proxy()) {
+        // no replication support for proxy
+        err = gkfs::rpc::forward_create_proxy(path, mode);
         if(err) {
             errno = err;
-        } else {
-            success = true;
-            errno = 0;
+            return -1;
+        }
+    } else {
+        // Write to all replicas, at least one need to success
+        bool success = false;
+        for(auto copy = 0; copy < CTX->get_replicas() + 1; copy++) {
+            err = gkfs::rpc::forward_create(path, mode, copy);
+            if(err) {
+                errno = err;
+            } else {
+                success = true;
+                errno = 0;
+            }
+        }
+        if(!success) {
+            return -1;
         }
     }
-    if(!success) {
-        return -1;
-    }
-
     return 0;
 }
 
@@ -363,8 +374,12 @@ gkfs_remove(const std::string& path) {
     }
 #endif // HAS_RENAME
 #endif // HAS_SYMLINKS
-
-    auto err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    int err = 0;
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_remove_proxy(path);
+    } else {
+        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    }
     if(err) {
         errno = err;
         return -1;
@@ -593,8 +608,12 @@ gkfs_statx(int dirfs, const std::string& path, int flags, unsigned int mask,
  */
 int
 gkfs_statfs(struct statfs* buf) {
-
-    auto ret = gkfs::rpc::forward_get_chunk_stat();
+    pair<int, rpc::ChunkStat> ret;
+    if(gkfs::config::proxy::fwd_chunk_stat && CTX->use_proxy()) {
+        ret = gkfs::rpc::forward_get_chunk_stat_proxy();
+    } else {
+        ret = gkfs::rpc::forward_get_chunk_stat();
+    }
     auto err = ret.first;
     if(err) {
         LOG(ERROR, "{}() Failure with error: '{}'", err);
@@ -689,9 +708,16 @@ gkfs_lseek(shared_ptr<gkfs::filemap::OpenFile> gkfs_fd, off_t offset,
             gkfs_fd->pos(gkfs_fd->pos() + offset);
             break;
         case SEEK_END: {
-            // TODO: handle replicas
-            auto ret =
-                    gkfs::rpc::forward_get_metadentry_size(gkfs_fd->path(), 0);
+            std::pair<int, off64_t> ret{};
+            if(gkfs::config::proxy::fwd_get_size && CTX->use_proxy()) {
+                ret = gkfs::rpc::forward_get_metadentry_size_proxy(
+                        gkfs_fd->path());
+            } else {
+                // TODO: handle replicas
+                ret = gkfs::rpc::forward_get_metadentry_size(gkfs_fd->path(),
+                                                             0);
+            }
+
             auto err = ret.first;
             if(err) {
                 errno = err;
@@ -740,17 +766,30 @@ gkfs_truncate(const std::string& path, off_t old_size, off_t new_size) {
     if(new_size == old_size) {
         return 0;
     }
-    for(auto copy = 0; copy < (CTX->get_replicas() + 1); copy++) {
-        auto err = gkfs::rpc::forward_decr_size(path, new_size, copy);
-        if(err) {
-            LOG(DEBUG, "Failed to decrease size");
-            errno = err;
-            return -1;
+    int err = 0;
+    // decrease size on metadata server first
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_decr_size_proxy(path, new_size);
+    } else {
+        for(auto copy = 0; copy < (CTX->get_replicas() + 1); copy++) {
+            err = gkfs::rpc::forward_decr_size(path, new_size, copy);
+            if(err) {
+                break;
+            }
         }
     }
-
-    auto err = gkfs::rpc::forward_truncate(path, old_size, new_size,
-                                           CTX->get_replicas());
+    if(err) {
+        LOG(DEBUG, "Failed to decrease size");
+        errno = err;
+        return -1;
+    }
+    // truncate chunks to new_size next
+    if(gkfs::config::proxy::fwd_truncate && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_truncate_proxy(path, old_size, new_size);
+    } else {
+        err = gkfs::rpc::forward_truncate(path, old_size, new_size,
+                                          CTX->get_replicas());
+    }
     if(err) {
         LOG(DEBUG, "Failed to truncate data");
         errno = err;
@@ -887,8 +926,14 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
     auto write_size = 0;
     auto num_replicas = CTX->get_replicas();
 
-    auto ret_offset = gkfs::rpc::forward_update_metadentry_size(
-            *path, count, offset, is_append, num_replicas);
+    pair<int, long> ret_offset;
+    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size_proxy(
+                *path, count, offset, is_append);
+    } else {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size(
+                *path, count, offset, is_append, num_replicas);
+    }
     auto err = ret_offset.first;
     if(err) {
         LOG(ERROR, "update_metadentry_size() failed with err '{}'", err);
@@ -910,7 +955,13 @@ gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
         offset = ret_offset.second;
     }
 
-    auto ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
+    pair<int, long> ret_write;
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy() &&
+       count > gkfs::config::proxy::fwd_io_count_threshold) {
+        ret_write = gkfs::rpc::forward_write_proxy(*path, buf, offset, count);
+    } else {
+        ret_write = gkfs::rpc::forward_write(*path, buf, offset, count, 0);
+    }
     err = ret_write.first;
     write_size = ret_write.second;
 
@@ -979,6 +1030,8 @@ gkfs_write_ws(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
 ssize_t
 gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset) {
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     return gkfs_write_ws(*file, reinterpret_cast<const char*>(buf), count,
                          offset);
 }
@@ -993,10 +1046,12 @@ gkfs_pwrite(int fd, const void* buf, size_t count, off64_t offset) {
  */
 ssize_t
 gkfs_write(int fd, const void* buf, size_t count) {
-    auto gkfs_file = CTX->file_map()->get(fd);
+    auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     // call pwrite and update pos
-    auto ret = gkfs_write_ws(*gkfs_file, reinterpret_cast<const char*>(buf),
-                             count, gkfs_file->pos(), true);
+    auto ret = gkfs_write_ws(*gkfs_fd, reinterpret_cast<const char*>(buf),
+                             count, gkfs_fd->pos(), true);
     return ret;
 }
 
@@ -1013,6 +1068,8 @@ ssize_t
 gkfs_pwritev(int fd, const struct iovec* iov, int iovcnt, off_t offset) {
 
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     auto pos = offset; // keep track of current position
     ssize_t written = 0;
     ssize_t ret;
@@ -1052,6 +1109,8 @@ ssize_t
 gkfs_writev(int fd, const struct iovec* iov, int iovcnt) {
 
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_pwritev(fd, iov, iovcnt, pos);
     assert(ret != 0);
@@ -1085,24 +1144,29 @@ gkfs_do_read(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
     if constexpr(gkfs::config::io::zero_buffer_before_read) {
         memset(buf, 0, sizeof(char) * count);
     }
-    std::pair<int, off_t> ret;
-    std::set<int8_t> failed; // set with failed targets.
-    if(CTX->get_replicas() != 0) {
 
-        ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
-                                      CTX->get_replicas(), failed);
-        while(ret.first == EIO) {
+    pair<int, long> ret;
+    if(gkfs::config::proxy::fwd_io && CTX->use_proxy() &&
+       count > gkfs::config::proxy::fwd_io_count_threshold) {
+        ret = gkfs::rpc::forward_read_proxy(file.path(), buf, offset, count);
+    } else {
+        std::set<int8_t> failed; // set with failed targets.
+        if(CTX->get_replicas() != 0) {
+
             ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
                                           CTX->get_replicas(), failed);
-            LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
-                ret.first);
+            while(ret.first == EIO) {
+                ret = gkfs::rpc::forward_read(file.path(), buf, offset, count,
+                                              CTX->get_replicas(), failed);
+                LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'",
+                    ret.first);
+            }
+
+        } else {
+            ret = gkfs::rpc::forward_read(file.path(), buf, offset, count, 0,
+                                          failed);
         }
-
-    } else {
-        ret = gkfs::rpc::forward_read(file.path(), buf, offset, count, 0,
-                                      failed);
     }
-
     auto err = ret.first;
     if(err) {
         LOG(WARNING, "gkfs::rpc::forward_read() failed with ret '{}'", err);
@@ -1146,6 +1210,8 @@ gkfs_read_ws(const gkfs::filemap::OpenFile& file, char* buf, size_t count,
 ssize_t
 gkfs_pread(int fd, void* buf, size_t count, off64_t offset) {
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     return gkfs_read_ws(*gkfs_fd, reinterpret_cast<char*>(buf), count, offset);
 }
 
@@ -1160,6 +1226,8 @@ gkfs_pread(int fd, void* buf, size_t count, off64_t offset) {
 ssize_t
 gkfs_read(int fd, void* buf, size_t count) {
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_read_ws(*gkfs_fd, reinterpret_cast<char*>(buf), count, pos);
     // Update offset in file descriptor in the file map
@@ -1182,6 +1250,8 @@ ssize_t
 gkfs_preadv(int fd, const struct iovec* iov, int iovcnt, off_t offset) {
 
     auto file = CTX->file_map()->get(fd);
+    if(!file)
+        return 0;
     auto pos = offset; // keep track of current position
     ssize_t read = 0;
     ssize_t ret;
@@ -1221,6 +1291,8 @@ ssize_t
 gkfs_readv(int fd, const struct iovec* iov, int iovcnt) {
 
     auto gkfs_fd = CTX->file_map()->get(fd);
+    if(!gkfs_fd)
+        return 0;
     auto pos = gkfs_fd->pos(); // retrieve the current offset
     auto ret = gkfs_preadv(fd, iov, iovcnt, pos);
     assert(ret != 0);
@@ -1291,7 +1363,11 @@ gkfs_rmdir(const std::string& path) {
         errno = ENOTEMPTY;
         return -1;
     }
-    err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
+        err = gkfs::rpc::forward_remove_proxy(path);
+    } else {
+        err = gkfs::rpc::forward_remove(path, CTX->get_replicas());
+    }
     if(err) {
         errno = err;
         return -1;
@@ -1586,14 +1662,22 @@ extern "C" int
 gkfs_getsingleserverdir(const char* path, struct dirent_extended* dirp,
                         unsigned int count, int server) {
 
-    auto ret = gkfs::rpc::forward_get_dirents_single(path, server);
+    pair<int, unique_ptr<vector<
+                      tuple<const basic_string<char>, bool, size_t, time_t>>>>
+            ret{};
+    if(gkfs::config::proxy::fwd_get_dirents_single && CTX->use_proxy()) {
+        ret = gkfs::rpc::forward_get_dirents_single_proxy(path, server);
+    } else {
+        ret = gkfs::rpc::forward_get_dirents_single(path, server);
+    }
+
     auto err = ret.first;
     if(err) {
         errno = err;
         return -1;
     }
 
-    auto open_dir = ret.second;
+    auto& open_dir = *ret.second;
     unsigned int pos = 0;
     unsigned int written = 0;
     struct dirent_extended* current_dirp = nullptr;

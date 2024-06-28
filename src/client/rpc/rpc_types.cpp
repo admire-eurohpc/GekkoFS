@@ -34,24 +34,51 @@
 // register request types so that they can be used by users and the engine
 //
 void
-hermes::detail::register_user_request_types() {
-    (void) registered_requests().add<gkfs::rpc::fs_config>();
-    (void) registered_requests().add<gkfs::rpc::create>();
-    (void) registered_requests().add<gkfs::rpc::stat>();
-    (void) registered_requests().add<gkfs::rpc::remove_metadata>();
-    (void) registered_requests().add<gkfs::rpc::decr_size>();
-    (void) registered_requests().add<gkfs::rpc::update_metadentry>();
-    (void) registered_requests().add<gkfs::rpc::get_metadentry_size>();
-    (void) registered_requests().add<gkfs::rpc::update_metadentry_size>();
+hermes::detail::register_user_request_types(uint32_t provider_id) {
+    if(provider_id == 0) {
+        (void) registered_requests().add<gkfs::rpc::fs_config>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::create>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::stat>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::remove_metadata>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::decr_size>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::update_metadentry>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::get_metadentry_size>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::update_metadentry_size>(
+                provider_id);
 
 #ifdef HAS_SYMLINKS
-    (void) registered_requests().add<gkfs::rpc::mk_symlink>();
+        (void) registered_requests().add<gkfs::rpc::mk_symlink>(provider_id);
 #endif // HAS_SYMLINKS
-    (void) registered_requests().add<gkfs::rpc::remove_data>();
-    (void) registered_requests().add<gkfs::rpc::write_data>();
-    (void) registered_requests().add<gkfs::rpc::read_data>();
-    (void) registered_requests().add<gkfs::rpc::trunc_data>();
-    (void) registered_requests().add<gkfs::rpc::get_dirents>();
-    (void) registered_requests().add<gkfs::rpc::chunk_stat>();
-    (void) registered_requests().add<gkfs::rpc::get_dirents_extended>();
+        (void) registered_requests().add<gkfs::rpc::remove_data>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::write_data>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::read_data>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::trunc_data>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::get_dirents>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::chunk_stat>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::get_dirents_extended>(
+                provider_id);
+    } else {
+        (void) registered_requests().add<gkfs::rpc::write_data_proxy>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::read_data_proxy>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::trunc_data_proxy>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::chunk_stat_proxy>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::create_proxy>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::stat_proxy>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::remove_proxy>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::decr_size_proxy>(
+                provider_id);
+        (void) registered_requests().add<gkfs::rpc::get_metadentry_size_proxy>(
+                provider_id);
+        (void) registered_requests()
+                .add<gkfs::rpc::update_metadentry_size_proxy>(provider_id);
+        (void) registered_requests().add<gkfs::rpc::get_dirents_extended_proxy>(
+                provider_id);
+    }
 }

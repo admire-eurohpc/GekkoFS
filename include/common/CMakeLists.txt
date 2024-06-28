@@ -30,3 +30,9 @@ target_sources(
   gkfs_daemon PUBLIC cmake_configure.hpp.in common_defs.hpp rpc/rpc_types.hpp
                      rpc/rpc_util.hpp
 )
+
+target_sources(gkfs_proxy
+    PUBLIC
+    common_defs.hpp
+    rpc/rpc_types.hpp
+    rpc/rpc_util.hpp)

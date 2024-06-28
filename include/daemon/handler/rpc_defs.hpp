@@ -37,8 +37,7 @@ extern "C" {
 #include <margo.h>
 }
 
-/* visible API for RPC operations */
-
+// client <-> daemon RPCs
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_get_fs_config)
 
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_create)
@@ -64,7 +63,6 @@ DECLARE_MARGO_RPC_HANDLER(rpc_srv_mk_symlink)
 
 #endif
 
-
 // data
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_remove_data)
 
@@ -75,5 +73,15 @@ DECLARE_MARGO_RPC_HANDLER(rpc_srv_write)
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_truncate)
 
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_get_chunk_stat)
+
+// proxy <-> daemon RPCs
+DECLARE_MARGO_RPC_HANDLER(rpc_srv_proxy_write)
+
+DECLARE_MARGO_RPC_HANDLER(rpc_srv_proxy_read)
+
+// client <-> proxy RPCs
+DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_read)
+
+DECLARE_MARGO_RPC_HANDLER(proxy_rpc_srv_write)
 
 #endif // GKFS_DAEMON_RPC_DEFS_HPP

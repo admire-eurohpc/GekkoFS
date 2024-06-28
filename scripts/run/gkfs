@@ -1,4 +1,20 @@
 #!/bin/bash
+# colors and shell styles
+# check for color support and set variables
+if [ "$(tput colors)" -gt 2 ]; then
+    C_GREEN='\033[0;32m' # green
+    C_BYELLOW='\033[1;33m' # Bold yellow
+    C_BRED='\033[1;31m' # Bold red
+    C_NONE='\033[0m' # No color
+else
+    C_GREEN=''
+    C_BYELLOW=''
+    C_BRED=''
+    C_NONE=''
+fi
+C_AST_GREEN="${C_GREEN}*${C_NONE} [gkfs] "
+C_AST_YELLOW="${C_BYELLOW}*${C_NONE} [gkfs] "
+C_AST_RED="${C_BRED}*${C_NONE} [gkfs] "
 #######################################
 # Poll GekkoFS hostsfile until all daemons are started. 
 # Exits with 1 if daemons cannot be started.
@@ -23,7 +39,7 @@ wait_for_gkfs_daemons() {
         sleep 2
         server_wait_cnt=$((server_wait_cnt+1))
         if [ ${server_wait_cnt} -gt 600 ]; then
-            echo "Server failed to start. Exiting ..."
+            echo -e "${C_AST_RED}Server failed to start. Exiting ..."
             exit 1
         fi
     done
@@ -32,22 +48,24 @@ wait_for_gkfs_daemons() {
 # Creates a pid file for a given pid. If pid file exists, we check if its pids are still valid.
 # If valid, an additional line is added. Otherwise, the pid in the file is deleted.
 # Globals:
-#   DAEMON_PID_FILE
+#   SRUN_DAEMON_PID_FILE
+#   SRUN_PROXY_PID_FILE
 #   VERBOSE
 # Arguments:
+#   path to pid file
 #   pid to write to pid file
 # Outputs:
 #   Writes status to stdout if VERBOSE is true
 #######################################
 create_pid_file() {
-    local pid_file=${DAEMON_PID_FILE}
-    local pid=${1}
+    local pid_file=${1}
+    local pid=${2}
     if [[ ${VERBOSE} == true ]]; then
-        echo "Creating pid file at ${pid_file} with pid ${pid} ..."
+        echo -e "${C_AST_GREEN}Creating pid file at ${pid_file} with pid ${pid} ..."
     fi
     # if PID file exists another daemon could run
     if [[ -e ${pid_file} ]]; then
-        local pid_file_tmp=${DAEMON_PID_FILE}.swp
+        local pid_file_tmp=${SRUN_DAEMON_PID_FILE}.swp
         # create empty tmp file
         truncate -s 0 "${pid_file_tmp}"
         while IFS= read -r line
@@ -69,10 +87,13 @@ create_pid_file() {
 #   NODE_NUM
 #   MOUNTDIR
 #   ROOTDIR
-#   ARGS
+#   DAEMON_ARGS_
+#   PROXY_ARGS_
 #   CPUS_PER_TASK
 #   VERBOSE
-#   USE_NUMACTL
+#   DAEMON_AFFINITY_
+#   PROXY_AFFINITY_
+#   USE_PROXY
 #   DAEMON_CPUNODEBIND
 #   DAEMON_MEMBIND
 #   GKFS_DAEMON_LOG_PATH
@@ -83,100 +104,218 @@ create_pid_file() {
 #######################################
 start_daemon() {
     local node_list
-    local srun_cmd
+    local srun_daemon_cmd
+    local srun_proxy_cmd
     local daemon_execute
+    local proxy_execute
     # setup
     if [[ ${USE_SRUN} == true ]]; then
-        node_list=$(scontrol show job "${SLURM_JOB_ID}" | grep " NodeList=" | cut -d "=" -f2)
-        if [[ -z ${NODE_NUM} ]]; then
-            NODE_NUM=$(scontrol show hostname "${node_list}" | wc -l)
+        # check for daemon first
+        if [[ -n ${DAEMON_NODELIST_} ]]; then
+            if [[ ! -f ${DAEMON_NODELIST_} ]]; then
+                echo -e "${C_AST_RED}ERROR: Daemon nodelist file not found at ${DAEMON_NODELIST_}. Exiting ..."
+                exit 1
+            fi
+            NODE_NUM=$(wc -l < "${DAEMON_NODELIST_}")
+            srun_daemon_cmd="srun --disable-status --nodelist=${DAEMON_NODELIST_} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+        else
+            node_list=$(scontrol show job "${SLURM_JOB_ID}" | grep " NodeList=" | cut -d "=" -f2)
+            if [[ -z ${NODE_NUM} ]]; then
+                NODE_NUM=$(scontrol show hostname "${node_list}" | wc -l)
+            fi
+            # Setting up base srun cmd
+            srun_daemon_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
         fi
-        # Setting up base srun cmd
-        srun_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+        if [[ ${USE_PROXY} == true ]]; then
+            if [[ -n ${PROXY_NODELIST_} ]]; then
+                if [[ ! -f ${PROXY_NODELIST_} ]]; then
+                    echo -e "${C_AST_RED}ERROR: Proxy nodelist file not found at ${PROXY_NODELIST_}. Exiting ..."
+                    exit 1
+                fi
+                NODE_NUM_PROXY=$(wc -l < "${PROXY_NODELIST_}")
+                srun_proxy_cmd="srun --disable-status --nodelist=${PROXY_NODELIST_} --ntasks=${NODE_NUM_PROXY} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+            else
+                srun_proxy_cmd="srun --disable-status -N ${NODE_NUM} --ntasks=${NODE_NUM} --cpus-per-task=${CPUS_PER_TASK} ${SRUN_ARGS} "
+                NODE_NUM_PROXY=$NODE_NUM
+            fi
+        fi
+    else
+        NODE_NUM=1
+        if [[ ${USE_PROXY} == true ]]; then
+            NODE_NUM_PROXY=$NODE_NUM
+        fi
     fi
 
     if [[ ${VERBOSE} == true ]]; then
-        echo "### mountdir: ${MOUNTDIR}"
-        echo "### rootdir: ${ROOTDIR}"
-        echo "### node_num: ${NODE_NUM}"
-        echo "### additional daemon args: ${ARGS}"
-        echo "### cpus_per_task: ${CPUS_PER_TASK}"
+        echo -e "${C_AST_GREEN}-------------------CLIENT SETTINGS------------------------"
+        echo -e "${C_AST_GREEN}Set env variables for client: "
+        echo -e "LD_PRELOAD=${PRELOAD_LIB}"
+        echo -e "LIBGKFS_HOSTS_FILE=${HOSTSFILE}"
+        echo -e "LIBGKFS_PROXY_PID_FILE=${PROXY_LOCAL_PID_FILE}"
+        echo -e "${C_AST_GREEN}----------------------------------------------------------"
+        echo -e "${C_AST_GREEN}mountdir: ${MOUNTDIR}"
+        echo -e "${C_AST_GREEN}rootdir: ${ROOTDIR}"
+        echo -e "${C_AST_GREEN}node_num: ${NODE_NUM}"
+        echo -e "${C_AST_GREEN}additional daemon args: ${DAEMON_ARGS_}"
+        echo -e "${C_AST_GREEN}cpus_per_task: ${CPUS_PER_TASK}"
+        [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}Proxy enabled"
     fi
     if [[ ${VERBOSE} == true ]]; then
-        echo "# Cleaning host file ..."
+        echo -e "${C_AST_GREEN}Cleaning host file ..."
     fi
     rm "${HOSTSFILE}" 2> /dev/null
     # Setting up base daemon cmd
-    local daemon_cmd="${DAEMON_BIN} -r ${ROOTDIR} -m ${MOUNTDIR} -H ${HOSTSFILE} ${ARGS}"
-    # Setting up numactl
-    if [[ ${USE_NUMACTL} == true ]]; then
-        daemon_cmd="numactl --cpunodebind=${DAEMON_CPUNODEBIND} --membind=${DAEMON_MEMBIND} ${daemon_cmd}"
+    local daemon_cmd="${DAEMON_BIN} -r ${ROOTDIR} -m ${MOUNTDIR} -H ${HOSTSFILE} ${DAEMON_ARGS_}"
+    if [[ ${USE_PROXY} == true ]]; then
+        daemon_cmd="${daemon_cmd} ${DAEMON_PROXY_ARGS}"
+    fi
+    # Set cpu affinity for daemon
+    if [[ -n ${DAEMON_AFFINITY_} ]]; then
+        daemon_cmd="${DAEMON_AFFINITY_} ${daemon_cmd}"
     fi
     # final daemon execute command
-    daemon_execute="${srun_cmd}${daemon_cmd}"
+    daemon_execute="${srun_daemon_cmd} ${SRUN_DAEMON_ARGS} ${daemon_cmd}"
+
+    # Setting up base proxy command
+    if [[ ${USE_PROXY} == true ]]; then
+        local proxy_cmd="${PROXY_BIN} -H ${HOSTSFILE} --pid-path ${PROXY_LOCAL_PID_FILE} ${PROXY_ARGS_}"
+        # Set cpu affinity for proxy
+        if [[ -n ${PROXY_AFFINITY_} ]]; then
+            proxy_cmd="${PROXY_AFFINITY_} ${proxy_cmd}"
+        fi
+        # final proxy execute command
+        proxy_execute="${srun_proxy_cmd} ${SRUN_PROXY_ARGS} ${proxy_cmd}"
+    fi
 
     if [[ ${VERBOSE} == true ]]; then
-        echo "### Full execute DAEMON command:"
-        echo "##### $daemon_execute"
+        echo -e "${C_AST_GREEN}Full execute DAEMON command:"
+        echo -e "${C_AST_GREEN}# $daemon_execute"
+        [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}Full execute PROXY command:"
+        [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}# $proxy_execute"
     fi
     # setup environment variables
     export GKFS_DAEMON_LOG_PATH=$GKFS_DAEMON_LOG_PATH
     export GKFS_DAEMON_LOG_LEVEL=$GKFS_DAEMON_LOG_LEVEL
+    export GKFS_PROXY_LOG_PATH=$GKFS_PROXY_LOG_PATH
+    export GKFS_PROXY_LOG_LEVEL=$GKFS_PROXY_LOG_LEVEL
 
-    echo "Starting daemons ..."
+    echo -e "${C_AST_GREEN}Starting GekkoFS daemons (${NODE_NUM} nodes) ..."
+    start_time="$(date -u +%s.%3N)"
     ${daemon_execute} &
     local daemon_pid=$!
     wait_for_gkfs_daemons
-    echo "Running ..."
+    stop_time="$(date -u +%s.%3N)"
+    elapsed="$(bc <<<"$stop_time-$start_time")"
+    echo -e "${C_AST_GREEN}GekkoFS daemons running"
+    echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
+
+    if [[ ${USE_PROXY} == true ]]; then
+        echo -e "${C_AST_GREEN}Starting GekkoFS proxies (${NODE_NUM_PROXY} nodes) ..."
+        start_time="$(date -u +%s.%3N)"
+        ${proxy_execute} &
+        local proxy_pid=$!
+        sleep 5 # TODO
+        stop_time="$(date -u +%s.%3N)"
+        elapsed="$(bc <<<"$stop_time-$start_time")"
+        echo -e "${C_AST_GREEN}GekkoFS proxies probably :) running"
+        echo -e "${C_AST_GREEN}Startup time: ${elapsed} seconds"
+    fi
 
     if [[ ${RUN_FOREGROUND} == true ]]; then
         echo "Press 'q' to exit"
         while : ; do
             read -n 1 k <&1
             if [[ $k = q ]] ; then
+                if [[ ${USE_PROXY} == true ]]; then
+                    start_time="$(date -u +%s.%3N)"
+                    echo
+                    echo -e "${C_AST_GREEN}Shutting down GekkoFS proxies ..."
+                    if [[ -n ${proxy_pid} ]]; then
+                        kill -s SIGINT ${proxy_pid} &
+                        wait ${proxy_pid}
+                    fi
+                    stop_time="$(date -u +%s.%3N)"
+                    elapsed="$(bc <<<"$stop_time-$start_time")"
+                    echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
+                fi
+                start_time="$(date -u +%s.%3N)"
                 echo
-                echo "Shutting down ..."
+                echo -e "${C_AST_GREEN}Shutting down GekkoFS daemons ..."
                 if [[ -n ${daemon_pid} ]]; then
                     kill -s SIGINT ${daemon_pid} &
                     wait ${daemon_pid}
                 fi
+                stop_time="$(date -u +%s.%3N)"
+                elapsed="$(bc <<<"$stop_time-$start_time")"
+                echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
                 break
             else
                 echo "Press 'q' to exit"
             fi
         done
     else
-        create_pid_file ${daemon_pid}
+        create_pid_file ${SRUN_DAEMON_PID_FILE} ${daemon_pid}
+        if [[ ${USE_PROXY} == true ]]; then
+            create_pid_file ${SRUN_PROXY_PID_FILE} ${proxy_pid}
+        fi
     fi
 }
 #######################################
 # Stops GekkoFS daemons for the configured pid file
 # Globals:
-#   DAEMON_PID_FILE
+#   SRUN_DAEMON_PID_FILE
+#   SRUN_PROXY_PID_FILE
 #   VERBOSE
 # Outputs:
 #   Writes status to stdout
 #######################################
 stop_daemons() {
-    local pid_file=${DAEMON_PID_FILE}
+    local pid_file=${SRUN_DAEMON_PID_FILE}
+    local proxy_pid_file=${SRUN_PROXY_PID_FILE}
+    # if no daemon or proxy pid file exists, exit
+    if [[ ! -e ${pid_file} ]] && [[ ! -e ${proxy_pid_file} ]]; then
+        echo -e "${C_AST_RED}No pid files found -> no daemon or proxy running. Exiting ..."
+        exit 1
+    fi
+    # attempt to shutdown proxy
+    if [[ ${USE_PROXY} == true ]] && [[ -e ${proxy_pid_file} ]]; then
+        while IFS= read -r line
+        do
+            if ps -p "${line}" > /dev/null; then
+                echo -e "${C_AST_GREEN}Stopping proxy with pid ${line}"
+                start_time="$(date -u +%s.%3N)"
+                kill -s SIGINT "${line}" &
+                # poll pid until it stopped
+                if [[ ${VERBOSE} == true ]]; then
+                    echo -e "${C_AST_GREEN}Waiting for proxies to exit ..."
+                fi
+                timeout 1 tail --pid=${line} -f /dev/null
+            fi
+        done < "${proxy_pid_file}"
+        rm "${proxy_pid_file}"
+        stop_time="$(date -u +%s.%3N)"
+        elapsed="$(bc <<<"$stop_time-$start_time")"
+        echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
+    fi
+    # attempt to shutdown daemon
     if [[ -e ${pid_file} ]]; then
         while IFS= read -r line
         do
             if ps -p "${line}" > /dev/null; then
-                if [[ ${VERBOSE} == true ]]; then
-                    echo "Stopping daemon with pid ${line}"
-                fi
+                echo -e "${C_AST_GREEN}Stopping daemon with pid ${line}"
+                start_time="$(date -u +%s.%3N)"
                 kill -s SIGINT "${line}" &
                 # poll pid until it stopped
                 if [[ ${VERBOSE} == true ]]; then
-                    echo "Waiting for daemons to exit ..."
+                    echo -e "${C_AST_GREEN}Waiting for daemons to exit ..."
                 fi
                 timeout 1 tail --pid=${line} -f /dev/null
             fi
         done < "${pid_file}"
         rm "${pid_file}"
-    else
-        echo "No pid file found -> no daemon running. Exiting ..."
+        stop_time="$(date -u +%s.%3N)"
+        elapsed="$(bc <<<"$stop_time-$start_time")"
+        echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
     fi
 }
 #######################################
@@ -186,8 +325,8 @@ stop_daemons() {
 #######################################
 usage_short() {
     echo "
-usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [-f/--foreground <false>]
-        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [--numactl <false>] [-v/--verbose <false>]
+usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [--proxy <false>] [-f/--foreground <false>]
+        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [-v/--verbose <false>]
         {start,stop}
     "
 }
@@ -210,14 +349,15 @@ help_msg() {
             -h, --help              Shows this help message and exits
             -r, --rootdir <path>    The rootdir path for GekkoFS daemons.
             -m, --mountdir <path>   The mountdir path for GekkoFS daemons.
-            -a, --args <daemon_arguments>
+            -d, --daemon_args <daemon_arguments>
+            --proxy                 Start proxy after the daemons are running.
                                     Add various additional daemon arguments, e.g., \"-l ib0 -P ofi+psm2\".
+            -p, --proxy_args <proxy_arguments>
             -f, --foreground        Starts the script in the foreground. Daemons are stopped by pressing 'q'.
             --srun                  Use srun to start daemons on multiple nodes.
             -n, --numnodes <n>      GekkoFS daemons are started on n nodes.
                                     Nodelist is extracted from Slurm via the SLURM_JOB_ID env variable.
             --cpuspertask <#cores>  Set the number of cores the daemons can use. Must use '--srun'.
-            --numactl               Use numactl for the daemon. Modify gkfs.conf for further numactl configurations.
             -c, --config            Path to configuration file. By defaults looks for a 'gkfs.conf' in this directory.
             -v, --verbose           Increase verbosity
             "
@@ -241,22 +381,36 @@ if [[ -z ${CONFIGPATH} ]]; then
     CONFIGPATH="${SCRIPTDIR}/gkfs.conf"
 fi
 if [[ ! -f ${CONFIGPATH} ]]; then
-    >&2 echo ">> No config file found at '${CONFIGPATH}'."
+    >&2 echo -e "${C_AST_RED}>> No config file found at '${CONFIGPATH}'."
     exit 1
 fi
 # get variables from CONFIGPATH
 source "$CONFIGPATH"
 # more global variables which may be overwritten by user input
 VERBOSE=false
-NODE_NUM=1
+NODE_NUM=""
 MOUNTDIR=${DAEMON_MOUNTDIR}
 ROOTDIR=${DAEMON_ROOTDIR}
 HOSTSFILE=${LIBGKFS_HOSTS_FILE}
 CPUS_PER_TASK=$(grep -c ^processor /proc/cpuinfo)
-ARGS=${DAEMON_ARGS}
+DAEMON_ARGS_=${DAEMON_ARGS}
+PROXY_ARGS_=${PROXY_ARGS}
 USE_SRUN=${USE_SRUN}
+DAEMON_NODELIST_=${DAEMON_NODELIST}
+PROXY_NODELIST_=${PROXY_NODELIST}
 RUN_FOREGROUND=false
-USE_NUMACTL=${DAEMON_NUMACTL}
+DAEMON_AFFINITY_=${DAEMON_AFFINITY}
+PROXY_AFFINITY_=${PROXY_AFFINITY}
+USE_PROXY=${USE_PROXY}
+# use absolute paths for everything
+DAEMON_BIN=$(readlink -f ${DAEMON_BIN})
+PROXY_BIN=$(readlink -f ${PROXY_BIN})
+PRELOAD_LIB=$(readlink -f ${PRELOAD_LIB})
+HOSTSFILE=$(readlink -f ${HOSTSFILE})
+PROXY_LOCAL_PID_FILE=$(readlink -f ${PROXY_LOCAL_PID_FILE})
+SRUN_DAEMON_PID_FILE=$(readlink -f ${SRUN_DAEMON_PID_FILE})
+SRUN_PROXY_PID_FILE=$(readlink -f ${SRUN_PROXY_PID_FILE})
+
 # parse input
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -278,10 +432,19 @@ while [[ $# -gt 0 ]]; do
         shift # past argument
         shift # past value
         ;;
-    -a | --args)
-        ARGS="${ARGS} $2"
+    -d | --daemon_args)
+        DAEMON_ARGS_="${DAEMON_ARGS_} $2"
         shift # past argument
         shift # past value
+        ;;
+    -p | --proxy_args)
+        PROXY_ARGS_="${PROXY_ARGS_} $2"
+        shift # past argument
+        shift # past value
+        ;;
+    --proxy)
+        USE_PROXY=true
+        shift # past argument
         ;;
     --srun)
         USE_SRUN=true
@@ -291,9 +454,15 @@ while [[ $# -gt 0 ]]; do
         RUN_FOREGROUND=true
         shift # past argument
         ;;
-    --numactl)
-        USE_NUMACTL=true
+    --daemon_nodelist)
+        DAEMON_NODELIST_="$2"
         shift # past argument
+        shift # past value
+        ;;
+    --proxy_nodelist)
+        PROXY_NODELIST_="$2"
+        shift # past argument
+        shift # past value
         ;;
     --cpuspertask)
         CPUS_PER_TASK=$2
@@ -323,14 +492,14 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # positional arguments
 if [[ -z ${1+x} ]]; then
-    echo "ERROR: Positional arguments missing."
+    echo -e "${C_AST_RED}ERROR: Positional arguments missing."
     usage_short
     exit 1
 fi
 command="${1}"
 # checking input
 if [[ ${command} != *"start"* ]] && [[ ${command} != *"stop"* ]]; then
-    echo "ERROR: command ${command} not supported"
+    echo -e "${C_AST_RED}ERROR: command ${command} not supported"
     usage_short
     exit 1
 fi
@@ -341,5 +510,5 @@ elif [[ ${command} == "stop" ]]; then
     stop_daemons
 fi
 if [[ ${VERBOSE} == true ]]; then
-    echo "Nothing left to do. Exiting :)"
+    echo -e "${C_AST_GREEN}Nothing left to do. Exiting :)"
 fi

@@ -101,6 +101,11 @@ private:
     std::string rpc_protocol_;
     bool auto_sm_{false};
 
+    // proxy stuff
+    bool use_proxy_{false};
+    std::string proxy_address_str_;
+    hermes::endpoint proxy_host_;
+
     bool interception_enabled_;
 
     std::bitset<GKFS_MAX_INTERNAL_FDS> internal_fds_;
@@ -190,6 +195,27 @@ public:
     bool
     relativize_path(const char* raw_path, std::string& relative_path,
                     bool resolve_last_link = true) const;
+
+    bool
+    use_proxy() const;
+
+    void
+    use_proxy(bool use_proxy);
+
+    const std::string&
+    proxy_address_str() const;
+
+    void
+    proxy_address_str(const std::string& proxy_address_str);
+
+    const hermes::endpoint&
+    proxy_host() const;
+
+    void
+    proxy_host(const hermes::endpoint& proxy_host);
+
+    void
+    clear_proxy_host();
 
     const std::shared_ptr<gkfs::filemap::OpenFileMap>&
     file_map() const;
