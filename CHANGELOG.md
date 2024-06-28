@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Remove optimization, removing one RPC per operation ([!195](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/195)).
 - Added the GekkoFS proxy as an optional gateway between client and daemon. The proxy is started on each compute node
   that houses clients ([!191](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/191)).
   - Additional options for the GekkoFS daemon were added to integrate the GekkoFS proxy.

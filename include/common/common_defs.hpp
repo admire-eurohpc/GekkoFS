@@ -90,9 +90,17 @@ constexpr auto ucx_all = "ucx+all";
 constexpr auto ucx_tcp = "ucx+tcp";
 constexpr auto ucx_rc = "ucx+rc";
 constexpr auto ucx_ud = "ucx+ud";
+/*
+ * Disable warning for unused variable
+ * This is a bug in gcc that was fixed in version 13.
+ * XXX Can be removed in the future
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 constexpr auto all_remote_protocols = {ofi_sockets, ofi_tcp, ofi_verbs,
                                        ofi_psm2,    ucx_all, ucx_tcp,
                                        ucx_rc,      ucx_ud};
+#pragma GCC diagnostic pop
 } // namespace protocol
 } // namespace gkfs::rpc
 

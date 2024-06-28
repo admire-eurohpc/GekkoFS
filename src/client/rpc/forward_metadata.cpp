@@ -135,7 +135,7 @@ forward_stat(const std::string& path, string& attr, const int copy) {
  * @return error code
  */
 int
-forward_remove(const std::string& path, const int8_t num_copies) {
+forward_remove(const std::string& path, bool rm_dir, const int8_t num_copies) {
     if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
         LOG(WARNING, "{} was called even though proxy should be used!",
             __func__);
@@ -159,7 +159,8 @@ forward_remove(const std::string& path, const int8_t num_copies) {
             // returning one result and a broadcast(endpoint_set) returning a
             // result_set. When that happens we can remove the .at(0) :/
             auto out = ld_network_service
-                               ->post<gkfs::rpc::remove_metadata>(endp, path)
+                               ->post<gkfs::rpc::remove_metadata>(endp, path,
+                                                                  rm_dir)
                                .get()
                                .at(0);
 
@@ -174,9 +175,9 @@ forward_remove(const std::string& path, const int8_t num_copies) {
             return EBUSY;
         }
     }
-    // if file is not a regular file and it's size is 0, data does not need to
+    // if file is not a regular file or it's size is 0, data does not need to
     // be removed, thus, we exit
-    if(!(S_ISREG(mode) && (size != 0)))
+    if(!S_ISREG(mode) || size == 0)
         return 0;
 
 

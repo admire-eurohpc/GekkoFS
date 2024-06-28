@@ -520,7 +520,8 @@ struct remove_metadata {
         hermes::detail::post_to_mercury(ExecutionContext*);
 
     public:
-        input(const std::string& path) : m_path(path) {}
+        input(const std::string& path, bool rm_dir)
+            : m_path(path), m_rm_dir(rm_dir) {}
 
         input(input&& rhs) = default;
 
@@ -537,14 +538,21 @@ struct remove_metadata {
             return m_path;
         }
 
-        explicit input(const rpc_rm_node_in_t& other) : m_path(other.path) {}
+        bool
+        rm_dir() const {
+            return m_rm_dir;
+        }
+
+        explicit input(const rpc_rm_node_in_t& other)
+            : m_path(other.path), m_rm_dir(other.rm_dir) {}
 
         explicit operator rpc_rm_node_in_t() {
-            return {m_path.c_str()};
+            return {m_path.c_str(), m_rm_dir};
         }
 
     private:
         std::string m_path;
+        bool m_rm_dir;
     };
 
     class output {
@@ -3113,7 +3121,8 @@ struct remove_proxy {
         hermes::detail::post_to_mercury(ExecutionContext*);
 
     public:
-        input(const std::string& path) : m_path(path) {}
+        input(const std::string& path, bool rm_dir)
+            : m_path(path), m_rm_dir(rm_dir) {}
 
         input(input&& rhs) = default;
 
@@ -3130,14 +3139,21 @@ struct remove_proxy {
             return m_path;
         }
 
-        explicit input(const rpc_rm_node_in_t& other) : m_path(other.path) {}
+        bool
+        rm_dir() const {
+            return m_rm_dir;
+        }
+
+        explicit input(const rpc_rm_node_in_t& other)
+            : m_path(other.path), m_rm_dir(other.rm_dir) {}
 
         explicit operator rpc_rm_node_in_t() {
-            return {m_path.c_str()};
+            return {m_path.c_str(), m_rm_dir};
         }
 
     private:
         std::string m_path;
+        bool m_rm_dir;
     };
 
     class output {

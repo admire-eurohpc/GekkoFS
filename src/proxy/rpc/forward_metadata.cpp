@@ -22,7 +22,7 @@ using namespace std;
 namespace {
 
 std::tuple<int, int64_t, uint32_t>
-remove_metadata(const std::string& path) {
+remove_metadata(const std::string& path, bool rm_dir) {
     hg_handle_t rpc_handle = nullptr;
     rpc_rm_node_in_t daemon_in{};
     rpc_rm_metadata_out_t daemon_out{};
@@ -31,6 +31,7 @@ remove_metadata(const std::string& path) {
     uint32_t mode = 0;
     // fill in
     daemon_in.path = path.c_str();
+    daemon_in.rm_dir = rm_dir;
     // Create handle
     PROXY_DATA->log()->debug("{}() Creating Margo handle ...", __func__);
     auto endp = PROXY_DATA->rpc_endpoints().at(
@@ -51,9 +52,11 @@ remove_metadata(const std::string& path) {
         if(ret == HG_SUCCESS) {
             PROXY_DATA->log()->debug("{}() Got response success: {}", __func__,
                                      daemon_out.err);
-            mode = daemon_out.mode;
-            size = daemon_out.size;
             err = daemon_out.err;
+            if(!err) {
+                mode = daemon_out.mode;
+                size = daemon_out.size;
+            }
             margo_free_output(rpc_handle, &daemon_out);
         } else {
             // something is wrong
@@ -233,16 +236,15 @@ forward_stat(const std::string& path) {
 }
 
 int
-forward_remove(const std::string& path) {
-    auto [err, mode, size] = remove_metadata(path);
+forward_remove(const std::string& path, bool rm_dir) {
+    auto [err, mode, size] = remove_metadata(path, rm_dir);
     if(err != 0) {
         return err;
     }
-    // if file is not a regular file and it's size is 0, data does not need to
+    // if file is not a regular file or it's size is 0, data does not need to
     // be removed, thus, we exit
-    if(!(S_ISREG(mode) && (size != 0))) {
+    if(!S_ISREG(mode) || size == 0)
         return 0;
-    }
     return remove_data(path);
 }
 
