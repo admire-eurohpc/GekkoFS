@@ -79,7 +79,8 @@ proxy_rpc_srv_remove(hg_handle_t handle) {
     }
     PROXY_DATA->log()->debug("{}() Got RPC with path '{}'", __func__,
                              client_in.path);
-    client_out.err = gkfs::rpc::forward_remove(client_in.path);
+    client_out.err =
+            gkfs::rpc::forward_remove(client_in.path, client_in.rm_dir);
 
     PROXY_DATA->log()->debug("{}() Sending output err '{}'", __func__,
                              client_out.err);

@@ -78,7 +78,7 @@ forward_stat_proxy(const std::string& path, string& attr) {
 }
 
 int
-forward_remove_proxy(const std::string& path) {
+forward_remove_proxy(const std::string& path, bool rm_dir) {
     auto endp = CTX->proxy_host();
 
     try {
@@ -88,7 +88,8 @@ forward_remove_proxy(const std::string& path) {
         // TODO(amiranda): hermes will eventually provide a post(endpoint)
         // returning one result and a broadcast(endpoint_set) returning a
         // result_set. When that happens we can remove the .at(0) :/
-        auto out = ld_proxy_service->post<gkfs::rpc::remove_proxy>(endp, path)
+        auto out = ld_proxy_service
+                           ->post<gkfs::rpc::remove_proxy>(endp, path, rm_dir)
                            .get()
                            .at(0);
         LOG(DEBUG, "Got response success: {}", out.err());

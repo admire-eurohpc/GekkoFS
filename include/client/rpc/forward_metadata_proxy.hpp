@@ -23,7 +23,7 @@ int
 forward_stat_proxy(const std::string& path, std::string& attr);
 
 int
-forward_remove_proxy(const std::string& path);
+forward_remove_proxy(const std::string& path, bool rm_dir);
 
 int
 forward_decr_size_proxy(const std::string& path, size_t length);

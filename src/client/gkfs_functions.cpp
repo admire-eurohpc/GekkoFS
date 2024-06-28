@@ -365,7 +365,8 @@ gkfs_remove(const std::string& path) {
                     return -1;
                 }
             }
-            auto err = gkfs::rpc::forward_remove(new_path, CTX->get_replicas());
+            auto err = gkfs::rpc::forward_remove(new_path, false,
+                                                 CTX->get_replicas());
             if(err) {
                 errno = err;
                 return -1;
@@ -376,7 +377,7 @@ gkfs_remove(const std::string& path) {
 #endif // HAS_SYMLINKS
     int err = 0;
     if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
-        err = gkfs::rpc::forward_remove_proxy(path);
+        err = gkfs::rpc::forward_remove_proxy(path, false);
     } else {
         err = gkfs::rpc::forward_remove(path, false, CTX->get_replicas());
     }
@@ -478,7 +479,11 @@ gkfs_rename(const string& old_path, const string& new_path) {
                 return -1;
             }
             // Delete old file
-            err = gkfs::rpc::forward_remove(old_path, CTX->get_replicas());
+            auto is_dir = false;
+            if(S_ISDIR(md_old->mode()))
+                is_dir = true;
+            err = gkfs::rpc::forward_remove(old_path, is_dir,
+                                            CTX->get_replicas());
             if(err) {
                 errno = err;
                 return -1;
@@ -1363,7 +1368,7 @@ gkfs_rmdir(const std::string& path) {
     }
 #endif
     if(gkfs::config::proxy::fwd_remove && CTX->use_proxy()) {
-        err = gkfs::rpc::forward_remove_proxy(path);
+        err = gkfs::rpc::forward_remove_proxy(path, true);
     } else {
         err = gkfs::rpc::forward_remove(path, true, CTX->get_replicas());
     }
