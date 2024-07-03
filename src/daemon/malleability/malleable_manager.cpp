@@ -106,9 +106,8 @@ MalleableManager::read_hosts_file() {
     if(hosts.empty()) {
         throw runtime_error(fmt::format("Hostfile empty: '{}'", hostfile));
     }
-    GKFS_DATA->spdlogger()->info(
-            "{}() Number of hosts for current instance '{}'", __func__,
-            hosts.size());
+    GKFS_DATA->spdlogger()->info("{}() Number of hosts after expansion '{}'",
+                                 __func__, hosts.size());
     return hosts;
 }
 
@@ -209,9 +208,6 @@ MalleableManager::expand_start(int old_server_conf, int new_server_conf) {
     }
     connect_to_hosts(hosts);
     RPC_DATA->distributor()->hosts_size(hosts.size());
-    GKFS_DATA->spdlogger()->info(
-            "{}() Total number of hosts after expansion: {}", __func__,
-            RPC_DATA->distributor()->hosts_size());
     auto abt_err =
             ABT_thread_create(RPC_DATA->io_pool(), expand_abt,
                               ABT_THREAD_ATTR_NULL, nullptr, &redist_thread_);
