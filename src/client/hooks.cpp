@@ -1025,7 +1025,8 @@ hook_llistxattr(const char* path, char* list, size_t size) {
 ssize_t
 hook_flistxattr(int fd, char* list, size_t size) {
 
-    LOG(DEBUG, "{}() called with fd '{}' list '{}' size '{}'", __func__, fd, list, size);
+    LOG(DEBUG, "{}() called with fd '{}' list '{}' size '{}'", __func__, fd,
+        list, size);
 
     if(CTX->file_map()->exist(fd)) {
         return -ENOTSUP;
