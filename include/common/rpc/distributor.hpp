@@ -64,7 +64,7 @@ public:
     locate_file_metadata(const std::string& path, const int num_copy) const = 0;
 
     virtual std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const = 0;
+    locate_directory_metadata() const = 0;
 };
 
 
@@ -99,7 +99,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 class LocalOnlyDistributor : public Distributor {
@@ -125,7 +125,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 class ForwarderDistributor : public Distributor {
@@ -157,7 +157,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 /*
@@ -210,7 +210,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 } // namespace gkfs::rpc

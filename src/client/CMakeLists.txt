@@ -67,12 +67,14 @@ target_sources(
           preload.cpp
           preload_context.cpp
           preload_util.cpp
+	malleability.cpp
           rpc/rpc_types.cpp
           rpc/forward_data.cpp
 	      rpc/forward_data_proxy.cpp
           rpc/forward_management.cpp
           rpc/forward_metadata.cpp
 		  rpc/forward_metadata_proxy.cpp
+	rpc/forward_malleability.cpp
           syscalls/detail/syscall_info.c syscalls/util.S
 )
 

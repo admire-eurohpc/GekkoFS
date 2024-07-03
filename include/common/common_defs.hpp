@@ -78,7 +78,14 @@ constexpr auto client_proxy_get_dirents_extended =
 // Specific RPCs between daemon and proxy
 constexpr auto proxy_daemon_write = "proxy_daemon_rpc_srv_write_data";
 constexpr auto proxy_daemon_read = "proxy_daemon_rpc_srv_read_data";
+
 } // namespace tag
+
+namespace malleable::tag {
+constexpr auto expand_start = "rpc_srv_expand_start";
+constexpr auto expand_status = "rpc_srv_expand_status";
+constexpr auto expand_finalize = "rpc_srv_expand_finalize";
+} // namespace malleable::tag
 
 namespace protocol {
 constexpr auto na_sm = "na+sm";

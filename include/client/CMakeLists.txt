@@ -72,6 +72,7 @@ target_sources(
          rpc/forward_management.hpp
          rpc/forward_metadata.hpp
          rpc/forward_data.hpp
+    rpc/forward_malleability.hpp
          syscalls/args.hpp
          syscalls/decoder.hpp
          syscalls/errno.hpp
