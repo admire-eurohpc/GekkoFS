@@ -996,6 +996,43 @@ hook_lgetxattr(const char* path, const char* name, void* value, size_t size) {
     return syscall_no_intercept_wrapper(SYS_lgetxattr, path, name, value, size);
 }
 
+ssize_t
+hook_listxattr(const char* path, char* list, size_t size) {
+
+    LOG(DEBUG, "{}() called with path '{}' list '{}' size '{}'", __func__, path,
+        list, size);
+
+    std::string rel_path;
+    if(CTX->relativize_path(path, rel_path)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_listxattr, path, list, size);
+}
+
+ssize_t
+hook_llistxattr(const char* path, char* list, size_t size) {
+
+    LOG(DEBUG, "{}() called with path '{}' list '{}' size '{}'", __func__, path,
+        list, size);
+
+    std::string rel_path;
+    if(CTX->relativize_path(path, rel_path)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_llistxattr, path, list, size);
+}
+
+ssize_t
+hook_flistxattr(int fd, char* list, size_t size) {
+
+    LOG(DEBUG, "{}() called with fd '{}' list '{}' size '{}'", __func__, fd,
+        list, size);
+
+    if(CTX->file_map()->exist(fd)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_flistxattr, fd, list, size);
+}
 
 int
 hook_fallocate(int fd, int mode, off_t offset, off_t len) {
@@ -1018,6 +1055,4 @@ hook_fadvise64(int fd, off_t offset, off_t len, int advice) {
     }
     return syscall_no_intercept_wrapper(SYS_fadvise64, fd, offset, len, advice);
 }
-
-
 } // namespace gkfs::hook
