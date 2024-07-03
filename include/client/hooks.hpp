@@ -208,19 +208,20 @@ hook_getxattr(const char* path, const char* name, void* value, size_t size);
 int
 hook_lgetxattr(const char* path, const char* name, void* value, size_t size);
 
+ssize_t
+hook_listxattr(const char* path, char* list, size_t size);
+
+ssize_t
+hook_llistxattr(const char* path, char* list, size_t size);
+
+ssize_t
+hook_flistxattr(int fd, char* list, size_t size);
+
 int
 hook_fallocate(int fd, int mode, off_t offset, off_t len);
 
 int
 hook_fadvise64(int fd, off_t offset, off_t len, int advice);
-
-// char * list is nullable (_Nullable - Clang extension)
-ssize_t
-hook_listxattr(const char* path, char* list, size_t size);
-ssize_t
-hook_llistxattr(const char* path, char* list, size_t size);
-ssize_t
-hook_flistxattr(int fd, char* list, size_t size);
 
 } // namespace gkfs::hook
 

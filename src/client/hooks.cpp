@@ -996,29 +996,6 @@ hook_lgetxattr(const char* path, const char* name, void* value, size_t size) {
     return syscall_no_intercept_wrapper(SYS_lgetxattr, path, name, value, size);
 }
 
-
-int
-hook_fallocate(int fd, int mode, off_t offset, off_t len) {
-    LOG(DEBUG, "{}() called with fd '{}' mode '{}' offset '{}' len '{}'",
-        __func__, fd, mode, offset, len);
-
-    if(CTX->file_map()->exist(fd)) {
-        return -ENOTSUP;
-    }
-    return syscall_no_intercept_wrapper(SYS_fallocate, fd, mode, offset, len);
-}
-
-int
-hook_fadvise64(int fd, off_t offset, off_t len, int advice) {
-    LOG(DEBUG, "{}() called with fd '{}' offset '{}' len '{}' advice '{}'",
-        __func__, fd, offset, len, advice);
-
-    if(CTX->file_map()->exist(fd)) {
-        return -ENOTSUP;
-    }
-    return syscall_no_intercept_wrapper(SYS_fadvise64, fd, offset, len, advice);
-}
-
 ssize_t
 hook_listxattr(const char* path, char* list, size_t size) {
 
@@ -1048,16 +1025,33 @@ hook_llistxattr(const char* path, char* list, size_t size) {
 ssize_t
 hook_flistxattr(int fd, char* list, size_t size) {
 
-    LOG(DEBUG, "{}() called with filedescriptor '{}' list '{}' size '{}'",
-        __func__, fd, list, size);
+    LOG(DEBUG, "{}() called with fd '{}' list '{}' size '{}'", __func__, fd, list, size);
 
-    const char* newpath_path;
-    std::string newpath_resolved;
-    auto newpath_status =
-            CTX->relativize_fd_path(fd, newpath_path, newpath_resolved);
-    if(newpath_status == gkfs::preload::RelativizeStatus::internal) {
+    if(CTX->file_map()->exist(fd)) {
         return -ENOTSUP;
     }
     return syscall_no_intercept_wrapper(SYS_flistxattr, fd, list, size);
+}
+
+int
+hook_fallocate(int fd, int mode, off_t offset, off_t len) {
+    LOG(DEBUG, "{}() called with fd '{}' mode '{}' offset '{}' len '{}'",
+        __func__, fd, mode, offset, len);
+
+    if(CTX->file_map()->exist(fd)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_fallocate, fd, mode, offset, len);
+}
+
+int
+hook_fadvise64(int fd, off_t offset, off_t len, int advice) {
+    LOG(DEBUG, "{}() called with fd '{}' offset '{}' len '{}' advice '{}'",
+        __func__, fd, offset, len, advice);
+
+    if(CTX->file_map()->exist(fd)) {
+        return -ENOTSUP;
+    }
+    return syscall_no_intercept_wrapper(SYS_fadvise64, fd, offset, len, advice);
 }
 } // namespace gkfs::hook
