@@ -208,7 +208,10 @@ MalleableManager::expand_start(int old_server_conf, int new_server_conf) {
                             __func__, hosts.size(), new_server_conf));
     }
     connect_to_hosts(hosts);
-
+    RPC_DATA->distributor()->hosts_size(hosts.size());
+    GKFS_DATA->spdlogger()->info(
+            "{}() Total number of hosts after expansion: {}", __func__,
+            RPC_DATA->distributor()->hosts_size());
     auto abt_err =
             ABT_thread_create(RPC_DATA->io_pool(), expand_abt,
                               ABT_THREAD_ATTR_NULL, nullptr, &redist_thread_);
@@ -239,7 +242,11 @@ MalleableManager::redistribute_metadata() {
             continue;
         }
         auto dest_id = RPC_DATA->distributor()->locate_file_metadata(key, 0);
+        GKFS_DATA->spdlogger()->info(
+                "{}() Migration: key {} and value {}. From host {} to host {}",
+                __func__, key, value, RPC_DATA->local_host_id(), dest_id);
         if(dest_id == RPC_DATA->local_host_id()) {
+            GKFS_DATA->spdlogger()->info("{}() SKIPPERS", __func__);
             continue;
         }
         auto err = gkfs::malleable::rpc::forward_metadata(key, value, dest_id);

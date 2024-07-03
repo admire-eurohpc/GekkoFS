@@ -56,6 +56,9 @@ public:
     virtual unsigned int
     hosts_size() const = 0;
 
+    virtual void
+    hosts_size(unsigned int size) = 0;
+
     virtual host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 unsigned int hosts_size, const int num_copy) = 0;
@@ -82,6 +85,9 @@ public:
 
     unsigned int
     hosts_size() const override;
+
+    void
+    hosts_size(unsigned int size) override;
 
     host_t
     localhost() const override;
@@ -116,6 +122,9 @@ public:
     unsigned int
     hosts_size() const override;
 
+    void
+    hosts_size(unsigned int size) override;
+
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 const int num_copy) const override;
@@ -143,6 +152,9 @@ public:
 
     unsigned int
     hosts_size() const override;
+
+    void
+    hosts_size(unsigned int size) override;
 
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
@@ -196,6 +208,9 @@ public:
 
     unsigned int
     hosts_size() const override;
+
+    void
+    hosts_size(unsigned int size) override;
 
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,

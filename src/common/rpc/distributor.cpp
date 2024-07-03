@@ -52,6 +52,11 @@ SimpleHashDistributor::hosts_size() const {
     return hosts_size_;
 }
 
+void
+SimpleHashDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
+}
+
 host_t
 SimpleHashDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
                                    const int num_copy) const {
@@ -95,6 +100,11 @@ LocalOnlyDistributor::hosts_size() const {
     return hosts_size_;
 }
 
+void
+LocalOnlyDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
+}
+
 host_t
 LocalOnlyDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
                                   const int num_copy) const {
@@ -126,6 +136,11 @@ ForwarderDistributor::localhost() const {
 unsigned int
 ForwarderDistributor::hosts_size() const {
     return hosts_size_;
+}
+
+void
+ForwarderDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
 }
 
 host_t
@@ -237,6 +252,11 @@ GuidedDistributor::localhost() const {
 unsigned int
 GuidedDistributor::hosts_size() const {
     return hosts_size_;
+}
+
+void
+GuidedDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
 }
 
 host_t

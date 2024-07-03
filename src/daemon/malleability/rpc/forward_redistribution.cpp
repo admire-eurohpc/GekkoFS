@@ -38,6 +38,9 @@ forward_metadata(std::string& key, std::string& value, unsigned int dest_id) {
     rpc_migrate_metadata_in_t in{};
     rpc_err_out_t out{};
     int err;
+    // set input
+    in.key = key.c_str();
+    in.value = value.c_str();
     // Create handle
     GKFS_DATA->spdlogger()->debug("{}() Creating Margo handle ...", __func__);
     auto endp = RPC_DATA->rpc_endpoints().at(dest_id);

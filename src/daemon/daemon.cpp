@@ -278,9 +278,12 @@ init_rpc_client() {
     if(gkfs::rpc::protocol::ofi_psm2 == GKFS_DATA->rpc_protocol())
         hg_options.na_init_info.progress_mode = NA_NO_BLOCK;
     // Start Margo (this will also initialize Argobots and Mercury internally)
-    auto margo_config = "{}";
+    auto margo_config = fmt::format(
+            R"({{ "use_progress_thread" : true, "rpc_thread_count" : {} }})",
+            0);
+    //    auto margo_config = "{}";
     struct margo_init_info args = {nullptr};
-    args.json_config = margo_config;
+    args.json_config = margo_config.c_str();
     args.hg_init_info = &hg_options;
     auto* mid = margo_init_ext(GKFS_DATA->bind_addr().c_str(),
                                MARGO_CLIENT_MODE, &args);
@@ -465,20 +468,6 @@ init_environment() {
     // init margo for proxy RPC
 
     if(!GKFS_DATA->bind_proxy_addr().empty()) {
-        GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ... ",
-                                      __func__);
-        try {
-            auto distributor =
-                    std::make_shared<gkfs::rpc::SimpleHashDistributor>();
-            RPC_DATA->distributor(distributor);
-        } catch(const std::exception& e) {
-            GKFS_DATA->spdlogger()->error(
-                    "{}() Failed to initialize Distributor: {}", __func__,
-                    e.what());
-            throw;
-        }
-        GKFS_DATA->spdlogger()->debug("{}() Distributed running.", __func__);
-
         GKFS_DATA->spdlogger()->debug(
                 "{}() Initializing proxy RPC server: '{}'", __func__,
                 GKFS_DATA->bind_proxy_addr());
@@ -538,12 +527,28 @@ init_environment() {
         throw;
     }
     GKFS_DATA->spdlogger()->debug("{}() RPC client running.", __func__);
+
+    // Needed for client
+    GKFS_DATA->spdlogger()->debug("{}() Initializing Distributor ... ",
+                                  __func__);
+    try {
+        auto distributor = std::make_shared<gkfs::rpc::SimpleHashDistributor>();
+        RPC_DATA->distributor(distributor);
+    } catch(const std::exception& e) {
+        GKFS_DATA->spdlogger()->error(
+                "{}() Failed to initialize Distributor: {}", __func__,
+                e.what());
+        throw;
+    }
+    GKFS_DATA->spdlogger()->debug("{}() Distributed running.", __func__);
+
     GKFS_DATA->spdlogger()->debug("{}() Initializing MalleableManager...",
                                   __func__);
     try {
         auto malleable_manager =
                 std::make_shared<gkfs::malleable::MalleableManager>();
         GKFS_DATA->malleable_manager(malleable_manager);
+
     } catch(const std::exception& e) {
         GKFS_DATA->spdlogger()->error(
                 "{}() Failed to initialize MalleableManager: {}", __func__,
@@ -551,7 +556,6 @@ init_environment() {
         throw;
     }
     GKFS_DATA->spdlogger()->debug("{}() MalleableManager running.", __func__);
-
 
     GKFS_DATA->spdlogger()->info("Startup successful. Daemon is ready.");
 }

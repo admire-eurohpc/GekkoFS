@@ -48,7 +48,7 @@ main(int argc, const char* argv[]) {
     auto err = gkfs_init();
     cout << "Init result " << err << endl;
 
-    err = gkfs::malleable::expand_start(1, 1);
+    err = gkfs::malleable::expand_start(1, 2);
     if(err) {
         cout << "Expand start failed. Exiting..." << endl;
         gkfs_end();
