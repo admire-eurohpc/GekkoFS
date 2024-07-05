@@ -38,6 +38,7 @@
 #include <cerrno>
 #include <algorithm>
 #include <filesystem>
+#include <vector>
 #include <spdlog/spdlog.h>
 #include <config.hpp>
 
@@ -338,6 +339,20 @@ ChunkStorage::chunk_stat() const {
     auto bytes_free = static_cast<unsigned long long>(sfs.f_bsize) *
                       static_cast<unsigned long long>(sfs.f_bavail);
     return {chunksize_, bytes_total / chunksize_, bytes_free / chunksize_};
+}
+
+fs::recursive_directory_iterator
+ChunkStorage::get_all_chunk_files() {
+    auto chunk_dir = fs::path(root_path_);
+    if(!fs::exists(chunk_dir)) {
+        throw ChunkStorageException(ENOENT, "Chunk directory does not exist");
+    }
+    return fs::recursive_directory_iterator(chunk_dir);
+}
+
+std::string
+ChunkStorage::get_chunk_directory() {
+    return root_path_;
 }
 
 } // namespace gkfs::data

@@ -127,8 +127,7 @@ struct fs_config {
 
         explicit input(const hermes::detail::hg_void_t& other) {}
 
-        explicit
-        operator hermes::detail::hg_void_t() {
+        explicit operator hermes::detail::hg_void_t() {
             return {};
         }
     };
@@ -314,8 +313,7 @@ struct create {
         explicit input(const rpc_mk_node_in_t& other)
             : m_path(other.path), m_mode(other.mode) {}
 
-        explicit
-        operator rpc_mk_node_in_t() {
+        explicit operator rpc_mk_node_in_t() {
             return {m_path.c_str(), m_mode};
         }
 
@@ -424,8 +422,7 @@ struct stat {
 
         explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_path_only_in_t() {
+        explicit operator rpc_path_only_in_t() {
             return {m_path.c_str()};
         }
 
@@ -551,8 +548,7 @@ struct remove_metadata {
         explicit input(const rpc_rm_node_in_t& other)
             : m_path(other.path), m_rm_dir(other.rm_dir) {}
 
-        explicit
-        operator rpc_rm_node_in_t() {
+        explicit operator rpc_rm_node_in_t() {
             return {m_path.c_str(), m_rm_dir};
         }
 
@@ -684,8 +680,7 @@ struct decr_size {
         explicit input(const rpc_trunc_in_t& other)
             : m_path(other.path), m_length(other.length) {}
 
-        explicit
-        operator rpc_trunc_in_t() {
+        explicit operator rpc_trunc_in_t() {
             return {m_path.c_str(), m_length};
         }
 
@@ -892,8 +887,7 @@ struct update_metadentry {
               m_atime_flag(other.atime_flag), m_mtime_flag(other.mtime_flag),
               m_ctime_flag(other.ctime_flag) {}
 
-        explicit
-        operator rpc_update_metadentry_in_t() {
+        explicit operator rpc_update_metadentry_in_t() {
             return {m_path.c_str(), m_nlink,      m_mode,       m_uid,
                     m_gid,          m_size,       m_blocks,     m_atime,
                     m_mtime,        m_ctime,      m_nlink_flag, m_mode_flag,
@@ -1021,8 +1015,7 @@ struct get_metadentry_size {
 
         explicit input(const rpc_path_only_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_path_only_in_t() {
+        explicit operator rpc_path_only_in_t() {
             return {m_path.c_str()};
         }
 
@@ -1157,8 +1150,7 @@ struct update_metadentry_size {
             : m_path(other.path), m_size(other.size), m_offset(other.offset),
               m_append(other.append) {}
 
-        explicit
-        operator rpc_update_metadentry_size_in_t() {
+        explicit operator rpc_update_metadentry_size_in_t() {
             return {m_path.c_str(), m_size, m_offset, m_append};
         }
 
@@ -1286,8 +1278,7 @@ struct mk_symlink {
         explicit input(const rpc_mk_symlink_in_t& other)
             : m_path(other.path), m_target_path(other.target_path) {}
 
-        explicit
-        operator rpc_mk_symlink_in_t() {
+        explicit operator rpc_mk_symlink_in_t() {
             return {m_path.c_str(), m_target_path.c_str()};
         }
 
@@ -1398,8 +1389,7 @@ struct remove_data {
 
         explicit input(const rpc_rm_node_in_t& other) : m_path(other.path) {}
 
-        explicit
-        operator rpc_rm_node_in_t() {
+        explicit operator rpc_rm_node_in_t() {
             return {m_path.c_str()};
         }
 
@@ -1565,8 +1555,7 @@ struct write_data {
               m_total_chunk_size(other.total_chunk_size),
               m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_write_data_in_t() {
+        explicit operator rpc_write_data_in_t() {
             return {m_path.c_str(),      m_offset,          m_host_id,
                     m_host_size,         m_wbitset.c_str(), m_chunk_n,
                     m_chunk_start,       m_chunk_end,       m_total_chunk_size,
@@ -1751,8 +1740,7 @@ struct read_data {
               m_total_chunk_size(other.total_chunk_size),
               m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_read_data_in_t() {
+        explicit operator rpc_read_data_in_t() {
             return {m_path.c_str(),      m_offset,          m_host_id,
                     m_host_size,         m_wbitset.c_str(), m_chunk_n,
                     m_chunk_start,       m_chunk_end,       m_total_chunk_size,
@@ -1886,8 +1874,7 @@ struct trunc_data {
         explicit input(const rpc_trunc_in_t& other)
             : m_path(other.path), m_length(other.length) {}
 
-        explicit
-        operator rpc_trunc_in_t() {
+        explicit operator rpc_trunc_in_t() {
             return {
                     m_path.c_str(),
                     m_length,
@@ -2006,8 +1993,7 @@ struct get_dirents {
         explicit input(const rpc_get_dirents_in_t& other)
             : m_path(other.path), m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_get_dirents_in_t() {
+        explicit operator rpc_get_dirents_in_t() {
             return {m_path.c_str(), hg_bulk_t(m_buffers)};
         }
 
@@ -2132,8 +2118,7 @@ struct get_dirents_extended {
         explicit input(const rpc_get_dirents_in_t& other)
             : m_path(other.path), m_buffers(other.bulk_handle) {}
 
-        explicit
-        operator rpc_get_dirents_in_t() {
+        explicit operator rpc_get_dirents_in_t() {
             return {m_path.c_str(), hg_bulk_t(m_buffers)};
         }
 
@@ -2252,8 +2237,7 @@ struct chunk_stat {
         explicit input(const rpc_chunk_stat_in_t& other)
             : m_dummy(other.dummy) {}
 
-        explicit
-        operator rpc_chunk_stat_in_t() {
+        explicit operator rpc_chunk_stat_in_t() {
             return {m_dummy};
         }
 
@@ -3788,8 +3772,7 @@ struct expand_start {
             : m_old_server_conf(other.old_server_conf),
               m_new_server_conf(other.new_server_conf) {}
 
-        explicit
-        operator rpc_expand_start_in_t() {
+        explicit operator rpc_expand_start_in_t() {
             return {m_old_server_conf, m_new_server_conf};
         }
 
@@ -3893,8 +3876,7 @@ struct expand_status {
 
         explicit input(const hermes::detail::hg_void_t& other) {}
 
-        explicit
-        operator hermes::detail::hg_void_t() {
+        explicit operator hermes::detail::hg_void_t() {
             return {};
         }
     };
@@ -3995,8 +3977,7 @@ struct expand_finalize {
 
         explicit input(const hermes::detail::hg_void_t& other) {}
 
-        explicit
-        operator hermes::detail::hg_void_t() {
+        explicit operator hermes::detail::hg_void_t() {
             return {};
         }
     };

@@ -113,8 +113,8 @@ namespace malleable::rpc::tag {
 constexpr auto expand_start = "rpc_srv_expand_start";
 constexpr auto expand_status = "rpc_srv_expand_status";
 constexpr auto expand_finalize = "rpc_srv_expand_finalize";
+// migrate data uses the write rpc
 constexpr auto migrate_metadata = "rpc_srv_migrate_metadata";
-constexpr auto migrate_data = "rpc_srv_migrate_data";
 } // namespace malleable::rpc::tag
 
 namespace config::syscall::stat {

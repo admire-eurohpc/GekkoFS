@@ -28,16 +28,26 @@
 
 #include <daemon/malleability/malleable_manager.hpp>
 #include <daemon/malleability/rpc/forward_redistribution.hpp>
-
 #include <daemon/backend/metadata/db.hpp>
+#include <daemon/backend/data/chunk_storage.hpp>
 
 #include <common/rpc/rpc_util.hpp>
 
+#include <filesystem>
+#include <algorithm>
 #include <regex>
 #include <random>
 #include <thread>
 
+extern "C" {
+#include <abt.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+}
+
 using namespace std;
+namespace fs = std::filesystem;
 
 namespace gkfs::malleable {
 
@@ -190,7 +200,12 @@ MalleableManager::expand_abt(void* _arg) {
                                  __func__);
     GKFS_DATA->redist_running(true);
     GKFS_DATA->malleable_manager()->redistribute_metadata();
-    GKFS_DATA->malleable_manager()->redistribute_data();
+    try {
+        GKFS_DATA->malleable_manager()->redistribute_data();
+    } catch(const gkfs::data::ChunkStorageException& e) {
+        GKFS_DATA->spdlogger()->error("{}() Failed to redistribute data: '{}'",
+                                      __func__, e.what());
+    }
     GKFS_DATA->redist_running(false);
     GKFS_DATA->spdlogger()->info(
             "{}() Expansion process successfully finished.", __func__);
@@ -269,101 +284,72 @@ void
 MalleableManager::redistribute_data() {
     GKFS_DATA->spdlogger()->info("{}() Starting data redistribution...",
                                  __func__);
+
+    auto chunk_dir = fs::path(GKFS_DATA->storage()->get_chunk_directory());
+    auto dir_iterator = GKFS_DATA->storage()->get_all_chunk_files();
+
+    for(const auto& entry : dir_iterator) {
+        if(!entry.is_regular_file()) {
+            continue;
+        }
+        // path under chunkdir as placed in the rootdir
+        auto rel_chunk_dir = fs::relative(entry, chunk_dir);
+        // chunk id from this entry used for determining destination
+        uint64_t chunk_id = stoul(rel_chunk_dir.filename().string());
+        // mountdir gekkofs path used for determining destination
+        auto gkfs_path = rel_chunk_dir.parent_path().string();
+        ::replace(gkfs_path.begin(), gkfs_path.end(), ':', '/');
+        gkfs_path = "/" + gkfs_path;
+        auto dest_id =
+                RPC_DATA->distributor()->locate_data(gkfs_path, chunk_id, 0);
+        GKFS_DATA->spdlogger()->trace(
+                "{}() Migrating chunkfile: {} for gkfs file {} chnkid {} destid {}",
+                __func__, rel_chunk_dir.string(), gkfs_path, chunk_id, dest_id);
+        if(dest_id == RPC_DATA->local_host_id()) {
+            GKFS_DATA->spdlogger()->trace("{}() SKIPPERS", __func__);
+            continue;
+        }
+        auto fd = open(entry.path().c_str(), O_RDONLY);
+        if(fd < 0) {
+            GKFS_DATA->spdlogger()->error("{}() Failed to open chunkfile: {}",
+                                          __func__, entry.path().c_str());
+            continue;
+        }
+        auto buf = new char[entry.file_size()];
+        auto bytes_read = read(fd, buf, entry.file_size());
+        if(bytes_read < 0) {
+            GKFS_DATA->spdlogger()->error("{}() Failed to read chunkfile: {}",
+                                          __func__, entry.path().c_str());
+            continue;
+        }
+        auto err = gkfs::malleable::rpc::forward_data(
+                gkfs_path, buf, bytes_read, chunk_id, dest_id);
+        if(err != 0) {
+            GKFS_DATA->spdlogger()->error(
+                    "{}() Failed to migrate data for chunkfile: {}", __func__,
+                    entry.path().c_str());
+        }
+        close(fd);
+        GKFS_DATA->spdlogger()->trace(
+                "{}() Data migration completed for chunkfile: {}. Removing ...",
+                __func__, entry.path().c_str());
+        // remove file after migration
+        auto entry_dir = entry.path().parent_path();
+        try {
+            fs::remove(entry);
+            if(fs::is_empty(entry_dir)) {
+                fs::remove(entry_dir);
+            }
+        } catch(const fs::filesystem_error& e) {
+            GKFS_DATA->spdlogger()->error("{}() Failed to remove chunkfile: {}",
+                                          __func__, entry.path().c_str());
+        }
+        GKFS_DATA->spdlogger()->trace("{}() Done for chunkfile: {}", __func__,
+                                      entry.path().c_str());
+    }
+
     GKFS_DATA->spdlogger()->info("{}() Data redistribution completed.",
                                  __func__);
-    // Relocate data (chunks)
-    //    auto relocate_chunk_rpc_id =
-    //            gkfs::rpc::get_rpc_id(mid, gkfs::rpc::tag::relocate_chunk);
-    //    for(auto& chunks_dir :
-    //    GKFS_DATA->storage()->chunks_directory_iterator()) {
-    //        if(!chunks_dir.is_directory()) {
-    //            GKFS_DATA->spdlogger()->warn(
-    //                    "{}() Expected directory but got something else: {}",
-    //                    __func__, chunks_dir.path().string());
-    //            continue;
-    //        }
-    //        string file_path = GKFS_DATA->storage()->get_file_path(
-    //                chunks_dir.path().filename().string());
-    //
-    //        for(auto& chunk_file : fs::directory_iterator(chunks_dir)) {
-    //            if(!chunk_file.is_regular_file()) {
-    //                GKFS_DATA->spdlogger()->warn(
-    //                        "{}() Expected regular file but got something
-    //                        else: {}",
-    //                        __func__, chunk_file.path().string());
-    //                continue;
-    //            }
-    //            gkfs::rpc::chnk_id_t chunk_id =
-    //                    std::stoul(chunk_file.path().filename().string());
-    //            auto destination = distributor.locate_data(file_path,
-    //            chunk_id); size_t size = chunk_file.file_size();
-    //
-    //            GKFS_DATA->spdlogger()->trace(
-    //                    "{}() Checking {} chunk: {} size: {} {} {}", __func__,
-    //                    file_path, chunk_id, size,
-    //                    (destination == localhost ? " Stay on" : " -> Goto "),
-    //                    destination);
-    //
-    //            if(destination == localhost) {
-    //                continue;
-    //            }
-    //
-    //            // prepare bulk
-    //            unique_ptr<char[]> buf(new char[size]());
-    //            // read data (blocking)
-    //            hg_size_t bytes_read = GKFS_DATA->storage()->read_chunk(
-    //                    file_path, chunk_id, buf.get(), size, 0);
-    //            hg_bulk_t bulk{};
-    //            char* bufptr = buf.get();
-    //            auto ret = margo_bulk_create(mid, 1, (void**) &bufptr,
-    //            &bytes_read,
-    //                                         HG_BULK_READ_ONLY, &bulk);
-    //            assert(ret == HG_SUCCESS);
-    //
-    //            // send RPC
-    //            rpc_relocate_chunk_in_t in{};
-    //            rpc_err_out_t out{};
-    //            hg_addr_t host_addr{};
-    //
-    //            in.path = file_path.c_str();
-    //            in.chunk_id = chunk_id;
-    //            in.bulk_handle = bulk;
-    //
-    //            ret = margo_addr_lookup(mid,
-    //            hosts[destination].second.c_str(),
-    //                                    &host_addr);
-    //            assert(ret == HG_SUCCESS);
-    //
-    //            // let's do this sequential first
-    //            hg_handle_t handle;
-    //            ret = margo_create(mid, host_addr, relocate_chunk_rpc_id,
-    //            &handle); assert(ret == HG_SUCCESS);
-    //
-    //            ret = margo_forward(handle, &in); // blocking
-    //            assert(ret == HG_SUCCESS);
-    //
-    //            ret = margo_get_output(handle, &out);
-    //            assert(ret == HG_SUCCESS);
-    //
-    //            // TODO(dauer) process output
-    //            GKFS_DATA->storage()->remove_chunk(file_path, chunk_id);
-    //
-    //            // FIXME This can leave behind empty directories, even when
-    //            the
-    //            // whole file is delete later. Three possibilities:
-    //            // 1) Clean them up, but make sure this doesn't break another
-    //            thread
-    //            // creating a new chunk in this directory at the same time.
-    //            // 2) Switch to a flat namespace without directories
-    //            // 3) Ignore and waste some inodes
-    //
-    //            if(HG_SUCCESS != gkfs::rpc::margo_client_cleanup(
-    //                                     &handle, &out, &mid, &host_addr,
-    //                                     &bulk)) {
-    //                cout << "Error during margo cleanup.\n";
-    //            }
-    //        }
-    //    }
 }
 
 } // namespace gkfs::malleable

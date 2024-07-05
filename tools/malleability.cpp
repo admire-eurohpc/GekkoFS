@@ -119,8 +119,10 @@ main(int argc, const char* argv[]) {
             cout << "Expand start failed. Exiting...\n";
             gkfs_end();
             return -1;
+        } else {
+            cout << "Expansion process from " << current_instance
+                 << " nodes to " << expanded_instance << " nodes launched...\n";
         }
-        cout << "Expand start " << err << "\n";
     } else if(opts.action == "status") {
         if(gkfs::malleable::expand_status() > 0) {
             cout << "Expansion in progress...\n";

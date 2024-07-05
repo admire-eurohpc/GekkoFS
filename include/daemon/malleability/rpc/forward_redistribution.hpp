@@ -37,8 +37,9 @@ namespace gkfs::malleable::rpc {
 int
 forward_metadata(std::string& key, std::string& value, unsigned int dest_id);
 
-void
-forward_data();
+int
+forward_data(const std::string& path, void* buf, const size_t count,
+             const uint64_t chnk_id, const uint64_t dest_id);
 
 } // namespace gkfs::malleable::rpc
 

@@ -39,6 +39,7 @@
 #include <string>
 #include <memory>
 #include <system_error>
+#include <filesystem>
 
 /* Forward declarations */
 namespace spdlog {
@@ -186,6 +187,12 @@ public:
      */
     [[nodiscard]] ChunkStat
     chunk_stat() const;
+
+    std::filesystem::recursive_directory_iterator
+    get_all_chunk_files();
+
+    std::string
+    get_chunk_directory();
 };
 
 } // namespace gkfs::data

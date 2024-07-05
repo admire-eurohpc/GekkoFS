@@ -174,8 +174,4 @@ MERCURY_GEN_PROC(rpc_expand_start_in_t,
 MERCURY_GEN_PROC(rpc_migrate_metadata_in_t,
                  ((hg_const_string_t) (key))((hg_const_string_t) (value)))
 
-MERCURY_GEN_PROC(rpc_migrate_data_in_t,
-                 ((hg_const_string_t) (path))((hg_uint64_t) (chunk_id))(
-                         (hg_bulk_t) (bulk_handle)))
-
 #endif // LFS_RPC_TYPES_HPP

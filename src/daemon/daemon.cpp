@@ -187,8 +187,6 @@ register_server_rpcs(margo_instance_id mid) {
     MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_metadata,
                    rpc_migrate_metadata_in_t, rpc_err_out_t,
                    rpc_srv_migrate_metadata);
-    MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_data,
-                   rpc_migrate_data_in_t, rpc_err_out_t, rpc_srv_migrate_data);
 }
 
 /**
@@ -261,9 +259,10 @@ register_client_rpcs(margo_instance_id mid) {
     RPC_DATA->rpc_client_ids().migrate_metadata_id =
             MARGO_REGISTER(mid, gkfs::malleable::rpc::tag::migrate_metadata,
                            rpc_migrate_metadata_in_t, rpc_err_out_t, NULL);
-    //    RPC_DATA->rpc_client_ids().migrate_data_id = MARGO_REGISTER(
-    //            mid, gkfs::malleable::rpc::tag::migrate_metadata,
-    //            rpc_migrate_metadata_in_t, rpc_err_out_t, NULL);
+    // this is just a write
+    RPC_DATA->rpc_client_ids().migrate_data_id =
+            MARGO_REGISTER(mid, gkfs::rpc::tag::write, rpc_write_data_in_t,
+                           rpc_data_out_t, NULL);
 }
 
 /**
