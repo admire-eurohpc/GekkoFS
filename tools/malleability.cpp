@@ -105,7 +105,7 @@ main(int argc, const char* argv[]) {
     if(opts.verbose) { // Check the verbose flag from the main options
         std::cout << "Verbose mode is on." << std::endl;
     }
-    int err;
+    int res;
     gkfs_init();
 
     if(opts.action == "start") {
@@ -113,9 +113,9 @@ main(int argc, const char* argv[]) {
         if(current_instance == -1 || expanded_instance == -1) {
             return 1;
         }
-        err = gkfs::malleable::expand_start(current_instance,
+        res = gkfs::malleable::expand_start(current_instance,
                                             expanded_instance);
-        if(err) {
+        if(res) {
             cout << "Expand start failed. Exiting...\n";
             gkfs_end();
             return -1;
@@ -124,14 +124,16 @@ main(int argc, const char* argv[]) {
                  << " nodes to " << expanded_instance << " nodes launched...\n";
         }
     } else if(opts.action == "status") {
-        if(gkfs::malleable::expand_status() > 0) {
-            cout << "Expansion in progress...\n";
+        res = gkfs::malleable::expand_status();
+        if(res > 0) {
+            cout << "Expansion in progress: " << res
+                 << " nodes not finished.\n";
         } else {
-            cout << "No expansion running.\n";
+            cout << "No expansion running/finished.\n";
         }
     } else if(opts.action == "finalize") {
-        err = gkfs::malleable::expand_finalize();
-        cout << "Expand finalize " << err << endl;
+        res = gkfs::malleable::expand_finalize();
+        cout << "Expand finalize " << res << endl;
     }
     gkfs_end();
 }

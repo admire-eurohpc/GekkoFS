@@ -138,11 +138,6 @@ rpc_srv_migrate_metadata(hg_handle_t handle) {
     return gkfs::rpc::cleanup_respond(&handle, &in, &out);
 }
 
-hg_return_t
-rpc_srv_migrate_data(hg_handle_t handle) {
-    return HG_SUCCESS;
-}
-
 } // namespace
 
 DEFINE_MARGO_RPC_HANDLER(rpc_srv_expand_start)
@@ -152,5 +147,3 @@ DEFINE_MARGO_RPC_HANDLER(rpc_srv_expand_status)
 DEFINE_MARGO_RPC_HANDLER(rpc_srv_expand_finalize)
 
 DEFINE_MARGO_RPC_HANDLER(rpc_srv_migrate_metadata)
-
-DEFINE_MARGO_RPC_HANDLER(rpc_srv_migrate_data)

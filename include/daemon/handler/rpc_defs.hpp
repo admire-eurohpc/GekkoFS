@@ -94,7 +94,5 @@ DECLARE_MARGO_RPC_HANDLER(rpc_srv_expand_finalize)
 
 DECLARE_MARGO_RPC_HANDLER(rpc_srv_migrate_metadata)
 
-DECLARE_MARGO_RPC_HANDLER(rpc_srv_migrate_data)
-
 
 #endif // GKFS_DAEMON_RPC_DEFS_HPP

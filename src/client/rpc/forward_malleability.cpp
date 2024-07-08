@@ -132,19 +132,20 @@ forward_expand_status() {
 
     // wait for RPC responses
     for(std::size_t i = 0; i < handles.size(); ++i) {
-
         gkfs::malleable::rpc::expand_status::output out;
-
         try {
             out = handles[i].get().at(0);
-
-            if(out.err() != 0) {
+            if(out.err() > 0) {
+                LOG(DEBUG,
+                    "{}() Host '{}' not done yet with malleable operation.",
+                    __func__, targets[i]);
+                err += out.err();
+            }
+            if(out.err() < 0) {
+                // ignore. shouldn't happen for now
                 LOG(ERROR,
-                    "{}() Failed to retrieve dir entries from host '{}'. Error '{}'",
-                    __func__, targets[i], strerror(out.err()));
-                err = out.err();
-                // We need to gather all responses before exiting
-                continue;
+                    "{}() Host '{}' is unable to check for expansion progress. (shouldn't happen)",
+                    __func__, targets[i]);
             }
         } catch(const std::exception& ex) {
             LOG(ERROR,
@@ -200,8 +201,7 @@ forward_expand_finalize() {
             out = handles[i].get().at(0);
 
             if(out.err() != 0) {
-                LOG(ERROR,
-                    "{}() Failed to retrieve dir entries from host '{}'. Error '{}'",
+                LOG(ERROR, "{}() Failed finalize on host '{}'. Error '{}'",
                     __func__, targets[i], strerror(out.err()));
                 err = out.err();
                 // We need to gather all responses before exiting

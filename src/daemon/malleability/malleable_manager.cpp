@@ -194,46 +194,6 @@ MalleableManager::connect_to_hosts(
     }
 }
 
-void
-MalleableManager::expand_abt(void* _arg) {
-    GKFS_DATA->spdlogger()->info("{}() Starting expansion process...",
-                                 __func__);
-    GKFS_DATA->redist_running(true);
-    GKFS_DATA->malleable_manager()->redistribute_metadata();
-    try {
-        GKFS_DATA->malleable_manager()->redistribute_data();
-    } catch(const gkfs::data::ChunkStorageException& e) {
-        GKFS_DATA->spdlogger()->error("{}() Failed to redistribute data: '{}'",
-                                      __func__, e.what());
-    }
-    GKFS_DATA->redist_running(false);
-    GKFS_DATA->spdlogger()->info(
-            "{}() Expansion process successfully finished.", __func__);
-}
-
-void
-MalleableManager::expand_start(int old_server_conf, int new_server_conf) {
-    auto hosts = read_hosts_file();
-    if(hosts.size() != static_cast<size_t>(new_server_conf)) {
-        throw runtime_error(
-                fmt::format("MalleableManager::{}() Something is wrong. "
-                            "Number of hosts in hosts file ({}) "
-                            "does not match new server configuration ({})",
-                            __func__, hosts.size(), new_server_conf));
-    }
-    connect_to_hosts(hosts);
-    RPC_DATA->distributor()->hosts_size(hosts.size());
-    auto abt_err =
-            ABT_thread_create(RPC_DATA->io_pool(), expand_abt,
-                              ABT_THREAD_ATTR_NULL, nullptr, &redist_thread_);
-    if(abt_err != ABT_SUCCESS) {
-        auto err_str = fmt::format(
-                "MalleableManager::{}() Failed to create ABT thread with abt_err '{}'",
-                __func__, abt_err);
-        throw runtime_error(err_str);
-    }
-}
-
 int
 MalleableManager::redistribute_metadata() {
     uint64_t count = 0;
@@ -350,6 +310,48 @@ MalleableManager::redistribute_data() {
 
     GKFS_DATA->spdlogger()->info("{}() Data redistribution completed.",
                                  __func__);
+}
+
+void
+MalleableManager::expand_abt(void* _arg) {
+    GKFS_DATA->spdlogger()->info("{}() Starting expansion process...",
+                                 __func__);
+    GKFS_DATA->redist_running(true);
+    GKFS_DATA->malleable_manager()->redistribute_metadata();
+    try {
+        GKFS_DATA->malleable_manager()->redistribute_data();
+    } catch(const gkfs::data::ChunkStorageException& e) {
+        GKFS_DATA->spdlogger()->error("{}() Failed to redistribute data: '{}'",
+                                      __func__, e.what());
+    }
+    GKFS_DATA->redist_running(false);
+    GKFS_DATA->spdlogger()->info(
+            "{}() Expansion process successfully finished.", __func__);
+}
+
+// PUBLIC
+
+void
+MalleableManager::expand_start(int old_server_conf, int new_server_conf) {
+    auto hosts = read_hosts_file();
+    if(hosts.size() != static_cast<size_t>(new_server_conf)) {
+        throw runtime_error(
+                fmt::format("MalleableManager::{}() Something is wrong. "
+                            "Number of hosts in hosts file ({}) "
+                            "does not match new server configuration ({})",
+                            __func__, hosts.size(), new_server_conf));
+    }
+    connect_to_hosts(hosts);
+    RPC_DATA->distributor()->hosts_size(hosts.size());
+    auto abt_err =
+            ABT_thread_create(RPC_DATA->io_pool(), expand_abt,
+                              ABT_THREAD_ATTR_NULL, nullptr, &redist_thread_);
+    if(abt_err != ABT_SUCCESS) {
+        auto err_str = fmt::format(
+                "MalleableManager::{}() Failed to create ABT thread with abt_err '{}'",
+                __func__, abt_err);
+        throw runtime_error(err_str);
+    }
 }
 
 } // namespace gkfs::malleable

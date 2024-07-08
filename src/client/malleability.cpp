@@ -59,19 +59,22 @@ expand_start(int old_server_conf, int new_server_conf) {
     // TODO check that hostsfile contains endmarker
     return gkfs::malleable::rpc::forward_expand_start(old_server_conf,
                                                       new_server_conf);
-    //    return 0;
 }
 
 int
 expand_status() {
-    LOG(INFO, "{}() Expand operation status", __func__);
-    return gkfs::malleable::rpc::forward_expand_status();
+    LOG(INFO, "{}() enter", __func__);
+    auto res = gkfs::malleable::rpc::forward_expand_status();
+    LOG(INFO, "{}() '{}' nodes working on extend operation.", __func__, res);
+    return res;
 }
 
 int
 expand_finalize() {
-    LOG(INFO, "{}() Expand operation finalize", __func__);
-    return gkfs::malleable::rpc::forward_expand_finalize();
+    LOG(INFO, "{}() enter", __func__);
+    auto res = gkfs::malleable::rpc::forward_expand_finalize();
+    LOG(INFO, "{}() extend operation finalized. ", __func__);
+    return res;
 }
 
 } // namespace gkfs::malleable

@@ -48,14 +48,14 @@ private:
     connect_to_hosts(
             const std::vector<std::pair<std::string, std::string>>& hosts);
 
-    static void
-    expand_abt(void* _arg);
-
     int
     redistribute_metadata();
 
     void
     redistribute_data();
+
+    static void
+    expand_abt(void* _arg);
 
 public:
     void
