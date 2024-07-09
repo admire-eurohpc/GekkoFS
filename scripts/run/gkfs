@@ -15,25 +15,34 @@ fi
 C_AST_GREEN="${C_GREEN}*${C_NONE} [gkfs] "
 C_AST_YELLOW="${C_BYELLOW}*${C_NONE} [gkfs] "
 C_AST_RED="${C_BRED}*${C_NONE} [gkfs] "
+
+# Important const globals
+FS_INSTANCE_MARKER_CONST="#FS_INSTANCE_END"
 #######################################
 # Poll GekkoFS hostsfile until all daemons are started. 
 # Exits with 1 if daemons cannot be started.
 # Globals:
 #   HOSTSFILE
 #   NODE_NUM
+#   NODE_CNT_EXPAND
+#   COMMAND
 # Arguments:
 #   None
 # Outputs:
 #   Writes error to stdout
 #######################################
 wait_for_gkfs_daemons() {
-	  sleep 2
+	  sleep 1
     local server_wait_cnt=0
     local nodes=1
     if [[ -n ${NODE_NUM} ]]; then
         nodes=${NODE_NUM}
     fi
-    until [ $(($(wc -l "${HOSTSFILE}"  2> /dev/null | awk '{print $1}') + 0)) -eq "${nodes}" ]
+    # when expanding the total number of nodes is: initial nodelist + expand nodelist
+    if [[ ${COMMAND} == *"expand"* ]]; then
+        nodes=${NODE_CNT_EXPAND}
+    fi
+    until [ $(($(grep -cv '^#' "${HOSTSFILE}"  2> /dev/null | awk '{print $1}') + 0)) -eq "${nodes}" ]
     do
 		    #echo "Waiting for all servers to report connection. Try $server_wait_cnt"
         sleep 2
@@ -43,15 +52,13 @@ wait_for_gkfs_daemons() {
             exit 1
         fi
     done
-    # This must be equivalent to the line set in include/common/common_defs.hpp
-    echo "#FS_INSTANCE_END" >> "${HOSTSFILE}"
 }
 #######################################
 # Creates a pid file for a given pid. If pid file exists, we check if its pids are still valid.
 # If valid, an additional line is added. Otherwise, the pid in the file is deleted.
 # Globals:
-#   SRUN_DAEMON_PID_FILE
-#   SRUN_PROXY_PID_FILE
+#   DAEMON_PID_FILE
+#   PROXY_PID_FILE
 #   VERBOSE
 # Arguments:
 #   path to pid file
@@ -59,15 +66,15 @@ wait_for_gkfs_daemons() {
 # Outputs:
 #   Writes status to stdout if VERBOSE is true
 #######################################
-create_pid_file() {
+write_pid_file() {
     local pid_file=${1}
     local pid=${2}
     if [[ ${VERBOSE} == true ]]; then
         echo -e "${C_AST_GREEN}Creating pid file at ${pid_file} with pid ${pid} ..."
     fi
-    # if PID file exists another daemon could run
+    # if PID file exists another daemon (or srun) could run
     if [[ -e ${pid_file} ]]; then
-        local pid_file_tmp=${SRUN_DAEMON_PID_FILE}.swp
+        local pid_file_tmp=${DAEMON_PID_FILE}.swp
         # create empty tmp file
         truncate -s 0 "${pid_file_tmp}"
         while IFS= read -r line
@@ -101,10 +108,13 @@ create_pid_file() {
 #   GKFS_DAEMON_LOG_PATH
 #   GKFS_DAEMON_LOG_LEVEL
 #   RUN_FOREGROUND
+#   DAEMON_BIN
+#   PROXY_BIN
+#   COMMAND
 # Outputs:
 #   Writes status to stdout
 #######################################
-start_daemon() {
+start_daemons() {
     local node_list
     local srun_daemon_cmd
     local srun_proxy_cmd
@@ -162,10 +172,14 @@ start_daemon() {
         echo -e "${C_AST_GREEN}cpus_per_task: ${CPUS_PER_TASK}"
         [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}Proxy enabled"
     fi
-    if [[ ${VERBOSE} == true ]]; then
-        echo -e "${C_AST_GREEN}Cleaning host file ..."
+    # sanity checks before starting
+    if [[ ${COMMAND} == *"start"* ]]; then
+        # only clear hostfile when starting for the first time
+        if [[ ${VERBOSE} == true ]]; then
+            echo -e "${C_AST_GREEN}Cleaning host file ..."
+        fi
+        rm "${HOSTSFILE}" 2> /dev/null
     fi
-    rm "${HOSTSFILE}" 2> /dev/null
     # Setting up base daemon cmd
     local daemon_cmd="${DAEMON_BIN} -r ${ROOTDIR} -m ${MOUNTDIR} -H ${HOSTSFILE} ${DAEMON_ARGS_}"
     if [[ ${USE_PROXY} == true ]]; then
@@ -175,24 +189,24 @@ start_daemon() {
     if [[ -n ${DAEMON_AFFINITY_} ]]; then
         daemon_cmd="${DAEMON_AFFINITY_} ${daemon_cmd}"
     fi
-    # final daemon execute command
+    # final daemon execute COMMAND
     daemon_execute="${srun_daemon_cmd} ${SRUN_DAEMON_ARGS} ${daemon_cmd}"
 
-    # Setting up base proxy command
+    # Setting up base proxy COMMAND
     if [[ ${USE_PROXY} == true ]]; then
         local proxy_cmd="${PROXY_BIN} -H ${HOSTSFILE} --pid-path ${PROXY_LOCAL_PID_FILE} ${PROXY_ARGS_}"
         # Set cpu affinity for proxy
         if [[ -n ${PROXY_AFFINITY_} ]]; then
             proxy_cmd="${PROXY_AFFINITY_} ${proxy_cmd}"
         fi
-        # final proxy execute command
+        # final proxy execute COMMAND
         proxy_execute="${srun_proxy_cmd} ${SRUN_PROXY_ARGS} ${proxy_cmd}"
     fi
 
     if [[ ${VERBOSE} == true ]]; then
-        echo -e "${C_AST_GREEN}Full execute DAEMON command:"
+        echo -e "${C_AST_GREEN}Full execute DAEMON COMMAND:"
         echo -e "${C_AST_GREEN}# $daemon_execute"
-        [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}Full execute PROXY command:"
+        [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}Full execute PROXY COMMAND:"
         [[ ${USE_PROXY} == true ]] && echo -e "${C_AST_GREEN}# $proxy_execute"
     fi
     # setup environment variables
@@ -256,24 +270,24 @@ start_daemon() {
             fi
         done
     else
-        create_pid_file ${SRUN_DAEMON_PID_FILE} ${daemon_pid}
+        write_pid_file ${DAEMON_PID_FILE} ${daemon_pid}
         if [[ ${USE_PROXY} == true ]]; then
-            create_pid_file ${SRUN_PROXY_PID_FILE} ${proxy_pid}
+            write_pid_file ${PROXY_PID_FILE} ${proxy_pid}
         fi
     fi
 }
 #######################################
 # Stops GekkoFS daemons for the configured pid file
 # Globals:
-#   SRUN_DAEMON_PID_FILE
-#   SRUN_PROXY_PID_FILE
+#   DAEMON_PID_FILE
+#   PROXY_PID_FILE
 #   VERBOSE
 # Outputs:
 #   Writes status to stdout
 #######################################
 stop_daemons() {
-    local pid_file=${SRUN_DAEMON_PID_FILE}
-    local proxy_pid_file=${SRUN_PROXY_PID_FILE}
+    local pid_file=${DAEMON_PID_FILE}
+    local proxy_pid_file=${PROXY_PID_FILE}
     # if no daemon or proxy pid file exists, exit
     if [[ ! -e ${pid_file} ]] && [[ ! -e ${proxy_pid_file} ]]; then
         echo -e "${C_AST_RED}No pid files found -> no daemon or proxy running. Exiting ..."
@@ -303,6 +317,8 @@ stop_daemons() {
     if [[ -e ${pid_file} ]]; then
         while IFS= read -r line
         do
+            # if line starts with # continue
+            [[ ${line} =~ ^#.*$ ]] && continue
             if ps -p "${line}" > /dev/null; then
                 echo -e "${C_AST_GREEN}Stopping daemon with pid ${line}"
                 start_time="$(date -u +%s.%3N)"
@@ -320,6 +336,142 @@ stop_daemons() {
         echo -e "${C_AST_GREEN}Shutdown time: ${elapsed} seconds"
     fi
 }
+
+#######################################
+# Sets up expand progress for later operation
+# Globals:
+#   RUN_FOREGROUND
+#   EXPAND_NODELIST
+#   HOSTSFILE
+#   DAEMON_NODELIST
+#   USE_PROXY
+#   GKFS_MALLEABILITY_BIN_
+#   VERBOSE
+# Outputs:
+#   sets GKFS_MALLEABILITY_BIN_ if not already given by config
+#######################################
+expand_setup() {
+    # sanity checks
+    if [[ ${RUN_FOREGROUND} == true ]]; then
+        echo -e "${C_AST_RED}ERROR: Cannot run in foreground for expansion. Exiting ..."
+        exit 1
+    fi
+    if [[ -z ${EXPAND_NODELIST} ]]; then
+        echo -e "${C_AST_RED}ERROR: No expand host file given. We need to know which nodes should be used. Exiting ..."
+        exit 1
+    fi
+    # if proxy is enabled error out
+    if [[ ${USE_PROXY} == true ]]; then
+        echo -e "${C_AST_RED}ERROR: Proxy not supported for expansion. Exiting ..."
+        exit 1
+    fi
+    # check that gkfs host file exists
+    if [[ ! -f ${HOSTSFILE} ]]; then
+        echo -e "${C_AST_RED}ERROR: No GekkoFS hostfile for expansion found at ${HOSTSFILE}. Exiting ..."
+        exit 1
+    fi
+    # check that daemon pid file exists
+    if [[ ! -f ${DAEMON_PID_FILE} ]]; then
+        echo -e "${C_AST_RED}ERROR: No daemon pid file found at ${DAEMON_PID_FILE}."
+        echo -e "${C_AST_RED}       Existing daemon must run in background for extension. Exiting ..."
+        exit 1
+    fi
+    # modify all necessary environment variables from the config file to fit expand
+    DAEMON_NODELIST_=${DAEMON_NODELIST}
+    # Set daemon node list based on given expand hostfile
+    DAEMON_NODELIST_=$(readlink -f ${EXPAND_NODELIST})
+    # setup
+    # This must be equivalent to the line set in include/common/common_defs.hpp
+    echo "$FS_INSTANCE_MARKER_CONST" >> "${HOSTSFILE}"
+    # check that the gkfs_malleability binary exists in $PATH if not already set via config
+    if [[ -z ${GKFS_MALLEABILITY_BIN_} ]]; then
+        GKFS_MALLEABILITY_BIN_=$(COMMAND -v gkfs_malleability)
+    fi
+    # if not found check if it exists in the parent directory of the daemon bin
+    if [[ -z ${GKFS_MALLEABILITY_BIN_} ]]; then
+        # check that the gkfs_malleability binary exists somewhere in the parent directory where daemon bin is located
+        if [[ -f $(dirname ${DAEMON_BIN})/gkfs_malleability ]]; then
+            GKFS_MALLEABILITY_BIN_=$(readlink -f $(dirname ${DAEMON_BIN})/gkfs_malleability)
+        else
+            echo -e "${C_AST_RED}ERROR: gkfs_malleability binary not found. Exiting ..."
+            exit 1
+        fi
+    fi
+}
+
+#######################################
+# Prints expansion progress
+# Input:
+#   $1 current
+#   $2 total
+#   VERBOSE
+# Outputs:
+#   Writes status to stdout
+#######################################
+show_expand_progress() {
+    local current="$1"
+    local total="$2"
+    local remaining=$((total - current))
+    local progress=$(( (remaining * 100) / total ))
+    local bar_length=20
+    local filled_length=$(( (progress * bar_length) / 100 ))
+    local empty_length=$(( bar_length - filled_length ))
+
+    # Clear the entire line and move cursor to the beginning
+    tput el1; tput cr
+
+    printf "["
+    for ((i=0; i<filled_length; i++)); do
+        printf "#"
+    done
+    for ((i=0; i<empty_length; i++)); do
+        printf " "
+    done
+
+    printf "] %d/%d left" "$current" "$total"
+}
+
+#######################################
+# Adds GekkoFS daemons to an existing GekkoFS instance
+# Globals:
+#   DAEMON_PID_FILE
+#   PROXY_PID_FILE
+#   VERBOSE
+# Outputs:
+#   Writes status to stdout
+#######################################
+add_daemons() {
+    expand_setup
+    # get old and new node configuration
+    local node_cnt_initial=$(grep -v '^#' "${HOSTSFILE}" | wc -l)
+    NODE_CNT_EXPAND=$((${node_cnt_initial}+$(cat ${EXPAND_NODELIST} | wc -l)))
+    # start new set of daemons
+    start_daemons
+    # TODO REMOVE
+#    sed -i '0,/evie/! s/evie/evie2/' ${HOSTSFILE}
+    export LIBGKFS_HOSTS_FILE=${HOSTSFILE}
+    # start expansion which redistributes metadata and data
+    ${GKFS_MALLEABILITY_BIN_} expand start
+    echo -e "${C_AST_GREEN}Expansion progress: "
+    # wait for expansion to finish
+    until EXPAND_STATUS=$(${GKFS_MALLEABILITY_BIN_} -m expand status); [ $((${EXPAND_STATUS})) -eq 0 ]
+    do
+        sleep 1
+        show_expand_progress ${EXPAND_STATUS} ${node_cnt_initial}
+    done
+    show_expand_progress ${EXPAND_STATUS} ${node_cnt_initial}
+    echo
+    # finalize and remove marker
+    echo -e "${C_AST_GREEN}Redistribution process done. Finalizing ..."
+    sed -i '/^#/d' ${HOSTSFILE}
+    EXPAND_FINALIZE=$(${GKFS_MALLEABILITY_BIN_} -m expand finalize)
+    if [ $((${EXPAND_FINALIZE})) -ne 0 ]; then
+        echo -e "${C_AST_RED}ERROR: Expansion finalized failed. This is not recoverable. Exiting ..."
+        exit 1
+    fi
+    echo -e "${C_AST_GREEN}Expansion done."
+}
+
 #######################################
 # Print short usage information
 # Outputs:
@@ -329,7 +481,7 @@ usage_short() {
     echo "
 usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [--proxy <false>] [-f/--foreground <false>]
         [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [-v/--verbose <false>]
-        {start,stop}
+        {start,expand,stop}
     "
 }
 #######################################
@@ -345,7 +497,7 @@ help_msg() {
     additional permanent configurations can be set.
 
     positional arguments:
-            command                 Command to execute: 'start' and 'stop'
+            COMMAND                 Command to execute: 'start', 'stop', 'expand'
 
     optional arguments:
             -h, --help              Shows this help message and exits
@@ -361,6 +513,7 @@ help_msg() {
                                     Nodelist is extracted from Slurm via the SLURM_JOB_ID env variable.
             --cpuspertask <#cores>  Set the number of cores the daemons can use. Must use '--srun'.
             -c, --config            Path to configuration file. By defaults looks for a 'gkfs.conf' in this directory.
+            -e, --expand_hostfile   Path to the hostfile with new nodes where GekkoFS should be extended to (hostfile contains one line per node).
             -v, --verbose           Increase verbosity
             "
 }
@@ -410,8 +563,10 @@ PROXY_BIN=$(readlink -f ${PROXY_BIN})
 PRELOAD_LIB=$(readlink -f ${PRELOAD_LIB})
 HOSTSFILE=$(readlink -f ${HOSTSFILE})
 PROXY_LOCAL_PID_FILE=$(readlink -f ${PROXY_LOCAL_PID_FILE})
-SRUN_DAEMON_PID_FILE=$(readlink -f ${SRUN_DAEMON_PID_FILE})
-SRUN_PROXY_PID_FILE=$(readlink -f ${SRUN_PROXY_PID_FILE})
+DAEMON_PID_FILE=$(readlink -f ${DAEMON_PID_FILE})
+PROXY_PID_FILE=$(readlink -f ${PROXY_PID_FILE})
+EXPAND_NODELIST=""
+GKFS_MALLEABILITY_BIN_=${GKFS_MALLEABILITY_BIN}
 
 # parse input
 POSITIONAL=()
@@ -476,6 +631,11 @@ while [[ $# -gt 0 ]]; do
             shift # past argument
             shift # past value
             ;;
+    -e | --expand_hostfile)
+            EXPAND_NODELIST=$2
+            shift # past argument
+            shift # past value
+            ;;
     -h | --help)
         help_msg
         exit
@@ -498,18 +658,20 @@ if [[ -z ${1+x} ]]; then
     usage_short
     exit 1
 fi
-command="${1}"
+COMMAND="${1}"
 # checking input
-if [[ ${command} != *"start"* ]] && [[ ${command} != *"stop"* ]]; then
-    echo -e "${C_AST_RED}ERROR: command ${command} not supported"
+if [[ ${COMMAND} != *"start"* ]] && [[ ${COMMAND} != *"stop"* ]] && [[ ${COMMAND} != *"expand"* ]]; then
+    echo -e "${C_AST_RED}ERROR: COMMAND ${COMMAND} not supported"
     usage_short
     exit 1
 fi
 # Run script
-if [[ ${command} == "start" ]]; then
-    start_daemon
-elif [[ ${command} == "stop" ]]; then
+if [[ ${COMMAND} == "start" ]]; then
+    start_daemons
+elif [[ ${COMMAND} == "stop" ]]; then
     stop_daemons
+elif [[ ${COMMAND} == "expand" ]]; then
+    add_daemons
 fi
 if [[ ${VERBOSE} == true ]]; then
     echo -e "${C_AST_GREEN}Nothing left to do. Exiting :)"

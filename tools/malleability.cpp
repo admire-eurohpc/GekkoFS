@@ -39,6 +39,7 @@ using namespace std;
 
 struct cli_options {
     bool verbose = false;
+    bool machine_readable = false;
     string action;
     string subcommand;
 };
@@ -90,6 +91,9 @@ main(int argc, const char* argv[]) {
 
     // Global verbose flag
     desc.add_flag("--verbose,-v", opts.verbose, "Verbose output");
+    desc.add_flag("--machine-readable,-m", opts.machine_readable,
+                  "machine-readable output");
+
 
     auto expand_args =
             desc.add_subcommand("expand", "Expansion-related actions");
@@ -126,14 +130,26 @@ main(int argc, const char* argv[]) {
     } else if(opts.action == "status") {
         res = gkfs::malleable::expand_status();
         if(res > 0) {
-            cout << "Expansion in progress: " << res
-                 << " nodes not finished.\n";
+            if(opts.machine_readable) {
+                cout << res;
+            } else {
+                cout << "Expansion in progress: " << res
+                     << " nodes not finished.\n";
+            }
         } else {
-            cout << "No expansion running/finished.\n";
+            if(opts.machine_readable) {
+                cout << res;
+            } else {
+                cout << "No expansion running/finished.\n";
+            }
         }
     } else if(opts.action == "finalize") {
         res = gkfs::malleable::expand_finalize();
-        cout << "Expand finalize " << res << endl;
+        if(opts.machine_readable) {
+            cout << res;
+        } else {
+            cout << "Expand finalize " << res << endl;
+        }
     }
     gkfs_end();
 }
