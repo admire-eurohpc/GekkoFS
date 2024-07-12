@@ -51,6 +51,8 @@ namespace fs = std::filesystem;
 
 namespace gkfs::malleable {
 
+// TODO The following three functions are almost identical to the proxy code
+// They should be moved to a common and shared between the proxy and the daemon
 vector<pair<string, string>>
 MalleableManager::load_hostfile(const std::string& path) {
 
@@ -198,7 +200,7 @@ int
 MalleableManager::redistribute_metadata() {
     uint64_t count = 0;
     auto estimate_db_size = GKFS_DATA->mdb()->db_size();
-    auto percent_interval = estimate_db_size / 1000;
+    auto percent_interval = estimate_db_size / 100;
     GKFS_DATA->spdlogger()->info(
             "{}() Starting metadata redistribution for '{}' estimated number of KV pairs...",
             __func__, estimate_db_size);
@@ -206,6 +208,7 @@ MalleableManager::redistribute_metadata() {
     string key, value;
     auto iter =
             static_cast<rocksdb::Iterator*>(GKFS_DATA->mdb()->iterate_all());
+    // TODO parallelize
     for(iter->SeekToFirst(); iter->Valid(); iter->Next()) {
         key = iter->key().ToString();
         value = iter->value().ToString();
@@ -213,11 +216,11 @@ MalleableManager::redistribute_metadata() {
             continue;
         }
         auto dest_id = RPC_DATA->distributor()->locate_file_metadata(key, 0);
-        GKFS_DATA->spdlogger()->info(
+        GKFS_DATA->spdlogger()->trace(
                 "{}() Migration: key {} and value {}. From host {} to host {}",
                 __func__, key, value, RPC_DATA->local_host_id(), dest_id);
         if(dest_id == RPC_DATA->local_host_id()) {
-            GKFS_DATA->spdlogger()->info("{}() SKIPPERS", __func__);
+            GKFS_DATA->spdlogger()->trace("{}() SKIP", __func__);
             continue;
         }
         auto err = gkfs::malleable::rpc::forward_metadata(key, value, dest_id);
@@ -248,6 +251,7 @@ MalleableManager::redistribute_data() {
     auto chunk_dir = fs::path(GKFS_DATA->storage()->get_chunk_directory());
     auto dir_iterator = GKFS_DATA->storage()->get_all_chunk_files();
 
+    // TODO this can be parallelized, e.g., async chunk I/O
     for(const auto& entry : dir_iterator) {
         if(!entry.is_regular_file()) {
             continue;

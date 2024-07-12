@@ -449,8 +449,6 @@ add_daemons() {
     NODE_CNT_EXPAND=$((${node_cnt_initial}+$(cat ${EXPAND_NODELIST} | wc -l)))
     # start new set of daemons
     start_daemons
-    # TODO REMOVE
-#    sed -i '0,/evie/! s/evie/evie2/' ${HOSTSFILE}
     export LIBGKFS_HOSTS_FILE=${HOSTSFILE}
     # start expansion which redistributes metadata and data
     ${GKFS_MALLEABILITY_BIN_} expand start
