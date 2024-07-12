@@ -284,7 +284,7 @@ init_rpc_client() {
     struct margo_init_info args = {nullptr};
     args.json_config = margo_config.c_str();
     args.hg_init_info = &hg_options;
-    auto* mid = margo_init_ext(GKFS_DATA->bind_addr().c_str(),
+    auto* mid = margo_init_ext(GKFS_DATA->rpc_protocol().c_str(),
                                MARGO_CLIENT_MODE, &args);
 
     if(mid == MARGO_INSTANCE_NULL) {
@@ -293,7 +293,7 @@ init_rpc_client() {
 
     GKFS_DATA->spdlogger()->info(
             "{}() RPC client initialization successful for protocol {}",
-            __func__, GKFS_DATA->bind_addr());
+            __func__, GKFS_DATA->rpc_protocol());
 
     RPC_DATA->client_rpc_mid(mid);
     register_client_rpcs(mid);
@@ -517,7 +517,7 @@ init_environment() {
 
     // Init margo client
     GKFS_DATA->spdlogger()->debug("{}() Initializing RPC client: '{}'",
-                                  __func__, GKFS_DATA->bind_addr());
+                                  __func__, GKFS_DATA->rpc_protocol());
     try {
         init_rpc_client();
     } catch(const std::exception& e) {
