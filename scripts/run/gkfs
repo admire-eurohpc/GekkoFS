@@ -361,6 +361,8 @@ expand_setup() {
         exit 1
     fi
     # if proxy is enabled error out
+    # to support proxy, all proxies need to be shutdown during expansion and started up after again
+    # to get the new configuration.
     if [[ ${USE_PROXY} == true ]]; then
         echo -e "${C_AST_RED}ERROR: Proxy not supported for expansion. Exiting ..."
         exit 1
