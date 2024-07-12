@@ -1,6 +1,6 @@
 ################################################################################
-# Copyright 2018-2023, Barcelona Supercomputing Center (BSC), Spain            #
-# Copyright 2015-2023, Johannes Gutenberg Universitaet Mainz, Germany          #
+# Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain            #
+# Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany          #
 #                                                                              #
 # This software was partially supported by the                                 #
 # EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).    #
@@ -36,3 +36,10 @@ if (GKFS_ENABLE_CLIENT_METRICS)
     target_link_libraries(gkfs_clientmetrics2json PUBLIC msgpack_util nlohmann_json::nlohmann_json)
     install(TARGETS gkfs_clientmetrics2json RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
+
+add_executable(gkfs_malleability malleability.cpp)
+target_link_libraries(gkfs_malleability
+    PUBLIC
+    gkfs_user_lib
+    CLI11::CLI11)
+install(TARGETS gkfs_malleability RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

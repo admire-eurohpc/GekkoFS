@@ -54,6 +54,50 @@ RPCData::proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid) {
     RPCData::proxy_server_rpc_mid_ = proxy_server_rpc_mid;
 }
 
+margo_instance*
+RPCData::client_rpc_mid() {
+    return client_rpc_mid_;
+}
+
+void
+RPCData::client_rpc_mid(margo_instance* client_rpc_mid) {
+    RPCData::client_rpc_mid_ = client_rpc_mid;
+}
+
+margo_client_ids&
+RPCData::rpc_client_ids() {
+    return rpc_client_ids_;
+}
+
+std::map<uint64_t, hg_addr_t>&
+RPCData::rpc_endpoints() {
+    return rpc_endpoints_;
+}
+
+void
+RPCData::rpc_endpoints(const std::map<uint64_t, hg_addr_t>& rpc_endpoints) {
+    rpc_endpoints_ = rpc_endpoints;
+}
+
+uint64_t
+RPCData::hosts_size() const {
+    return hosts_size_;
+}
+void
+RPCData::hosts_size(uint64_t hosts_size) {
+    hosts_size_ = hosts_size;
+}
+
+uint64_t
+RPCData::local_host_id() const {
+    return local_host_id_;
+}
+
+void
+RPCData::local_host_id(uint64_t local_host_id) {
+    local_host_id_ = local_host_id;
+}
+
 ABT_pool
 RPCData::io_pool() const {
     return io_pool_;

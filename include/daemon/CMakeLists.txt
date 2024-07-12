@@ -36,6 +36,8 @@ target_sources(
          classes/rpc_data.hpp
          handler/rpc_defs.hpp
          handler/rpc_util.hpp
+    malleability/malleable_manager.hpp
+    malleability/rpc/forward_redistribution.hpp
 )
 
 if(GKFS_ENABLE_AGIOS)

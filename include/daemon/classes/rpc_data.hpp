@@ -30,6 +30,7 @@
 #define LFS_RPC_DATA_HPP
 
 #include <daemon/daemon.hpp>
+#include <map>
 
 namespace gkfs {
 
@@ -41,6 +42,11 @@ class Distributor;
 
 namespace daemon {
 
+struct margo_client_ids {
+    hg_id_t migrate_metadata_id;
+    hg_id_t migrate_data_id;
+};
+
 class RPCData {
 
 private:
@@ -50,6 +56,13 @@ private:
     // contexts that were created at init time
     margo_instance_id server_rpc_mid_;
     margo_instance_id proxy_server_rpc_mid_;
+    // client
+    margo_instance_id client_rpc_mid_;
+    margo_client_ids rpc_client_ids_{};
+    std::map<uint64_t, hg_addr_t> rpc_endpoints_;
+    uint64_t hosts_size_;
+    uint64_t local_host_id_;
+
 
     // Argobots I/O pools and execution streams
     ABT_pool io_pool_;
@@ -83,7 +96,34 @@ public:
     proxy_server_rpc_mid();
 
     void
-    proxy_server_rpc_mid(margo_instance* proxy_server_rpc_mid);
+    proxy_server_rpc_mid(margo_instance* client_rpc_mid);
+
+    margo_instance*
+    client_rpc_mid();
+
+    void
+    client_rpc_mid(margo_instance* client_rpc_mid);
+
+    margo_client_ids&
+    rpc_client_ids();
+
+    std::map<uint64_t, hg_addr_t>&
+    rpc_endpoints();
+
+    void
+    rpc_endpoints(const std::map<uint64_t, hg_addr_t>& rpc_endpoints);
+
+    uint64_t
+    hosts_size() const;
+
+    void
+    hosts_size(uint64_t hosts_size);
+
+    uint64_t
+    local_host_id() const;
+
+    void
+    local_host_id(uint64_t local_host_id);
 
     ABT_pool
     io_pool() const;

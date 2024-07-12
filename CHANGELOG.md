@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added file system expansion support ([!196](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/196)).
+  - Added the tool `gkfs_malleability` to steer start, status, and finalize requests for expansion operations.
+  - `-DGKFS_BUILD_TOOLS=ON` must be set for CMake to build the tool.
+  - Overhauled the `gkfs` run script to accommodate the new tool.
+  - During expansion, redistribution of data is performed by the daemons. Therefore, an RPC client for daemons was added.
+  - See Readme for usage details.
 - Propagate PKG_CONFIG_PATH to dependency scripts ([!185](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/185)).
 - Added syscall support for listxattr family ([!186](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/186)).
 - Remove optimization, removing one RPC per operation ([!195](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/195)).

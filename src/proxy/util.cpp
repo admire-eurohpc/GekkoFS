@@ -53,6 +53,8 @@ load_hostfile(const std::string& lfpath) {
     string uri;
     std::smatch match;
     while(getline(lf, line)) {
+        if(line[0] == '#')
+            continue;
         if(!regex_match(line, match, line_re)) {
             PROXY_DATA->log()->debug(
                     "{}() Unrecognized line format: [path: '{}', line: '{}']",

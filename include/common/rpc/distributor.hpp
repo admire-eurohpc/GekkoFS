@@ -56,6 +56,9 @@ public:
     virtual unsigned int
     hosts_size() const = 0;
 
+    virtual void
+    hosts_size(unsigned int size) = 0;
+
     virtual host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 unsigned int hosts_size, const int num_copy) = 0;
@@ -64,7 +67,7 @@ public:
     locate_file_metadata(const std::string& path, const int num_copy) const = 0;
 
     virtual std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const = 0;
+    locate_directory_metadata() const = 0;
 };
 
 
@@ -83,6 +86,9 @@ public:
     unsigned int
     hosts_size() const override;
 
+    void
+    hosts_size(unsigned int size) override;
+
     host_t
     localhost() const override;
 
@@ -99,7 +105,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 class LocalOnlyDistributor : public Distributor {
@@ -116,6 +122,9 @@ public:
     unsigned int
     hosts_size() const override;
 
+    void
+    hosts_size(unsigned int size) override;
+
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 const int num_copy) const override;
@@ -125,7 +134,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 class ForwarderDistributor : public Distributor {
@@ -144,6 +153,9 @@ public:
     unsigned int
     hosts_size() const override;
 
+    void
+    hosts_size(unsigned int size) override;
+
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 const int num_copy) const override final;
@@ -157,7 +169,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 /*
@@ -197,6 +209,9 @@ public:
     unsigned int
     hosts_size() const override;
 
+    void
+    hosts_size(unsigned int size) override;
+
     host_t
     locate_data(const std::string& path, const chunkid_t& chnk_id,
                 const int num_copy) const override;
@@ -210,7 +225,7 @@ public:
                          const int num_copy) const override;
 
     std::vector<host_t>
-    locate_directory_metadata(const std::string& path) const override;
+    locate_directory_metadata() const override;
 };
 
 } // namespace gkfs::rpc

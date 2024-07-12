@@ -173,16 +173,20 @@ MetadataDB::get_dirents_extended(const std::string& dir) const {
     return backend_->get_dirents_extended(root_path);
 }
 
-
 /**
  * @internal
  * Code example for iterating all entries in KV store. This is for debug only as
  * it is too expensive.
  * @endinternal
  */
-void
+void*
 MetadataDB::iterate_all() const {
-    backend_->iterate_all();
+    return backend_->iterate_all();
+}
+
+uint64_t
+MetadataDB::db_size() const {
+    return backend_->db_size();
 }
 
 } // namespace gkfs::metadata

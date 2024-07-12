@@ -52,6 +52,11 @@ SimpleHashDistributor::hosts_size() const {
     return hosts_size_;
 }
 
+void
+SimpleHashDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
+}
+
 host_t
 SimpleHashDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
                                    const int num_copy) const {
@@ -78,7 +83,7 @@ SimpleHashDistributor::locate_file_metadata(const string& path,
 }
 
 ::vector<host_t>
-SimpleHashDistributor::locate_directory_metadata(const string& path) const {
+SimpleHashDistributor::locate_directory_metadata() const {
     return all_hosts_;
 }
 
@@ -95,6 +100,11 @@ LocalOnlyDistributor::hosts_size() const {
     return hosts_size_;
 }
 
+void
+LocalOnlyDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
+}
+
 host_t
 LocalOnlyDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
                                   const int num_copy) const {
@@ -108,7 +118,7 @@ LocalOnlyDistributor::locate_file_metadata(const string& path,
 }
 
 ::vector<host_t>
-LocalOnlyDistributor::locate_directory_metadata(const string& path) const {
+LocalOnlyDistributor::locate_directory_metadata() const {
     return {localhost_};
 }
 
@@ -126,6 +136,11 @@ ForwarderDistributor::localhost() const {
 unsigned int
 ForwarderDistributor::hosts_size() const {
     return hosts_size_;
+}
+
+void
+ForwarderDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
 }
 
 host_t
@@ -150,7 +165,7 @@ ForwarderDistributor::locate_file_metadata(const std::string& path,
 
 
 std::vector<host_t>
-ForwarderDistributor::locate_directory_metadata(const std::string& path) const {
+ForwarderDistributor::locate_directory_metadata() const {
     return all_hosts_;
 }
 
@@ -239,6 +254,11 @@ GuidedDistributor::hosts_size() const {
     return hosts_size_;
 }
 
+void
+GuidedDistributor::hosts_size(unsigned int size) {
+    hosts_size_ = size;
+}
+
 host_t
 GuidedDistributor::locate_data(const string& path, const chunkid_t& chnk_id,
                                unsigned int hosts_size, const int num_copy) {
@@ -282,7 +302,7 @@ GuidedDistributor::locate_file_metadata(const string& path,
 
 
 ::vector<host_t>
-GuidedDistributor::locate_directory_metadata(const string& path) const {
+GuidedDistributor::locate_directory_metadata() const {
     return all_hosts_;
 }
 

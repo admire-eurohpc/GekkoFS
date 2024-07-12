@@ -642,7 +642,7 @@ forward_get_dirents(const string& path) {
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 
-    auto const targets = CTX->distributor()->locate_directory_metadata(path);
+    auto const targets = CTX->distributor()->locate_directory_metadata();
 
     /* preallocate receiving buffer. The actual size is not known yet.
      *
@@ -793,7 +793,7 @@ forward_get_dirents_single(const string& path, int server) {
 
     LOG(DEBUG, "{}() enter for path '{}'", __func__, path)
 
-    auto const targets = CTX->distributor()->locate_directory_metadata(path);
+    auto const targets = CTX->distributor()->locate_directory_metadata();
 
     /* preallocate receiving buffer. The actual size is not known yet.
      *

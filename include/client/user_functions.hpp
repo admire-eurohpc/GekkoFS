@@ -40,7 +40,8 @@ extern "C" {
 
 struct linux_dirent64;
 
-namespace gkfs::syscall {
+namespace gkfs {
+namespace syscall {
 
 int
 gkfs_open(const std::string& path, mode_t mode, int flags);
@@ -77,7 +78,34 @@ gkfs_remove(const std::string& path);
 
 std::vector<std::string>
 gkfs_get_file_list(const std::string& path);
-} // namespace gkfs::syscall
+} // namespace syscall
+namespace malleable {
+
+/**
+ * @brief Start an expansion of the file system
+ * @param old_server_conf old number of nodes
+ * @param new_server_conf new number of nodes
+ * @return error code
+ */
+int
+expand_start(int old_server_conf, int new_server_conf);
+
+/**
+ * @brief Check for the current status of the expansion process
+ * @return 0 when finished, positive numbers indicate how many daemons
+ * are still redistributing data
+ */
+int
+expand_status();
+
+/**
+ * @brief Finalize the expansion process
+ * @return error code
+ */
+int
+expand_finalize();
+} // namespace malleable
+} // namespace gkfs
 
 
 extern "C" int

@@ -529,8 +529,10 @@ ParallaxBackend::get_dirents_extended_impl(const std::string& dir) const {
  * Code example for iterating all entries in KV store. This is for debug only as
  * it is too expensive
  */
-void
-ParallaxBackend::iterate_all_impl() const {}
+void*
+ParallaxBackend::iterate_all_impl() const {
+    return nullptr;
+}
 
 
 } // namespace gkfs::metadata

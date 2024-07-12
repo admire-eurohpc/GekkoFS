@@ -159,7 +159,7 @@ to be empty.
 
 For MPI application, the `LD_PRELOAD` variable can be passed with the `-x` argument for `mpirun/mpiexec`.
 
-## Run GekkoFS daemons on multiple nodes (beta version!)
+## Run GekkoFS daemons on multiple nodes
 
 The `scripts/run/gkfs` script can be used to simplify starting the GekkoFS daemon on one or multiple nodes. To start
 GekkoFS on multiple nodes, a Slurm environment that can execute `srun` is required. Users can further
@@ -168,9 +168,9 @@ modify `scripts/run/gkfs.conf` to mold default configurations to their environme
 The following options are available for `scripts/run/gkfs`:
 
 ```bash
-usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [-f/--foreground <false>]
-        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [--numactl <false>] [-v/--verbose <false>]
-        {start,stop}
+usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args <daemon_args>] [--proxy <false>] [-f/--foreground <false>]
+        [--srun <false>] [-n/--numnodes <jobsize>] [--cpuspertask <64>] [-v/--verbose <false>]
+        {start,expand,stop}
 
 
     This script simplifies the starting and stopping GekkoFS daemons. If daemons are started on multiple nodes,
@@ -178,21 +178,23 @@ usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args 
     additional permanent configurations can be set.
 
     positional arguments:
-            command                 Command to execute: 'start' and 'stop'
+            COMMAND                 Command to execute: 'start', 'stop', 'expand'
 
     optional arguments:
             -h, --help              Shows this help message and exits
-            -r, --rootdir <path>    Providing the rootdir path for GekkoFS daemons.
-            -m, --mountdir <path>   Providing the mountdir path for GekkoFS daemons.
-            -a, --args <daemon_arguments>
+            -r, --rootdir <path>    The rootdir path for GekkoFS daemons.
+            -m, --mountdir <path>   The mountdir path for GekkoFS daemons.
+            -d, --daemon_args <daemon_arguments>
+            --proxy                 Start proxy after the daemons are running.
                                     Add various additional daemon arguments, e.g., "-l ib0 -P ofi+psm2".
+            -p, --proxy_args <proxy_arguments>
             -f, --foreground        Starts the script in the foreground. Daemons are stopped by pressing 'q'.
             --srun                  Use srun to start daemons on multiple nodes.
             -n, --numnodes <n>      GekkoFS daemons are started on n nodes.
                                     Nodelist is extracted from Slurm via the SLURM_JOB_ID env variable.
             --cpuspertask <#cores>  Set the number of cores the daemons can use. Must use '--srun'.
-            --numactl               Use numactl for the daemon. Modify gkfs.conf for further numactl configurations.
             -c, --config            Path to configuration file. By defaults looks for a 'gkfs.conf' in this directory.
+            -e, --expand_hostfile   Path to the hostfile with new nodes where GekkoFS should be extended to (hostfile contains one line per node).
             -v, --verbose           Increase verbosity
 ```
 
@@ -414,6 +416,58 @@ Press 'q' to exit
 
 Please consult `include/config.hpp` for additional configuration options. Note, GekkoFS proxy does not support
 replication.
+
+### File system expansion
+
+GekkoFS supports extending the current daemon configuration to additional compute nodes. This includes redistribution of
+the existing data and metadata and therefore scales file system performance and capacity of existing data. Note,
+that it is the user's responsibility to not access the GekkoFS file system during redistribution. A corresponding
+feature that is transparent to the user is planned. Note also, if the GekkoFS proxy is used, they need to be manually
+restarted, after expansion.
+
+To enable this feature, the following CMake compilation flags are required to build the `gkfs_malleability` tool:
+`-DGKFS_BUILD_TOOLS=ON`. The `gkfs_malleability` tool is then available in the `build/tools` directory. Please consult
+`-h` for its arguments. While the tool can be used manually to expand the file system, the `scripts/run/gkfs` script
+should be used instead which invokes the `gkfs_malleability` tool.
+
+The only requirement for extending the file system is a hostfile containing the hostnames/IPs of the new nodes (one line
+per host). Example starting the file system. The `DAEMON_NODELIST` in the `gkfs.conf` is set to a hostfile containing
+the initial set of file system nodes.:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf start
+* [gkfs] Starting GekkoFS daemons (4 nodes) ...
+* [gkfs] GekkoFS daemons running
+* [gkfs] Startup time: 10.853 seconds
+```
+
+... Some computation ...
+
+Expanding the file system. Using `-e <hostfile>` to specify the new nodes. Redistribution is done automatically with a
+progress bar. When finished, the file system is ready to use in the new configuration:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf -e ~/hostfile_expand expand
+* [gkfs] Starting GekkoFS daemons (8 nodes) ...
+* [gkfs] GekkoFS daemons running
+* [gkfs] Startup time: 1.058 seconds
+Expansion process from 4 nodes to 12 nodes launched...
+* [gkfs] Expansion progress:
+[####################] 0/4 left
+* [gkfs] Redistribution process done. Finalizing ...
+* [gkfs] Expansion done.
+```
+
+Stop the file system:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf stop
+* [gkfs] Stopping daemon with pid 16462
+srun: sending Ctrl-C to StepId=282378.1
+* [gkfs] Stopping daemon with pid 16761
+srun: sending Ctrl-C to StepId=282378.2
+* [gkfs] Shutdown time: 1.032 seconds
+```
 
 ## Acknowledgment
 

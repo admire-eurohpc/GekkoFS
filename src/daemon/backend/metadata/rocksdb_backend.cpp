@@ -388,17 +388,26 @@ RocksDBBackend::get_dirents_extended_impl(const std::string& dir) const {
  * Code example for iterating all entries in KV store. This is for debug only as
  * it is too expensive
  */
-void
+void*
 RocksDBBackend::iterate_all_impl() const {
-    std::string key;
-    std::string val;
+    //    std::string key;
+    //    std::string val;
     // Do RangeScan on parent inode
-    auto iter = db_->NewIterator(rdb::ReadOptions());
-    for(iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-        key = iter->key().ToString();
-        val = iter->value().ToString();
-        std::cout << key << std::endl;
-    }
+    //    auto iter = db_->NewIterator(rdb::ReadOptions());
+    //    for(iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    //        key = iter->key().ToString();
+    //        val = iter->value().ToString();
+    //    }
+    // TODO Fix this hacky solution. Returning void* is not a good idea :>
+    return static_cast<void*>(db_->NewIterator(rdb::ReadOptions()));
+}
+
+uint64_t
+RocksDBBackend::db_size_impl() const {
+    // TODO error handling
+    uint64_t num_keys = 0;
+    db_->GetAggregatedIntProperty("rocksdb.estimate-num-keys", &num_keys);
+    return num_keys;
 }
 
 /**

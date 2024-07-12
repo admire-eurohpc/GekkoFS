@@ -164,5 +164,14 @@ MERCURY_GEN_PROC(rpc_proxy_get_dirents_in_t,
                  ((hg_const_string_t) (path))((int32_t) (server))(
                          (hg_bulk_t) (bulk_handle)))
 
+// malleability client <-> daemon
+
+MERCURY_GEN_PROC(rpc_expand_start_in_t,
+                 ((uint32_t) (old_server_conf))((uint32_t) (new_server_conf)))
+
+// malleability daemon <-> daemon
+
+MERCURY_GEN_PROC(rpc_migrate_metadata_in_t,
+                 ((hg_const_string_t) (key))((hg_const_string_t) (value)))
 
 #endif // LFS_RPC_TYPES_HPP
