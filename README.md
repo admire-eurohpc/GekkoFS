@@ -517,6 +517,9 @@ Client-metrics require the CMake argument `-DGKFS_ENABLE_CLIENT_METRICS=ON` (see
 - `LIBGKFS_METRICS_IP_PORT` - Enable flushing to a set ZeroMQ server (replaces `LIBGKFS_METRICS_PATH`).
 - `LIBGKFS_PROXY_PID_FILE` - Path to the proxy pid file (when using the GekkoFS proxy).
 - `LIBGKFS_NUM_REPL` - Number of replicas for data.
+#### Caching
+- `LIBGKFS_DENTRY_CACHE` - Enable caching directory entries until closing the directory (default: OFF). 
+Improves performance for `ls -l` type operations. Further compile-time settings available at `include/config.hpp`.
 
 ### Daemon
 #### Logging

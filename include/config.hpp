@@ -48,7 +48,7 @@ constexpr auto forwarding_file_path = "";
 
 namespace cache {
 // Optimization for readdir which avoids consecutive stat calls
-constexpr bool use_dentry_cache = true;
+constexpr bool use_dentry_cache = false;
 // When enabled, the dentry cache is cleared when a directory is closed.
 // Disabling this may cause semantic issues.
 constexpr bool clear_dentry_cache_on_close = true;
@@ -146,7 +146,6 @@ constexpr auto chunksize = 524288; // in bytes (e.g., 524288 == 512KB)
 // size of preallocated buffer to hold directory entries in rpc call
 constexpr auto dirents_buff_size = (8 * 1024 * 1024);         // 8 mega
 constexpr auto dirents_buff_size_proxy = (128 * 1024 * 1024); // 8 mega
-constexpr auto async_opendir = true;
 /*
  * Indicates the number of concurrent progress to drive I/O operations of chunk
  * files to and from local file systems The value is directly mapped to created

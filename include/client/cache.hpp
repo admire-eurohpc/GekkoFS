@@ -44,25 +44,44 @@ namespace gkfs::cache {
 
 namespace dir {
 
+/**
+ * @brief Cache entry metadata.
+ * The entries are limited to the get_dir_extended RPC.
+ */
 struct cache_entry {
     gkfs::filemap::FileType file_type;
     uint64_t size;
     time_t ctime;
 };
 
+/**
+ * @brief Cache for directory entries to accelerate ls -l type operations
+ */
 class DentryCache {
 private:
-    // <dir_id, <name, cache_entry>>
+    // <dir_id, <name, cache_entry>>: Associate a directory id with its entries
+    // containing the directory name and cache entry metadata
     std::unordered_map<uint32_t, std::unordered_map<std::string, cache_entry>>
             entries_;
-    // <dir_path, dir_id>
+    // <dir_path, dir_id>: Associate a directory path with a unique id
     std::unordered_map<std::string, uint32_t> entry_dir_id_;
-    std::mutex mtx_;
-    std::hash<std::string> str_hash;
+    std::mutex mtx_;                 // Mutex to protect the cache
+    std::hash<std::string> str_hash; // hash to generate ids
 
+    /**
+     * @brief Generate a unique id for caching a directory
+     * @param dir_path
+     * @return id
+     */
     uint32_t
     gen_dir_id(const std::string& dir_path);
 
+    /**
+     * @brief Get the unique id for a directory to retrieve its entries. Creates
+     * an id if it does not exist.
+     * @param dir_path
+     * @return id
+     */
     uint32_t
     get_dir_id(const std::string& dir_path);
 
@@ -71,27 +90,47 @@ public:
 
     virtual ~DentryCache() = default;
 
+    /**
+     * @brief Insert a new entry in the cache
+     * @param parent_dir
+     * @param name
+     * @param value
+     */
     void
-    insert(const std::string& parent_dir, const std::string name,
-           const cache_entry value);
+    insert(const std::string& parent_dir, std::string name, cache_entry value);
 
+    /**
+     * @brief Get an entry from the cache for a given directory
+     * @param parent_dir
+     * @param name
+     * @return std::optional<cache_entry>
+     */
     std::optional<cache_entry>
     get(const std::string& parent_dir, const std::string& name);
 
+    /**
+     * @brief Clear the cache for a given directory. Called when a directory is
+     * closed
+     * @param dir_path
+     */
     void
     clear_dir(const std::string& dir_path);
 
+    /**
+     * @brief Dump the cache to the log for debugging purposes. Not used in
+     * production.
+     * @param dir_path
+     */
     void
     dump_cache_to_log(const std::string& dir_path);
 
+    /**
+     * @brief Clear the entire cache
+     */
     void
     clear();
 };
 } // namespace dir
-
-//// <path<cnt, size>>
-// std::unordered_map<std::string, std::pair<size_t, size_t>> size_cache;
-
 
 } // namespace gkfs::cache
 

@@ -211,26 +211,19 @@ optional<gkfs::metadata::Metadata>
 get_metadata(const string& path, bool follow_links) {
     std::string attr;
     int err{};
+    // Use file metadata from dentry cache if available
     if(CTX->use_dentry_cache()) {
+        // get parent and filename path to retrieve the cache entry
         std::filesystem::path p(path);
         auto parent = p.parent_path().string();
         auto filename = p.filename().string();
-        //        LOG(INFO, "{}(): for path '{}' -> parent path '{}' leaf name
-        //        '{}'",
-        //            __func__, path, p.parent_path().string(),
-        //            p.filename().string());
         auto cache_entry = CTX->dentry_cache()->get(parent, filename);
         if(cache_entry) {
-            //            LOG(INFO, "{}(): Cache hit for path '{}'", __func__,
-            //            path);
-            // TOOD something like this:
-            //            struct stat st{};
-            //            metadata_to_stat(path, *cache_entry, st);
-            //            return gkfs::metadata::Metadata{st};
-            // TODO add mode to extended RPC
-            mode_t mode = 33188;
+            LOG(DEBUG, "{}(): Dentry cache hit for file '{}'", __func__, path);
+            // if cache_entry exists, generate a Metadata object from it.
+            mode_t mode = gkfs::config::syscall::stat::file_mode_default;
             if(cache_entry->file_type == gkfs::filemap::FileType::directory) {
-                mode = 16895;
+                mode = gkfs::config::syscall::stat::dir_mode_default;
             }
             gkfs::metadata::Metadata md{};
             md.mode(mode);
@@ -239,7 +232,6 @@ get_metadata(const string& path, bool follow_links) {
             return md;
         }
     }
-
     if(gkfs::config::proxy::fwd_stat && CTX->use_proxy()) {
         err = gkfs::rpc::forward_stat_proxy(path, attr);
     } else {

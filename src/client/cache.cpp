@@ -44,6 +44,9 @@ namespace dir {
 
 uint32_t
 DentryCache::gen_dir_id(const std::string& dir_path) {
+    // While collisions can theoretically occur, they are extremely unlikely as
+    // clients are ephemeral and thus the lifetime of a cached directory as
+    // well.
     return str_hash(dir_path);
 }
 

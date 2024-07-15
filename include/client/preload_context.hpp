@@ -59,10 +59,7 @@ namespace cache {
 namespace dir {
 class DentryCache;
 }
-namespace file {
-class WriteSizeCache;
-}
-}
+} // namespace cache
 
 namespace preload {
 /*

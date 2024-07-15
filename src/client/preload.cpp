@@ -259,8 +259,11 @@ init_environment() {
         CTX->distributor(distributor);
     }
 
-    if(gkfs::config::cache::use_dentry_cache &&
-       !gkfs::env::var_is_set(gkfs::env::DISABLE_DENTRY_CACHE)) {
+    auto use_dcache = gkfs::env::get_var(gkfs::env::DENTRY_CACHE,
+                                         gkfs::config::cache::use_dentry_cache
+                                                 ? "ON"
+                                                 : "OFF") == "ON";
+    if(use_dcache) {
         try {
             LOG(INFO, "Initializing dentry caching...");
             auto dentry_cache =
@@ -273,7 +276,7 @@ init_environment() {
                            "Failed to initialize dentry cache: "s + e.what());
         }
     } else {
-        if(gkfs::env::var_is_set(gkfs::env::DISABLE_DENTRY_CACHE)) {
+        if(gkfs::env::var_is_set(gkfs::env::DENTRY_CACHE)) {
             LOG(INFO, "Dentry cache is disabled by environment variable.");
         } else {
             LOG(INFO, "Dentry cache is disabled by configuration.");
