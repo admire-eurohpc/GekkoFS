@@ -49,7 +49,7 @@ endif ()
 
 add_subdirectory(helpers)
 
-# create a convenience library with Catch2's main 
+# create a convenience library with Catch2's main
 # to speed up test compilation
 add_library(catch2_main STATIC)
 target_sources(catch2_main PRIVATE catch_main.cpp)
@@ -63,6 +63,7 @@ add_executable(tests)
 target_sources(tests
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/test_utils_arithmetic.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test_path.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test_helpers.cpp)
 
 if(GKFS_TESTS_GUIDED_DISTRIBUTION)
@@ -76,6 +77,7 @@ target_link_libraries(tests
     helpers
     arithmetic
     distributor
+    gkfs_user_lib
     )
 
 # Catch2's contrib folder includes some helper functions

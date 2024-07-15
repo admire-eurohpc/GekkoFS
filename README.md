@@ -469,6 +469,64 @@ srun: sending Ctrl-C to StepId=282378.2
 * [gkfs] Shutdown time: 1.032 seconds
 ```
 
+## All CMake options
+
+#### Core
+- `GKFS_BUILD_TOOLS` - Build tools (default: OFF)
+- `GKFS_BUILD_TESTS` - Build tests (default: OFF)
+- `GKFS_CREATE_CHECK_PARENTS` - Enable checking parent directory for existence before creating children (default: ON)
+- `GKFS_MAX_INTERNAL_FDS` - Number of file descriptors reserved for internal use (default: 256)
+- `GKFS_MAX_OPEN_FDS` - Maximum number of open file descriptors supported (default: 1024)
+- `GKFS_RENAME_SUPPORT` - Enable support for rename (default: OFF)
+- `GKFS_SYMLINK_SUPPORT` - Enable support for symlinks (default: ON)
+- `GKFS_FOLLOW_EXTERNAL_SYMLINKS` - Enable support for following external links for resolving the path (default: OFF)
+- `GKFS_USE_LEGACY_PATH_RESOLVE` - Use the legacy implementation of the resolve function, deprecated (default: OFF)
+- `GKFS_USE_GUIDED_DISTRIBUTION` - Use guided data distributor (default: OFF)
+- `GKFS_USE_GUIDED_DISTRIBUTION_PATH` - File Path for guided distributor (default: /tmp/guided.txt)
+
+#### Logging
+- `GKFS_ENABLE_CLIENT_LOG` - Enable logging messages in clients (default: ON)
+- `GKFS_CLIENT_LOG_MESSAGE_SIZE` - Maximum size of a log message in the client library (default: 1024)
+
+#### Statistics
+- `GKFS_ENABLE_PROMETHEUS` - Enable pushing daemon statistics to a Prometheus Gateway (default: OFF)
+- `GKFS_ENABLE_CLIENT_METRICS` - Enable client metrics via MSGPack (default: OFF)
+
+#### Backends
+- `GKFS_ENABLE_ROCKSDB` - Enable RocksDB metadata backend (default: ON)
+- `GKFS_ENABLE_PARALLAX` - Enable Parallax metadata support (default: OFF)
+
+## All environment variables
+The GekkoFS daemon, client, and proxy support a number of environment variables to augment its functionality:
+
+### Client
+#### Core
+- `LIBGKFS_HOSTS_FILE` - Path to the hostsfile (created by the daemon and mandatory for the client).
+#### Logging
+- `LIBGKFS_LOG` - Log module of the client. 
+Available modules are: `none`, `syscalls`, `syscalls_at_entry`, `info`, `critical`, `errors`, `warnings`, `mercury`, `debug`, `most`, `all`, `trace_reads`, `help`.
+- `LIBGKFS_LOG_OUTPUT` - Path to the log file of the client.
+- `LIBGKFS_LOG_PER_PROCESS` - Write separate logs per client process.
+- `LIBGKFS_LOG_SYSCALL_FILTER` - Filter out specific system calls from log messages.
+- `LIBGKFS_LOG_OUTPUT_TRUNC` - Truncate the file used for logging.
+#### Client-metrics
+Client-metrics require the CMake argument `-DGKFS_ENABLE_CLIENT_METRICS=ON` (see above).
+- `LIBGKFS_ENABLE_METRICS` - Enable capturing client-side metrics.
+- `LIBGKFS_METRICS_FLUSH_INTERVAL` - Set the flush interval for client metrics.
+- `LIBGKFS_METRICS_PATH` - Path to flush client metrics.
+- `LIBGKFS_METRICS_IP_PORT` - Enable flushing to a set ZeroMQ server (replaces `LIBGKFS_METRICS_PATH`).
+- `LIBGKFS_PROXY_PID_FILE` - Path to the proxy pid file (when using the GekkoFS proxy).
+- `LIBGKFS_NUM_REPL` - Number of replicas for data.
+
+### Daemon
+#### Logging
+- `GKFS_DAEMON_LOG_PATH` - Path to the log file of the daemon.
+- `GKFS_DAEMON_LOG_LEVEL` - Log level of the daemon. Available levels are: `off`, `critical`, `err`, `warn`, `info`, `debug`, `trace`.
+### Proxy
+#### Logging
+- `GKFS_PROXY_LOG_PATH` - Path to the log file of the proxy.
+- `GKFS_PROXY_LOG_LEVEL` - Log level of the proxy. Available levels are: `off`, `critical`, `err`, `warn`, `info`, `debug`, `trace`.
+
 ## Acknowledgment
 
 This software was partially supported by the EC H2020 funded NEXTGenIO project (Project ID: 671951, www.nextgenio.eu).

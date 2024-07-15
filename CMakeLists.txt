@@ -272,6 +272,14 @@ if (GKFS_SYMLINK_SUPPORT)
     add_definitions(-DHAS_SYMLINKS)
 endif ()
 
+if (GKFS_USE_LEGACY_PATH_RESOLVE)
+    add_definitions(-DGKFS_USE_LEGACY_PATH_RESOLVE)
+endif ()
+
+if (GKFS_FOLLOW_EXTERNAL_SYMLINKS)
+    add_definitions(-DGKFS_FOLLOW_EXTERNAL_SYMLINKS)
+endif ()
+
 if (GKFS_RENAME_SUPPORT)
     # Rename depends on symlink support
     add_definitions(-DHAS_SYMLINKS)

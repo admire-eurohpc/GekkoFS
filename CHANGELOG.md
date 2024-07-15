@@ -58,6 +58,9 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
   - Improves RPC stability
   - Removes manual updates to Mercury public IDs from Hermes-Mercury to Margo
 - Updated Spack to support the latest version ([!190](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/190)).
+- Rewrite of the resolve path function to improve performance by making the
+    use of syscall for following symlinks optional
+    ([!183](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/183)).
 
 
 ### Removed

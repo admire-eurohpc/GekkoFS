@@ -86,7 +86,7 @@ def test_pathresolution(gkfs_daemon, gkfs_client):
     ret = gkfs_client.chdir(extdir)
     assert ret.retval == 0
 
-    ret = gkfs_client.getcwd_validate(str(intdir)+"../../../../../../../../../../../../../../../../../../.."+str(intdir))
+    ret = gkfs_client.getcwd_validate(str(intdir)+"/../../../../../../../../../../../../../../../../../../.."+str(intdir))
     assert ret.path == str(intdir)
     assert ret.retval == 0
 
