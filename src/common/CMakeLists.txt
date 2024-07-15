@@ -31,7 +31,7 @@ include(FetchContent)
 add_library(rpc_utils OBJECT)
 set_property(TARGET rpc_utils PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_sources(rpc_utils
-  PRIVATE
+    PRIVATE
     rpc/rpc_util.cpp
 )
 
@@ -46,7 +46,7 @@ target_sources(distributor
     ${INCLUDE_DIR}/common/rpc/distributor.hpp
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/rpc/distributor.cpp
-    )
+)
 
 add_library(statistics STATIC)
 set_property(TARGET statistics PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -55,18 +55,18 @@ target_sources(statistics
     ${INCLUDE_DIR}/common/statistics/stats.hpp
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/statistics/stats.cpp
-    )
+)
 
 
-if(GKFS_ENABLE_PROMETHEUS)
-  target_link_libraries(statistics
-    PRIVATE
-    prometheus-cpp::pull
-    prometheus-cpp::push
-    prometheus-cpp::core
-    curl
+if (GKFS_ENABLE_PROMETHEUS)
+    target_link_libraries(statistics
+        PRIVATE
+        prometheus-cpp::pull
+        prometheus-cpp::push
+        prometheus-cpp::core
+        curl
     )
-endif()
+endif ()
 
 add_library(log_util STATIC)
 set_property(TARGET log_util PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -75,11 +75,11 @@ target_sources(log_util
     ${INCLUDE_DIR}/common/log_util.hpp
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/log_util.cpp
-    )
+)
 target_link_libraries(log_util
-  PUBLIC
+    PUBLIC
     spdlog::spdlog
-    )
+)
 
 add_library(env_util STATIC)
 set_property(TARGET env_util PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -89,7 +89,7 @@ target_sources(env_util
     PRIVATE
     ${INCLUDE_DIR}/config.hpp
     ${CMAKE_CURRENT_LIST_DIR}/env_util.cpp
-    )
+)
 
 add_library(metadata STATIC)
 set_property(TARGET metadata PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -98,11 +98,11 @@ target_sources(metadata
     ${INCLUDE_DIR}/common/metadata.hpp
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/metadata.cpp
-    )
+)
 target_link_libraries(metadata
     PRIVATE
     fmt::fmt
-    )
+)
 
 add_library(path_util STATIC)
 set_property(TARGET path_util PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -111,7 +111,7 @@ target_sources(path_util
     path_util.cpp
     PUBLIC
     ${INCLUDE_DIR}/common/path_util.hpp
-    )
+)
 
 if (GKFS_ENABLE_CLIENT_METRICS)
     add_library(msgpack_util STATIC)

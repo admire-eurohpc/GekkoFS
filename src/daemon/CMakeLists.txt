@@ -37,53 +37,53 @@ pkg_check_modules(URING IMPORTED_TARGET liburing)
 
 # We need to add here any files that may have different compile definitions
 target_sources(
-  gkfs_daemon
-  PRIVATE daemon.cpp
-          handler/srv_data.cpp
-          ../common/rpc/rpc_util.cpp
-          util.cpp
-          ops/metadentry.cpp
-          ops/data.cpp
-          classes/fs_data.cpp
-          classes/rpc_data.cpp
-          handler/srv_metadata.cpp
-          handler/srv_management.cpp
+    gkfs_daemon
+    PRIVATE daemon.cpp
+    handler/srv_data.cpp
+    ../common/rpc/rpc_util.cpp
+    util.cpp
+    ops/metadentry.cpp
+    ops/data.cpp
+    classes/fs_data.cpp
+    classes/rpc_data.cpp
+    handler/srv_metadata.cpp
+    handler/srv_management.cpp
     handler/srv_malleability.cpp
     malleability/malleable_manager.cpp
     malleability/rpc/forward_redistribution.cpp
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/config.hpp
-         ${CMAKE_SOURCE_DIR}/include/version.hpp.in
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/config.hpp
+    ${CMAKE_SOURCE_DIR}/include/version.hpp.in
 )
 target_link_libraries(
-  gkfs_daemon
-  PUBLIC # internal libs
-         metadata
-         metadata_backend
-         storage
-         distributor
-         statistics
-         log_util
-         env_util
-         path_util
-         # external libs
-         CLI11::CLI11
-         fmt::fmt
-         Mercury::Mercury
-         Argobots::Argobots
-         Margo::Margo
-         # others
-         Threads::Threads
+    gkfs_daemon
+    PUBLIC # internal libs
+    metadata
+    metadata_backend
+    storage
+    distributor
+    statistics
+    log_util
+    env_util
+    path_util
+    # external libs
+    CLI11::CLI11
+    fmt::fmt
+    Mercury::Mercury
+    Argobots::Argobots
+    Margo::Margo
+    # others
+    Threads::Threads
 )
 
-if(GKFS_ENABLE_AGIOS)
-  target_sources(gkfs_daemon PRIVATE scheduler/agios.cpp)
-  target_compile_definitions(gkfs_daemon PUBLIC GKFS_ENABLE_AGIOS)
-  target_link_libraries(gkfs_daemon PRIVATE AGIOS::AGIOS)
-endif()
+if (GKFS_ENABLE_AGIOS)
+    target_sources(gkfs_daemon PRIVATE scheduler/agios.cpp)
+    target_compile_definitions(gkfs_daemon PUBLIC GKFS_ENABLE_AGIOS)
+    target_link_libraries(gkfs_daemon PRIVATE AGIOS::AGIOS)
+endif ()
 
-if(GKFS_ENABLE_CODE_COVERAGE)
+if (GKFS_ENABLE_CODE_COVERAGE)
     target_code_coverage(gkfs_daemon AUTO)
-endif()
+endif ()
 
 install(TARGETS gkfs_daemon RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

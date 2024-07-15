@@ -32,110 +32,110 @@
 # based on syscall interception.
 # ##############################################################################
 
-add_library (gkfs_intercept SHARED)
-add_library (gkfs_user_lib SHARED)
+add_library(gkfs_intercept SHARED)
+add_library(gkfs_user_lib SHARED)
 
 
 target_sources(gkfs_intercept
-  PRIVATE gkfs_functions.cpp 
-          intercept.cpp
-          hooks.cpp
-          logging.cpp
-          open_file_map.cpp
-          open_dir.cpp
-          path.cpp
-          preload.cpp
-          preload_context.cpp
-          preload_util.cpp
-	cache.cpp
-          rpc/rpc_types.cpp
-          rpc/forward_data.cpp
-          rpc/forward_data_proxy.cpp
-          rpc/forward_management.cpp
-          rpc/forward_metadata.cpp
-          rpc/forward_metadata_proxy.cpp
-          syscalls/detail/syscall_info.c)
+    PRIVATE gkfs_functions.cpp
+    intercept.cpp
+    hooks.cpp
+    logging.cpp
+    open_file_map.cpp
+    open_dir.cpp
+    path.cpp
+    preload.cpp
+    preload_context.cpp
+    preload_util.cpp
+    cache.cpp
+    rpc/rpc_types.cpp
+    rpc/forward_data.cpp
+    rpc/forward_data_proxy.cpp
+    rpc/forward_management.cpp
+    rpc/forward_metadata.cpp
+    rpc/forward_metadata_proxy.cpp
+    syscalls/detail/syscall_info.c)
 
 target_sources(
-  gkfs_user_lib
-  PRIVATE gkfs_functions.cpp 
-          intercept.cpp
-          hooks.cpp
-          logging.cpp
-          open_file_map.cpp
-          open_dir.cpp
-          path.cpp
-          preload.cpp
-          preload_context.cpp
-          preload_util.cpp
-	malleability.cpp
-	cache.cpp
-          rpc/rpc_types.cpp
-          rpc/forward_data.cpp
-	      rpc/forward_data_proxy.cpp
-          rpc/forward_management.cpp
-          rpc/forward_metadata.cpp
-		  rpc/forward_metadata_proxy.cpp
-	rpc/forward_malleability.cpp
-          syscalls/detail/syscall_info.c syscalls/util.S
+    gkfs_user_lib
+    PRIVATE gkfs_functions.cpp
+    intercept.cpp
+    hooks.cpp
+    logging.cpp
+    open_file_map.cpp
+    open_dir.cpp
+    path.cpp
+    preload.cpp
+    preload_context.cpp
+    preload_util.cpp
+    malleability.cpp
+    cache.cpp
+    rpc/rpc_types.cpp
+    rpc/forward_data.cpp
+    rpc/forward_data_proxy.cpp
+    rpc/forward_management.cpp
+    rpc/forward_metadata.cpp
+    rpc/forward_metadata_proxy.cpp
+    rpc/forward_malleability.cpp
+    syscalls/detail/syscall_info.c syscalls/util.S
 )
 
 target_compile_definitions(gkfs_user_lib PUBLIC BYPASS_SYSCALL)
 target_link_options(gkfs_user_lib PRIVATE -z noexecstack)
 
-if(GKFS_ENABLE_AGIOS)
-  target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
-endif()
+if (GKFS_ENABLE_AGIOS)
+    target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_AGIOS)
+endif ()
 # Enable MSGPack metrics for intercept only
 
 target_link_libraries(
-  gkfs_intercept
-  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
-  PUBLIC dl
-         Mercury::Mercury
-         hermes
-         fmt::fmt
-         Threads::Threads
-         Syscall_intercept::Syscall_intercept
+    gkfs_intercept
+    PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
+    PUBLIC dl
+    Mercury::Mercury
+    hermes
+    fmt::fmt
+    Threads::Threads
+    Syscall_intercept::Syscall_intercept
 )
 # Enable MSGPack metrics for intercept only
 if (GKFS_ENABLE_CLIENT_METRICS)
-	target_link_libraries(
-		gkfs_intercept
-		PUBLIC
-		msgpack_util
-	)
-	target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_CLIENT_METRICS)
+    target_link_libraries(
+        gkfs_intercept
+        PUBLIC
+        msgpack_util
+    )
+    target_compile_definitions(gkfs_intercept PUBLIC GKFS_ENABLE_CLIENT_METRICS)
 endif ()
 
 target_link_libraries(
-  gkfs_user_lib
-  PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
-  PUBLIC dl
-         Mercury::Mercury
-         hermes
-         fmt::fmt
-         Threads::Threads
+    gkfs_user_lib
+    PRIVATE metadata distributor env_util arithmetic path_util rpc_utils
+    PUBLIC dl
+    Mercury::Mercury
+    hermes
+    fmt::fmt
+    Threads::Threads
 )
 
 install(
-  TARGETS gkfs_intercept
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
+    TARGETS gkfs_intercept
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
 )
 
 
-set_target_properties(gkfs_user_lib 
-	PROPERTIES
-	PUBLIC_HEADER "../../include/client/void_syscall_intercept.hpp"
-	PUBLIC_HEADER "../../include/client/user_functions.hpp"
+set_target_properties(gkfs_user_lib
+    PROPERTIES
+    PUBLIC_HEADER "../../include/client/void_syscall_intercept.hpp"
+    PUBLIC_HEADER "../../include/client/user_functions.hpp"
 )
 
 
 install(
-  TARGETS gkfs_user_lib
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
+    TARGETS gkfs_user_lib
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gkfs
 )
