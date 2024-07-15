@@ -326,6 +326,23 @@ metadata_to_stat(const std::string& path, const gkfs::metadata::Metadata& md,
     return 0;
 }
 
+pair<int, off64_t>
+update_file_size(const std::string& path, size_t count, off64_t offset,
+                 bool is_append) {
+    LOG(DEBUG, "{}() path: '{}', count: '{}', offset: '{}', is_append: '{}'",
+        __func__, path, count, offset, is_append);
+    pair<int, long> ret_offset;
+    auto num_replicas = CTX->get_replicas();
+    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size_proxy(
+                path, count, offset, is_append);
+    } else {
+        ret_offset = gkfs::rpc::forward_update_metadentry_size(
+                path, count, offset, is_append, num_replicas);
+    }
+    return ret_offset;
+}
+
 map<string, uint64_t>
 load_forwarding_map_file(const std::string& lfpath) {
 

@@ -39,6 +39,7 @@
 #include <mutex>
 #include <optional>
 #include <cstdint>
+#include <utility>
 
 namespace gkfs::cache {
 
@@ -132,6 +133,60 @@ public:
 };
 } // namespace dir
 
+namespace file {
+class WriteSizeCache {
+private:
+    // <path<cnt, size>>
+    std::unordered_map<std::string, std::pair<size_t, size_t>> size_cache;
+    std::mutex mtx_;
+
+    // Flush threshold in number of write ops per file
+    size_t flush_threshold_{0};
+
+public:
+    WriteSizeCache() = default;
+
+    virtual ~WriteSizeCache() = default;
+
+    /**
+     * @brief Record the size of a file and add it to the cache
+     * @param path gekkofs path
+     * @param size current size to set for given path
+     * @return [size_update counter, current cached size]
+     */
+    std::pair<size_t, size_t>
+    record(std::string path, size_t size);
+
+    /**
+     * @brief reset entry from the cache
+     * @param path
+     * @param evict if true, entry is removed from cache, reseted to cnt 0
+     * otherwise
+     * @return [size_update counter, current cached size]
+     */
+    std::pair<size_t, size_t>
+    reset(const std::string& path, bool evict);
+
+    /**
+     * @brief Flush the cache for a given path contacting the corresponding
+     * daemon
+     * @param path
+     * @param evict during flush: if true, entry is removed from cache, reseted
+     * to cnt 0 otherwise
+     * @return error code and flushed size
+     */
+    std::pair<int, off64_t>
+    flush(const std::string& path, bool evict = true);
+
+
+    // GETTER/SETTER
+    size_t
+    flush_threshold() const;
+
+    void
+    flush_threshold(size_t flush_threshold);
+};
+} // namespace file
 } // namespace gkfs::cache
 
 #endif // GKFS_CLIENT_CACHE

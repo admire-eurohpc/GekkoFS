@@ -40,6 +40,14 @@ get_var(const string& name, const string& default_value) {
     return val != nullptr ? string(val) : default_value;
 }
 
+int
+get_var(const string& name, const int default_value) {
+    auto* const val_str = ::secure_getenv(name.c_str());
+    if(!val_str)
+        return default_value;
+    return stoi(val_str);
+}
+
 bool
 var_is_set(const string& name) {
     const char* const val = ::secure_getenv(name.c_str());

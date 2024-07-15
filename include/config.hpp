@@ -52,6 +52,11 @@ constexpr bool use_dentry_cache = false;
 // When enabled, the dentry cache is cleared when a directory is closed.
 // Disabling this may cause semantic issues.
 constexpr bool clear_dentry_cache_on_close = true;
+// When enabled, write operations no longer update the file size on each write.
+// Instead, the size is updated every `write_size_flush_threshold` writes per
+// file. fsync/close flushes the size to the server immediately.
+constexpr bool use_write_size_cache = false;
+constexpr auto write_size_flush_threshold = 100;
 } // namespace cache
 
 namespace client_metrics {

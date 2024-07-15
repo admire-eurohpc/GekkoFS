@@ -259,7 +259,7 @@ init_environment() {
         CTX->distributor(distributor);
     }
 
-    auto use_dcache = gkfs::env::get_var(gkfs::env::DENTRY_CACHE,
+    auto use_dcache = gkfs::env::get_var(gkfs::env::cache::DENTRY,
                                          gkfs::config::cache::use_dentry_cache
                                                  ? "ON"
                                                  : "OFF") == "ON";
@@ -276,10 +276,46 @@ init_environment() {
                            "Failed to initialize dentry cache: "s + e.what());
         }
     } else {
-        if(gkfs::env::var_is_set(gkfs::env::DENTRY_CACHE)) {
+        if(gkfs::env::var_is_set(gkfs::env::cache::DENTRY)) {
             LOG(INFO, "Dentry cache is disabled by environment variable.");
         } else {
             LOG(INFO, "Dentry cache is disabled by configuration.");
+        }
+    }
+
+    auto use_write_size_cache =
+            gkfs::env::get_var(gkfs::env::cache::WRITE_SIZE,
+                               gkfs::config::cache::use_write_size_cache
+                                       ? "ON"
+                                       : "OFF") == "ON";
+    if(use_write_size_cache) {
+        try {
+            LOG(INFO, "Initializing write size cache...");
+            auto write_size_cache =
+                    std::make_shared<gkfs::cache::file::WriteSizeCache>();
+            CTX->write_size_cache(write_size_cache);
+            CTX->write_size_cache()->flush_threshold(gkfs::env::get_var(
+                    gkfs::env::cache::WRITE_SIZE_THRESHOLD,
+                    gkfs::config::cache::write_size_flush_threshold));
+            CTX->use_write_size_cache(true);
+            if(CTX->write_size_cache()->flush_threshold() == 0) {
+                LOG(WARNING,
+                    "Write size cache is enabled but flush threshold is set to 0. Cache is disabled as a result.");
+                CTX->use_write_size_cache(false);
+            } else {
+                LOG(INFO, "Write size cache enabled. Flushing at '{}' writes",
+                    CTX->write_size_cache()->flush_threshold());
+            }
+        } catch(const std::exception& e) {
+            exit_error_msg(EXIT_FAILURE,
+                           "Failed to initialize write size cache: "s +
+                                   e.what());
+        }
+    } else {
+        if(gkfs::env::var_is_set(gkfs::env::cache::WRITE_SIZE)) {
+            LOG(INFO, "Write size cache is disabled by environment variable.");
+        } else {
+            LOG(INFO, "Write size cache is disabled by configuration.");
         }
     }
 
