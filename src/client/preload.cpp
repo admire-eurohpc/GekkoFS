@@ -33,6 +33,7 @@
 #include <client/rpc/forward_management.hpp>
 #include <client/preload_util.hpp>
 #include <client/intercept.hpp>
+#include <client/cache.hpp>
 
 #include <common/rpc/distributor.hpp>
 #include <common/common_defs.hpp>
@@ -256,6 +257,30 @@ init_environment() {
                 CTX->local_host_id(), CTX->hosts().size());
 #endif
         CTX->distributor(distributor);
+    }
+
+    auto use_dcache = gkfs::env::get_var(gkfs::env::DENTRY_CACHE,
+                                         gkfs::config::cache::use_dentry_cache
+                                                 ? "ON"
+                                                 : "OFF") == "ON";
+    if(use_dcache) {
+        try {
+            LOG(INFO, "Initializing dentry caching...");
+            auto dentry_cache =
+                    std::make_shared<gkfs::cache::dir::DentryCache>();
+            CTX->dentry_cache(dentry_cache);
+            LOG(INFO, "dentry caching enabled.");
+            CTX->use_dentry_cache(true);
+        } catch(const std::exception& e) {
+            exit_error_msg(EXIT_FAILURE,
+                           "Failed to initialize dentry cache: "s + e.what());
+        }
+    } else {
+        if(gkfs::env::var_is_set(gkfs::env::DENTRY_CACHE)) {
+            LOG(INFO, "Dentry cache is disabled by environment variable.");
+        } else {
+            LOG(INFO, "Dentry cache is disabled by configuration.");
+        }
     }
 
     LOG(INFO, "Retrieving file system configuration...");

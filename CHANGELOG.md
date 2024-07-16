@@ -8,6 +8,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added a directory cache for the file system client to improve `ls -l` type operations by avoiding consecutive stat calls
+  ([!194](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/194)).
+  - The cache is experimental and thus disabled by default and can be enabled with the env variable `LIBGKFS_DISABLE_DIR_CACHE` set to `ON`.
 - Added file system expansion support ([!196](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/196)).
   - Added the tool `gkfs_malleability` to steer start, status, and finalize requests for expansion operations.
   - `-DGKFS_BUILD_TOOLS=ON` must be set for CMake to build the tool.

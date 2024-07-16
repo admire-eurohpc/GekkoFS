@@ -120,6 +120,8 @@ constexpr auto migrate_metadata = "rpc_srv_migrate_metadata";
 namespace config::syscall::stat {
 // Number 512-byte blocks allocated as it is in the linux kernel (struct_stat.h)
 constexpr auto st_nblocksize = 512;
+constexpr auto file_mode_default = 33188;
+constexpr auto dir_mode_default = 16895;
 } // namespace config::syscall::stat
 } // namespace gkfs
 #endif // GEKKOFS_COMMON_DEFS_HPP

@@ -28,17 +28,17 @@
 
 add_library(data_module
     STATIC
-    )
+)
 
 target_sources(data_module
     PUBLIC
     ${INCLUDE_DIR}/daemon/backend/data/data_module.hpp
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/data_module.cpp
-    )
+)
 
 target_link_libraries(data_module
-  PRIVATE
+    PRIVATE
     log_util
 )
 
@@ -51,7 +51,7 @@ target_sources(storage
     ${INCLUDE_DIR}/common/common_defs.hpp
     ${INCLUDE_DIR}/daemon/backend/data/file_handle.hpp
     ${CMAKE_CURRENT_LIST_DIR}/chunk_storage.cpp
-    )
+)
 
 target_link_libraries(storage
     PRIVATE
@@ -61,7 +61,7 @@ target_link_libraries(storage
     # open issue for std::filesystem https://gitlab.kitware.com/cmake/cmake/-/issues/17834
     stdc++fs
     -ldl
-    )
+)
 
 #target_include_directories(storage
 #    PRIVATE

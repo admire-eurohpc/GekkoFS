@@ -84,7 +84,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
             OUTPUT_VARIABLE GIT_VERSION
             ERROR_VARIABLE GIT_ERR
             OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
+        )
         if ("${GIT_RET}" STREQUAL "0")
             string(REGEX MATCH
                 "^v([0-9]+)\.([0-9]+)\.([0-9]+)-([0-9]+)-(.*)$"
@@ -165,7 +165,7 @@ find_package(Syscall_intercept REQUIRED)
 if (GKFS_ENABLE_AGIOS)
     message(STATUS "[${PROJECT_NAME}] Checking for Agios")
     find_package(AGIOS REQUIRED)
-endif()
+endif ()
 
 if (GKFS_ENABLE_CLIENT_METRICS)
     ### zeromq: required for sending client metrics to FTIO
@@ -174,15 +174,15 @@ if (GKFS_ENABLE_CLIENT_METRICS)
 endif ()
 
 ### Metadata backends
-if(GKFS_ENABLE_ROCKSDB)
+if (GKFS_ENABLE_ROCKSDB)
     message(STATUS "[${PROJECT_NAME}] Checking for RocksDB")
     add_compile_definitions(GKFS_ENABLE_ROCKSDB)
     find_package(RocksDB REQUIRED)
     message(STATUS "[${PROJECT_NAME}] RocksDB version ${RocksDB_VERSION}")
     message(STATUS "[${PROJECT_NAME}] RocksDB location ${RocksDB_DIR}")
-endif()
+endif ()
 
-if(GKFS_ENABLE_PARALLAX)
+if (GKFS_ENABLE_PARALLAX)
     add_compile_definitions(GKFS_ENABLE_PARALLAX)
     # The current version of Parallax has a direct dependency on libyaml and librt.
     # Make sure that we find them and add them as link dependencies..
@@ -196,15 +196,15 @@ if(GKFS_ENABLE_PARALLAX)
     message(STATUS "[${PROJECT_NAME}] Checking for Parallax")
     find_package(Parallax REQUIRED)
     target_link_libraries(Parallax::parallax INTERFACE yaml AIO::AIO)
-endif()
+endif ()
 
 ### Prometheus-cpp: required for the collection of GekkoFS stats
 ### (these expose the prometheus-cpp::pull, prometheus-cpp::push,
 ### prometheus-cpp::core, and curl imported targets
-if(GKFS_ENABLE_PROMETHEUS)
+if (GKFS_ENABLE_PROMETHEUS)
     find_package(CURL 7.68.0 REQUIRED)
     find_package(prometheus-cpp REQUIRED) # >= 1.0.0
-endif()
+endif ()
 
 ### Other stuff that can be found out using find_package:
 
@@ -226,10 +226,10 @@ set(GKFS_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/external)
 ### {fmt}: required for sensible output formatting
 set(FMT_INSTALL OFF)
 include_from_source(fmt
-  MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
-  SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG e57ca2e3685b160617d3d95fcd9e789c4e06ca88 # v10.1.0
+    MESSAGE "[${PROJECT_NAME}] Searching for {fmt}"
+    SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG e57ca2e3685b160617d3d95fcd9e789c4e06ca88 # v10.1.0
 )
 
 # ensure that fmt is linked as PIC
@@ -237,19 +237,19 @@ set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 ### spdlog: required for logging
 include_from_source(spdlog
-  MESSAGE "[${PROJECT_NAME}] Searching for spdlog"
-  SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG eb3220622e73a4889eee355ffa37972b3cac3df5 # v1.9.2
-  )
+    MESSAGE "[${PROJECT_NAME}] Searching for spdlog"
+    SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG eb3220622e73a4889eee355ffa37972b3cac3df5 # v1.9.2
+)
 
 ### CLI11: used for parsing command-line options
 include_from_source(cli11
-  MESSAGE "[${PROJECT_NAME}] Searching for CLI11"
-  SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/CLI11
-  GIT_REPOSITORY https://github.com/CLIUtils/CLI11
-  GIT_TAG v2.2.0
-  )
+    MESSAGE "[${PROJECT_NAME}] Searching for CLI11"
+    SOURCE_DIR ${GKFS_DEPENDENCIES_PATH}/CLI11
+    GIT_REPOSITORY https://github.com/CLIUtils/CLI11
+    GIT_TAG v2.2.0
+)
 
 if (GKFS_ENABLE_CLIENT_METRICS)
     ### MessagePack: used for monitoring information on the client
@@ -264,9 +264,9 @@ endif ()
 ################################################################################
 ## Check configured variables/options and act accordingly
 ################################################################################
-if(GKFS_BUILD_DOCUMENTATION)
+if (GKFS_BUILD_DOCUMENTATION)
     add_subdirectory(docs)
-endif()
+endif ()
 
 if (GKFS_SYMLINK_SUPPORT)
     add_definitions(-DHAS_SYMLINKS)
@@ -287,30 +287,30 @@ if (GKFS_RENAME_SUPPORT)
     add_definitions(-DHAS_RENAME)
 endif ()
 
-if(GKFS_MAX_INTERNAL_FDS)
+if (GKFS_MAX_INTERNAL_FDS)
     add_definitions(-DGKFS_MAX_INTERNAL_FDS=${GKFS_MAX_INTERNAL_FDS})
-endif()
+endif ()
 
-if(GKFS_MAX_OPEN_FDS)
+if (GKFS_MAX_OPEN_FDS)
     add_definitions(-DGKFS_MAX_OPEN_FDS=${GKFS_MAX_OPEN_FDS})
-endif()
+endif ()
 
-if(GKFS_ENABLE_CLIENT_LOG)
+if (GKFS_ENABLE_CLIENT_LOG)
     add_definitions(-DGKFS_ENABLE_LOGGING)
     add_definitions(-DLIBGKFS_LOG_MESSAGE_SIZE=${GKFS_CLIENT_LOG_MESSAGE_SIZE})
 endif ()
 
-if(GKFS_ENABLE_UNUSED_FUNCTIONS)
+if (GKFS_ENABLE_UNUSED_FUNCTIONS)
     add_definitions(-DGKFS_ENABLE_UNUSED_FUNCTIONS)
 endif ()
 
-if(GKFS_ENABLE_PROMETHEUS)
+if (GKFS_ENABLE_PROMETHEUS)
     add_definitions(-DGKFS_ENABLE_PROMETHEUS)
 endif ()
 
 configure_file(include/common/cmake_configure.hpp.in include/common/cmake_configure.hpp)
 
-if(GKFS_ENABLE_CLIENT_LOG)
+if (GKFS_ENABLE_CLIENT_LOG)
     option(HERMES_LOGGING "" ON)
     option(HERMES_LOGGING_FMT_USE_BUNDLED "" OFF)
     option(HERMES_LOGGING_FMT_HEADER_ONLY "" OFF)
@@ -369,15 +369,15 @@ if (GKFS_BUILD_TESTS)
     message(STATUS "[gekkofs] Check for guided distributor tests...")
     if (GKFS_USE_GUIDED_DISTRIBUTION)
         set(GKFS_TESTS_GUIDED_DISTRIBUTION "ON" CACHE STRING "Enable guided distributor tests (default: OFF)")
-    else()
+    else ()
         set(GKFS_TESTS_GUIDED_DISTRIBUTION "OFF" CACHE STRING "Enable guided distributor tests (default: OFF)")
-    endif()
+    endif ()
     message(STATUS "[gekkofs] Guided distributor tests: ${GKFS_TESTS_GUIDED_DISTRIBUTION}")
 
     add_subdirectory(tests)
-else()
+else ()
     unset(GKFS_TESTS_INTERFACE CACHE)
-endif()
+endif ()
 
 ################################################################################
 ## Print GekkoFS configuration summary

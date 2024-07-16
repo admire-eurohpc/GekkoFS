@@ -412,6 +412,27 @@ PreloadContext::fs_conf() const {
     return fs_conf_;
 }
 
+std::shared_ptr<gkfs::cache::dir::DentryCache>
+PreloadContext::dentry_cache() const {
+    return dentry_cache_;
+}
+
+void
+PreloadContext::dentry_cache(
+        std::shared_ptr<gkfs::cache::dir::DentryCache> dentry_cache) {
+    dentry_cache_ = dentry_cache;
+}
+
+bool
+PreloadContext::use_dentry_cache() const {
+    return use_dentry_cache_;
+}
+
+void
+PreloadContext::use_dentry_cache(bool use_dentry_cache) {
+    use_dentry_cache_ = use_dentry_cache;
+}
+
 void
 PreloadContext::enable_interception() {
     interception_enabled_ = true;

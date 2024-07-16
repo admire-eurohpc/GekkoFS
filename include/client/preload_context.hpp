@@ -55,6 +55,12 @@ namespace messagepack {
 class ClientMetrics;
 }
 
+namespace cache {
+namespace dir {
+class DentryCache;
+}
+} // namespace cache
+
 namespace preload {
 /*
  * Client file system config
@@ -90,6 +96,8 @@ private:
     std::shared_ptr<gkfs::filemap::OpenFileMap> ofm_;
     std::shared_ptr<gkfs::rpc::Distributor> distributor_;
     std::shared_ptr<FsConfig> fs_conf_;
+    std::shared_ptr<gkfs::cache::dir::DentryCache> dentry_cache_;
+    bool use_dentry_cache_{false};
 
     std::string cwd_;
     std::vector<std::string> mountdir_components_;
@@ -228,6 +236,19 @@ public:
 
     const std::shared_ptr<FsConfig>&
     fs_conf() const;
+
+    std::shared_ptr<gkfs::cache::dir::DentryCache>
+    dentry_cache() const;
+
+    void
+    dentry_cache(std::shared_ptr<gkfs::cache::dir::DentryCache> dentry_cache);
+
+    bool
+    use_dentry_cache() const;
+
+    void
+    use_dentry_cache(bool use_dentry_cache);
+
 
     void
     enable_interception();

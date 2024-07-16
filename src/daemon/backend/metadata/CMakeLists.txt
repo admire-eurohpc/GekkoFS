@@ -29,54 +29,54 @@
 # Define metadata module library first
 add_library(metadata_module STATIC)
 target_sources(
-  metadata_module
-  PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/metadata_module.hpp
-  PRIVATE metadata_module.cpp
+    metadata_module
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/metadata_module.hpp
+    PRIVATE metadata_module.cpp
 )
 target_link_libraries(metadata_module PRIVATE log_util)
 
 # Define metadata_backend and its common dependencies and sources
 add_library(metadata_backend STATIC)
 target_sources(
-  metadata_backend
-  PUBLIC
+    metadata_backend
+    PUBLIC
     ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/db.hpp
     ${CMAKE_SOURCE_DIR}/include/daemon/backend/exceptions.hpp
     ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/metadata_backend.hpp
-  PRIVATE ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/merge.hpp
-          merge.cpp db.cpp
+    PRIVATE ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/merge.hpp
+    merge.cpp db.cpp
 )
 
 target_link_libraries(
-  metadata_backend
-  PRIVATE metadata_module dl log_util path_util
+    metadata_backend
+    PRIVATE metadata_module dl log_util path_util
 )
 
-if(GKFS_ENABLE_ROCKSDB)
-  target_sources(
-    metadata_backend
-    PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/rocksdb_backend.hpp
-    PRIVATE rocksdb_backend.cpp
-  )
-
-  # If liburing is available in the system, RocksDB will have been built
-  # with liburing support. If so, we need to propagate the dependency to
-  # the daemon. Since liburing exports a pkg-config .pc file, we can use it
-  # to retrieve its details.
-  pkg_check_modules(URING IMPORTED_TARGET liburing)
-
-  if(URING_FOUND)
-    target_link_libraries(metadata_backend PUBLIC PkgConfig::URING)
-  endif()
-
-  target_link_libraries(metadata_backend PUBLIC RocksDB::rocksdb)
-endif()
-
-if(GKFS_ENABLE_PARALLAX)
-  target_sources(metadata_backend
-    PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/parallax_backend.hpp
-    PRIVATE parallax_backend.cpp
+if (GKFS_ENABLE_ROCKSDB)
+    target_sources(
+        metadata_backend
+        PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/rocksdb_backend.hpp
+        PRIVATE rocksdb_backend.cpp
     )
-  target_link_libraries(metadata_backend PUBLIC Parallax::parallax
-    Parallax::log)
-endif()
+
+    # If liburing is available in the system, RocksDB will have been built
+    # with liburing support. If so, we need to propagate the dependency to
+    # the daemon. Since liburing exports a pkg-config .pc file, we can use it
+    # to retrieve its details.
+    pkg_check_modules(URING IMPORTED_TARGET liburing)
+
+    if (URING_FOUND)
+        target_link_libraries(metadata_backend PUBLIC PkgConfig::URING)
+    endif ()
+
+    target_link_libraries(metadata_backend PUBLIC RocksDB::rocksdb)
+endif ()
+
+if (GKFS_ENABLE_PARALLAX)
+    target_sources(metadata_backend
+        PUBLIC ${CMAKE_SOURCE_DIR}/include/daemon/backend/metadata/parallax_backend.hpp
+        PRIVATE parallax_backend.cpp
+    )
+    target_link_libraries(metadata_backend PUBLIC Parallax::parallax
+        Parallax::log)
+endif ()

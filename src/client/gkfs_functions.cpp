@@ -37,6 +37,7 @@
 #include <client/rpc/forward_data.hpp>
 #include <client/rpc/forward_data_proxy.hpp>
 #include <client/open_dir.hpp>
+#include <client/cache.hpp>
 
 #include <common/path_util.hpp>
 #ifdef GKFS_ENABLE_CLIENT_METRICS
@@ -1322,12 +1323,60 @@ gkfs_opendir(const std::string& path) {
     }
 
     if(!S_ISDIR(md->mode())) {
-        LOG(DEBUG, "Path is not a directory");
+        LOG(DEBUG, "{}() Path is not a directory", __func__);
         errno = ENOTDIR;
         return -1;
     }
-
-    auto ret = gkfs::rpc::forward_get_dirents(path);
+    pair<int, shared_ptr<gkfs::filemap::OpenDir>> ret{};
+    // Use cache: Get all entries from all servers for the basic metadata
+    // this is used in get_metadata() later to avoid stat RPCs
+    if(CTX->use_dentry_cache()) {
+        ret.second = make_shared<gkfs::filemap::OpenDir>(path);
+        std::vector<std::future<
+                pair<int, unique_ptr<vector<tuple<const basic_string<char>,
+                                                  bool, size_t, time_t>>>>>>
+                dcache_futures;
+        LOG(DEBUG,
+            "{}() Sending async dirents for path '{}' to '{}' daemons ...",
+            __func__, path, CTX->hosts().size());
+        // Launch RPC calls asynchronously
+        for(uint64_t i = 0; i < CTX->hosts().size(); i++) {
+            dcache_futures.push_back(std::async(std::launch::async, [&, i]() {
+                if(gkfs::config::proxy::fwd_get_dirents_single &&
+                   CTX->use_proxy()) {
+                    return gkfs::rpc::forward_get_dirents_single_proxy(path, i);
+                } else {
+                    return gkfs::rpc::forward_get_dirents_single(path, i);
+                }
+            }));
+        }
+        int cnt = 0;
+        // Collect and process results
+        for(auto& fut : dcache_futures) {
+            auto res = fut.get(); // Wait for the RPC result
+            auto& open_dir = *res.second;
+            for(auto& dentry : open_dir) {
+                // type returns as a boolean. true if it is a directory
+                LOG(DEBUG, "name: {} type: {} size: {} ctime: {}",
+                    get<0>(dentry), get<1>(dentry), get<2>(dentry),
+                    get<3>(dentry));
+                auto ftype = get<1>(dentry) ? gkfs::filemap::FileType::directory
+                                            : gkfs::filemap::FileType::regular;
+                // filename, is_dir, size, ctime
+                ret.second->add(get<0>(dentry), ftype);
+                CTX->dentry_cache()->insert(
+                        path, get<0>(dentry),
+                        gkfs::cache::dir::cache_entry{ftype, get<2>(dentry),
+                                                      get<3>(dentry)});
+                cnt++;
+            }
+            ret.first = res.first;
+        }
+        LOG(DEBUG, "{}() Unpacked dirents for path '{}' counted '{}' entries",
+            __func__, path, cnt);
+    } else {
+        ret = gkfs::rpc::forward_get_dirents(path);
+    }
     auto err = ret.first;
     if(err) {
         errno = err;
@@ -1389,7 +1438,6 @@ gkfs_rmdir(const std::string& path) {
  */
 int
 gkfs_getdents(unsigned int fd, struct linux_dirent* dirp, unsigned int count) {
-
     // Get opendir object (content was downloaded with opendir() call)
     auto open_dir = CTX->file_map()->get_dir(fd);
     if(open_dir == nullptr) {
@@ -1464,7 +1512,6 @@ gkfs_getdents(unsigned int fd, struct linux_dirent* dirp, unsigned int count) {
 int
 gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
                 unsigned int count) {
-
     auto open_dir = CTX->file_map()->get_dir(fd);
     if(open_dir == nullptr) {
         // Cast did not succeeded: open_file is a regular file
@@ -1533,6 +1580,15 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
 int
 gkfs_close(unsigned int fd) {
     if(CTX->file_map()->exist(fd)) {
+        if(CTX->use_dentry_cache() &&
+           gkfs::config::cache::clear_dentry_cache_on_close) {
+            // clear cache for directory
+            if(CTX->file_map()->get(fd)->type() ==
+               gkfs::filemap::FileType::directory) {
+                CTX->dentry_cache()->clear_dir(
+                        CTX->file_map()->get(fd)->path());
+            }
+        }
         // No call to the daemon is required
         CTX->file_map()->remove(fd);
         return 0;
