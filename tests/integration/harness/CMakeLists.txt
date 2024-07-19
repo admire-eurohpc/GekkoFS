@@ -81,10 +81,10 @@ target_link_libraries(gkfs.io
     fmt::fmt
     CLI11::CLI11
     std::filesystem
-    )
+)
 
-if(GKFS_INSTALL_TESTS)
+if (GKFS_INSTALL_TESTS)
     install(TARGETS gkfs.io
         DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
-endif()
+endif ()

@@ -40,42 +40,42 @@ return all variables NOT MATCHING the provided ``<regular_expression>``.
 #]=======================================================================]
 function(get_cmake_variables OUTPUT_VARIABLE)
 
-  set(OPTIONS EXCLUDE)
-  set(SINGLE_VALUE REGEX)
-  set(MULTI_VALUE) # no multiple value args for now
+    set(OPTIONS EXCLUDE)
+    set(SINGLE_VALUE REGEX)
+    set(MULTI_VALUE) # no multiple value args for now
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(WARNING "Unparsed arguments in get_cmake_variables(): "
-                    "this often indicates typos!\n"
-                    "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  get_cmake_property(_var_names VARIABLES)
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(WARNING "Unparsed arguments in get_cmake_variables(): "
+            "this often indicates typos!\n"
+            "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+        )
+    endif ()
 
-  if(NOT ARGS_REGEX)
+    get_cmake_property(_var_names VARIABLES)
+
+    if (NOT ARGS_REGEX)
+        set(${OUTPUT_VARIABLE}
+            ${_var_names}
+            PARENT_SCOPE
+        )
+        return()
+    endif ()
+
+    if (ARGS_EXCLUDE)
+        set(_mode EXCLUDE)
+    else ()
+        set(_mode INCLUDE)
+    endif ()
+
+    list(FILTER _var_names ${_mode} REGEX ${ARGS_REGEX})
     set(${OUTPUT_VARIABLE}
         ${_var_names}
         PARENT_SCOPE
     )
-    return()
-  endif()
-
-  if(ARGS_EXCLUDE)
-    set(_mode EXCLUDE)
-  else()
-    set(_mode INCLUDE)
-  endif()
-
-  list(FILTER _var_names ${_mode} REGEX ${ARGS_REGEX})
-  set(${OUTPUT_VARIABLE}
-      ${_var_names}
-      PARENT_SCOPE
-  )
 endfunction()
 
 #[=======================================================================[.rst:
@@ -89,30 +89,30 @@ the provided ``<regular_expression>``.
 #]=======================================================================]
 function(dump_cmake_variables)
 
-  set(OPTIONS EXCLUDE)
-  set(SINGLE_VALUE REGEX)
-  set(MULTI_VALUE) # no multiple value args for now
+    set(OPTIONS EXCLUDE)
+    set(SINGLE_VALUE REGEX)
+    set(MULTI_VALUE) # no multiple value args for now
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(WARNING "Unparsed arguments in dump_cmake_variables(): "
-                    "this often indicates typos!"
-                    "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  if(ARGS_EXCLUDE AND NOT ARGS_REGEX)
-    message(ERROR "EXCLUDE option doesn't make sense without REGEX.")
-  endif()
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(WARNING "Unparsed arguments in dump_cmake_variables(): "
+            "this often indicates typos!"
+            "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+        )
+    endif ()
 
-  get_cmake_variables(_var_names REGEX ${ARGS_REGEX} ${ARGS_EXCLUDE})
+    if (ARGS_EXCLUDE AND NOT ARGS_REGEX)
+        message(ERROR "EXCLUDE option doesn't make sense without REGEX.")
+    endif ()
 
-  foreach(_var ${_var_names})
-    message(STATUS "${_var}=${${_var}}")
-  endforeach()
+    get_cmake_variables(_var_names REGEX ${ARGS_REGEX} ${ARGS_EXCLUDE})
+
+    foreach (_var ${_var_names})
+        message(STATUS "${_var}=${${_var}}")
+    endforeach ()
 endfunction()
 
 #[=======================================================================[.rst:
@@ -123,28 +123,28 @@ Mark all CMake variables matching ``regular_expression`` as advanced.
 #]=======================================================================]
 function(mark_variables_as_advanced)
 
-  set(OPTIONS) # no options for now
-  set(SINGLE_VALUE REGEX)
-  set(MULTI_VALUE) # no multiple value args for now
+    set(OPTIONS) # no options for now
+    set(SINGLE_VALUE REGEX)
+    set(MULTI_VALUE) # no multiple value args for now
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(WARNING "Unparsed arguments in mark_variables_as_advanced(): "
-                    "this often indicates typos!\n"
-                    "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  get_cmake_property(_var_names VARIABLES)
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(WARNING "Unparsed arguments in mark_variables_as_advanced(): "
+            "this often indicates typos!\n"
+            "Unparsed arguments: ${ARGS_UNPARSED_ARGUMENTS}"
+        )
+    endif ()
 
-  list(FILTER _var_names INCLUDE REGEX ${ARGS_REGEX})
+    get_cmake_property(_var_names VARIABLES)
 
-  foreach(_var ${_var_names})
-    mark_as_advanced(${_var})
-  endforeach()
+    list(FILTER _var_names INCLUDE REGEX ${ARGS_REGEX})
+
+    foreach (_var ${_var_names})
+        mark_as_advanced(${_var})
+    endforeach ()
 endfunction()
 
 
@@ -195,56 +195,56 @@ populated and potentially added to the build by the time it returns.
 #]=======================================================================]
 function(include_from_source contentName)
 
-  set(OPTIONS)
-  set(SINGLE_VALUE MESSAGE SOURCE_DIR GIT_REPOSITORY GIT_TAG)
-  set(MULTI_VALUE)
+    set(OPTIONS)
+    set(SINGLE_VALUE MESSAGE SOURCE_DIR GIT_REPOSITORY GIT_TAG)
+    set(MULTI_VALUE)
 
-  cmake_parse_arguments(ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN})
+    cmake_parse_arguments(ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN})
 
-  if(ARGS_MESSAGE)
-    message(STATUS ${ARGS_MESSAGE})
-  endif()
+    if (ARGS_MESSAGE)
+        message(STATUS ${ARGS_MESSAGE})
+    endif ()
 
-  include(FetchContent)
+    include(FetchContent)
 
-  if (EXISTS ${ARGS_SOURCE_DIR})
-    file(GLOB_RECURSE SOURCE_FILES "${ARGS_SOURCE_DIR}/*")
-    if(SOURCE_FILES STREQUAL "")
-      message(FATAL_ERROR
-        "The '${ARGS_SOURCE_DIR}' source directory appears "
-        "to be empty. If it corresponds to a git submodule it may not have "
-        "been properly initialized. Running:\n"
-        "  'git submodule update --init --recursive'\n"
-        "may fix the issue. If the directory corresponds to a manually "
-        "downloaded dependency, please download it again.")
-    endif()
+    if (EXISTS ${ARGS_SOURCE_DIR})
+        file(GLOB_RECURSE SOURCE_FILES "${ARGS_SOURCE_DIR}/*")
+        if (SOURCE_FILES STREQUAL "")
+            message(FATAL_ERROR
+                "The '${ARGS_SOURCE_DIR}' source directory appears "
+                "to be empty. If it corresponds to a git submodule it may not have "
+                "been properly initialized. Running:\n"
+                "  'git submodule update --init --recursive'\n"
+                "may fix the issue. If the directory corresponds to a manually "
+                "downloaded dependency, please download it again.")
+        endif ()
 
-    message(STATUS "Found source directory for '${contentName}'. Building.")
-    FetchContent_Declare(
-      ${contentName}
-      SOURCE_DIR ${ARGS_SOURCE_DIR}
-    )
-  else()
-    message(STATUS
-      "Source directory for '${contentName}' not found.\n"
-      "Downloading and building from remote Git repository.")
+        message(STATUS "Found source directory for '${contentName}'. Building.")
+        FetchContent_Declare(
+            ${contentName}
+            SOURCE_DIR ${ARGS_SOURCE_DIR}
+        )
+    else ()
+        message(STATUS
+            "Source directory for '${contentName}' not found.\n"
+            "Downloading and building from remote Git repository.")
 
-    if(NOT ARGS_GIT_REPOSITORY)
-      message(FATAL_ERROR "GIT_REPOSITORY for \"${contentName}\" not defined")
-    endif()
+        if (NOT ARGS_GIT_REPOSITORY)
+            message(FATAL_ERROR "GIT_REPOSITORY for \"${contentName}\" not defined")
+        endif ()
 
-    if(NOT ARGS_GIT_TAG)
-      message(FATAL_ERROR "GIT_TAG for \"${contentName}\" not defined")
-    endif()
+        if (NOT ARGS_GIT_TAG)
+            message(FATAL_ERROR "GIT_TAG for \"${contentName}\" not defined")
+        endif ()
 
-    FetchContent_Declare(
-      ${contentName}
-      GIT_REPOSITORY ${ARGS_GIT_REPOSITORY}
-      GIT_TAG ${ARGS_GIT_TAG}
-      GIT_SHALLOW ON
-      GIT_PROGRESS ON
-    )
-  endif()
+        FetchContent_Declare(
+            ${contentName}
+            GIT_REPOSITORY ${ARGS_GIT_REPOSITORY}
+            GIT_TAG ${ARGS_GIT_TAG}
+            GIT_SHALLOW ON
+            GIT_PROGRESS ON
+        )
+    endif ()
 
-  FetchContent_MakeAvailable(${contentName})
+    FetchContent_MakeAvailable(${contentName})
 endfunction()

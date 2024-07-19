@@ -29,15 +29,15 @@
 add_library(helpers STATIC)
 
 target_sources(helpers
-  PRIVATE
+    PRIVATE
     helpers.hpp
     random_string.cpp
     temporary_directory.cpp
     temporary_file.cpp
-  )
+)
 
 target_link_libraries(helpers
-  PUBLIC
+    PUBLIC
     fmt::fmt
     std::filesystem
-  )
+)

@@ -28,16 +28,16 @@
 
 include(gkfs-testing)
 
-if(GKFS_GENERATE_COVERAGE_REPORTS)
-  gkfs_enable_coverage_reports(EXCLUDE_DIRECTORIES
-    "${FETCHCONTENT_BASE_DIR}/*" "${CMAKE_SOURCE_DIR}/external/*" )
-endif()
+if (GKFS_GENERATE_COVERAGE_REPORTS)
+    gkfs_enable_coverage_reports(EXCLUDE_DIRECTORIES
+        "${FETCHCONTENT_BASE_DIR}/*" "${CMAKE_SOURCE_DIR}/external/*")
+endif ()
 
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND}
-            --force-new-ctest-process
-            --verbose
-            --output-on-failure
+    --force-new-ctest-process
+    --verbose
+    --output-on-failure
 )
 
 # integration tests

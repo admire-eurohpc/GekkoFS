@@ -29,9 +29,9 @@
 list(APPEND _parallax_components "log")
 
 find_path(
-  PARALLAX_INCLUDE_DIR
-  NAMES parallax.h
-  PATH_SUFFIXES include
+    PARALLAX_INCLUDE_DIR
+    NAMES parallax.h
+    PATH_SUFFIXES include
 )
 
 find_library(PARALLAX_LIBRARY NAMES parallax)
@@ -42,42 +42,42 @@ mark_as_advanced(PARALLAX_LIBRARY PARALLAX_INCLUDE_DIR PARALLAX_LOG_LIBRARY)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
-  Parallax
-  FOUND_VAR Parallax_FOUND
-  REQUIRED_VARS PARALLAX_LIBRARY PARALLAX_LOG_LIBRARY PARALLAX_INCLUDE_DIR
+    Parallax
+    FOUND_VAR Parallax_FOUND
+    REQUIRED_VARS PARALLAX_LIBRARY PARALLAX_LOG_LIBRARY PARALLAX_INCLUDE_DIR
 )
 
-if(Parallax_FOUND)
-  set(Parallax_INCLUDE_DIRS ${PARALLAX_INCLUDE_DIR})
-  set(Parallax_LIBRARIES ${PARALLAX_LIBRARY} ${PARALLAX_LOG_LIBRARY})
+if (Parallax_FOUND)
+    set(Parallax_INCLUDE_DIRS ${PARALLAX_INCLUDE_DIR})
+    set(Parallax_LIBRARIES ${PARALLAX_LIBRARY} ${PARALLAX_LOG_LIBRARY})
 
-  if(NOT TARGET Parallax::parallax)
-    add_library(Parallax::parallax UNKNOWN IMPORTED)
-  endif()
+    if (NOT TARGET Parallax::parallax)
+        add_library(Parallax::parallax UNKNOWN IMPORTED)
+    endif ()
 
-  set_target_properties(
-    Parallax::parallax
-    PROPERTIES IMPORTED_LOCATION "${PARALLAX_LIBRARY}"
-               INTERFACE_INCLUDE_DIRECTORIES "${PARALLAX_INCLUDE_DIR}"
-               IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-  )
+    set_target_properties(
+        Parallax::parallax
+        PROPERTIES IMPORTED_LOCATION "${PARALLAX_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PARALLAX_INCLUDE_DIR}"
+        IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+    )
 
-  foreach(_component ${_parallax_components})
-    if(NOT TARGET Parallax::${_component})
-      add_library(Parallax::${_component} UNKNOWN IMPORTED)
+    foreach (_component ${_parallax_components})
+        if (NOT TARGET Parallax::${_component})
+            add_library(Parallax::${_component} UNKNOWN IMPORTED)
 
-      if(Parallax_INCLUDE_DIRS)
-        set_target_properties(
-          Parallax::${_component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                             "${PARALLAX_INCLUDE_DIR}"
-        )
+            if (Parallax_INCLUDE_DIRS)
+                set_target_properties(
+                    Parallax::${_component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                    "${PARALLAX_INCLUDE_DIR}"
+                )
 
-        set_target_properties(
-          Parallax::${_component}
-          PROPERTIES IMPORTED_LOCATION "${PARALLAX_LOG_LIBRARY}"
-                     IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-        )
-      endif()
-    endif()
-  endforeach()
-endif()
+                set_target_properties(
+                    Parallax::${_component}
+                    PROPERTIES IMPORTED_LOCATION "${PARALLAX_LOG_LIBRARY}"
+                    IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+                )
+            endif ()
+        endif ()
+    endforeach ()
+endif ()

@@ -27,7 +27,7 @@
 ################################################################################
 
 find_library(Snappy_LIBRARY
-        NAMES snappy
+    NAMES snappy
 )
 
 find_path(Snappy_INCLUDE_DIR
@@ -42,6 +42,6 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Snappy DEFAULT_MSG Snappy_LIBRARY Snappy_INCLUDE_DIR)
 
 mark_as_advanced(
-        Snappy_LIBRARY
-        Snappy_INCLUDE_DIR
+    Snappy_LIBRARY
+    Snappy_INCLUDE_DIR
 )
