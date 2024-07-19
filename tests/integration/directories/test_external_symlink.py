@@ -40,7 +40,7 @@ from harness.logger import logger
 nonexisting = "nonexisting"
 
 #@pytest.mark.xfail(reason="invalid errno returned on success")
-def test_symlink(gkfs_daemon, gkfs_client):
+def test_external_symlink(gkfs_daemon, gkfs_client):
     """Testing different path resolution capabilities: symlinks"""
     pid = os.getpid().__str__()
     mountdir = gkfs_daemon.mountdir

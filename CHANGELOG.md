@@ -71,6 +71,8 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
 
 - An issue that updated the last modified time of a file during `stat` operations was
   fixed([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
+- Fixed a dependency conflict within the pytest dependency marshmallow ([!197](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/197)).
+- Fixed an issue with testing external symbolic links ([!198](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/198)).
 
 ## [0.9.2] - 2024-02
 

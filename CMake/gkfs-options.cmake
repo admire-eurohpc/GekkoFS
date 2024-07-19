@@ -261,7 +261,7 @@ gkfs_define_option(
 gkfs_define_option(
   GKFS_SYMLINK_SUPPORT
   HELP_TEXT "Enable support for symlinks"
-  DEFAULT_VALUE ON
+  DEFAULT_VALUE OFF
   DESCRIPTION "Enable support for symbolic links in paths"
 )
 

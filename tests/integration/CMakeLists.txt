@@ -65,11 +65,15 @@ gkfs_enable_python_testing(
 )
 
 # define CTest tests for functional test groups
+set(DIRECTORY_TESTS "directories/test_directories.py;directories/test_pathresolution.py")
+if(GKFS_FOLLOW_EXTERNAL_SYMLINKS)
+    set(DIRECTORY_TESTS "${DIRECTORY_TESTS}" ";directories/test_external_symlink.py")
+endif()
 gkfs_add_python_test(
     NAME test_directories
     PYTHON_VERSION 3.6
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
-    SOURCE directories/
+    SOURCE ${DIRECTORY_TESTS}
 )
 
 if (GLIBC_HAS_STATX)
@@ -146,7 +150,7 @@ if(GKFS_INSTALL_TESTS)
             PATTERN "gkfs.io" EXCLUDE
     )
 
-    if(GKFS_SYMLINK_SUPPORT)
+    if(GKFS_FOLLOW_EXTERNAL_SYMLINKS)
         install(DIRECTORY directories
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
             FILES_MATCHING
@@ -161,7 +165,7 @@ if(GKFS_INSTALL_TESTS)
         REGEX ".*\\.py"
         PATTERN "__pycache__" EXCLUDE
         PATTERN ".pytest_cache" EXCLUDE
-        PATTERN "test_symlink.py" EXCLUDE
+        PATTERN "test_external_symlink.py" EXCLUDE
 
     )
    endif()
