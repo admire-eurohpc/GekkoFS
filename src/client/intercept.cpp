@@ -1,6 +1,6 @@
 /*
-  Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
-  Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany
+Copyright 2018-2024, Barcelona Supercomputing Center (BSC), Spain
+Copyright 2015-2024, Johannes Gutenberg Universitaet Mainz, Germany/*
 
   This software was partially supported by the
   EC H2020 funded project NEXTGenIO (Project ID: 671951, www.nextgenio.eu).
@@ -31,9 +31,15 @@
 #include <client/preload.hpp>
 #include <client/hooks.hpp>
 #include <client/logging.hpp>
+#include <client/find_path.hpp>
+#include <client/transfer.hpp>
+#include <client/black_list.hpp>
+#include <client/removed_path.hpp>
+#include <client/direct_created.hpp>
 
 #include <optional>
 #include <fmt/format.h>
+
 
 #include <cerrno>
 
@@ -41,27 +47,10 @@ extern "C" {
 #include <syscall.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <printf.h>
 }
 
-
-#ifdef BYPASS_SYSCALL
-int (*intercept_hook_point)(long syscall_number, long arg0, long arg1,
-                            long arg2, long arg3, long arg4, long arg5,
-                            long* result){};
-
-void (*intercept_hook_point_clone_child)(unsigned long flags, void* child_stack,
-                                         int* ptid, int* ctid, long newtls){};
-
-void (*intercept_hook_point_clone_parent)(unsigned long flags,
-                                          void* child_stack, int* ptid,
-                                          int* ctid, long newtls,
-                                          long returned_pid){};
-
-void (*intercept_hook_point_post_kernel)(long syscall_number, long arg0,
-                                         long arg1, long arg2, long arg3,
-                                         long arg4, long arg5, long result){};
-#endif
 namespace {
 
 thread_local bool reentrance_guard_flag;
@@ -445,7 +434,7 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
         gkfs::syscall::from_external_code | gkfs::syscall::to_hook |
                 gkfs::syscall::not_executed,
         syscall_number, args);
-
+    int syserror = 0;
     switch(syscall_number) {
 
         case SYS_execve:
@@ -464,28 +453,111 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
             break;
 #endif
 #ifdef SYS_open
-        case SYS_open:
-            *result = gkfs::hook::hook_openat(
-                    AT_FDCWD, reinterpret_cast<char*>(arg0),
+        case SYS_open: {
+                // Check if the file exists in Gekkofs and respond from Gekkofs
+                struct stat st_open;
+                 int gkfs_result = gkfs::hook::hook_stat(reinterpret_cast<char*>(arg0), &st_open);
+                 int syserror = syscall_error_code(gkfs_result);
+    
+                if (syserror == 0 && check_rm_path((reinterpret_cast<const char*>(arg0)))) {
+                    // The file exists in Gekkofs, return result from Gekkofs
+                    *result = gkfs::hook::hook_openat(AT_FDCWD,
+                                              reinterpret_cast<char*>(arg0),
+                                              static_cast<int>(arg1),
+                                              static_cast<mode_t>(arg2));
+                // check if the file is not in the removing process and it is not exist in the black list
+                } else if (syserror == ENOENT && check_rm_path((reinterpret_cast<const char*>(arg0))) && check_bl_path((reinterpret_cast<const char*>(arg0))) ) {
+                    // The file doesn't exist in Gekkofs, transfer it and then open
+                    auto cache_path = reinterpret_cast<char*>(arg0);
+                    transfer::transfergekko(cache_path);
+        
+                    *result = gkfs::hook::hook_openat(AT_FDCWD,
+                                              reinterpret_cast<char*>(arg0),
+                                              static_cast<int>(arg1),
+                                              static_cast<mode_t>(arg2));
+                } else {
+                    // Leave it for Lustre
+                    *result = syscall_no_intercept_wrapper(
+                    syscall_number, reinterpret_cast<char*>(arg0),
                     static_cast<int>(arg1), static_cast<mode_t>(arg2));
-            break;
+
+                    if(*result > 0) {
+                        *result = CTX->register_internal_fd(*result);
+                    }
+            }
+    
+        break;
+        }
 #endif
 #ifdef SYS_creat
         case SYS_creat:
-            *result = gkfs::hook::hook_openat(
-                    AT_FDCWD, reinterpret_cast<const char*>(arg0),
+            //new_change
+            //I want to create data based on path on Gekkofs or Lustre
+            if (cached_file(reinterpret_cast<const char*>(arg0)) && check_rm_path((reinterpret_cast<const char*>(arg0))) && check_bl_path((reinterpret_cast<const char*>(arg0))) ) {
+                add_dc_path(reinterpret_cast<const char*>(arg0));
+                *result = gkfs::hook::hook_openat(
+                        AT_FDCWD, reinterpret_cast<const char*>(arg0),
+                        O_WRONLY | O_CREAT | O_TRUNC, static_cast<mode_t>(arg1));
+            }
+            //Leave it for Lustre
+            else {
+                *result = syscall_no_intercept_wrapper(
+                    syscall_number, reinterpret_cast<const char*>(arg0),
                     O_WRONLY | O_CREAT | O_TRUNC, static_cast<mode_t>(arg1));
+            }
+                
             break;
 #endif
         case SYS_openat:
-            *result = gkfs::hook::hook_openat(
-                    static_cast<int>(arg0), reinterpret_cast<const char*>(arg1),
-                    static_cast<int>(arg2), static_cast<mode_t>(arg3));
-            break;
 
-        case SYS_close:
-            *result = gkfs::hook::hook_close(static_cast<int>(arg0));
+        case SYS_openat: {
+            // Check if the file exists in Gekkofs
+            struct stat st_openat;
+            *result = gkfs::hook::hook_stat(reinterpret_cast<char*>(arg1), &st_openat);
+            int syserror = syscall_error_code(*result);
+
+            if (syserror == 0 && check_rm_path((reinterpret_cast<const char*>(arg1)))) {
+                // The file exists in Gekkofs and then open
+        
+                *result = gkfs::hook::hook_openat(static_cast<int>(arg0),
+                                          reinterpret_cast<const char*>(arg1),
+                                          static_cast<int>(arg2),
+                                          static_cast<mode_t>(arg3));
+
+            // check if the file is not in the removing process and it is not exist in the black list
+            } else if (syserror == ENOENT && check_rm_path((reinterpret_cast<const char*>(arg1))) && check_bl_path((reinterpret_cast<const char*>(arg0))) ){
+                // The file doesn't exist in Gekkofs, transfer and then  open
+                auto cache_path = reinterpret_cast<char*>(arg1);
+                transfer::transfergekko(cache_path);
+                *result = gkfs::hook::hook_openat(static_cast<int>(arg0),
+                                          reinterpret_cast<const char*>(arg1),
+                                          static_cast<int>(arg2),
+                                          static_cast<mode_t>(arg3));
+            }
+            //Leave It for Lustre
+            else {
+                *result = syscall_no_intercept_wrapper(
+                    syscall_number, static_cast<int>(arg0),
+                    reinterpret_cast<const char*>(arg1), static_cast<int>(arg2),
+                    static_cast<mode_t>(arg3));
+                if(*result > 0) {
+                *result = CTX->register_internal_fd(*result);
+                }
+
+            }
+
             break;
+        }
+        case SYS_close:
+        {
+            *result = gkfs::hook::hook_close(static_cast<int>(arg0));
+            ///Move to Lustre
+            ///new_change
+            ///Stage_out strategy
+            auto cache_path = reinterpret_cast<char*>(arg0);
+            transfer::transferlustre(cache_path);
+            break;
+        }
 #ifdef SYS_stat
         case SYS_stat:
             *result =
@@ -522,6 +594,7 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
             break;
 
         case SYS_read:
+        
             *result = gkfs::hook::hook_read(static_cast<unsigned int>(arg0),
                                             reinterpret_cast<void*>(arg1),
                                             static_cast<size_t>(arg2));
@@ -783,46 +856,6 @@ hook(long syscall_number, long arg0, long arg1, long arg2, long arg3, long arg4,
                     reinterpret_cast<const char*>(arg0),
                     reinterpret_cast<const char*>(arg1),
                     reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
-            break;
-#ifdef SYS_listxattr
-        case SYS_listxattr:
-            *result = gkfs::hook::hook_listxattr(
-                    reinterpret_cast<const char*>(arg0),
-                    reinterpret_cast<char*>(arg1), static_cast<size_t>(arg2));
-            break;
-#endif
-#ifdef SYS_llistxattr
-        case SYS_llistxattr:
-            *result = gkfs::hook::hook_llistxattr(
-                    reinterpret_cast<const char*>(arg0),
-                    reinterpret_cast<char*>(arg1), static_cast<size_t>(arg2));
-            break;
-#endif
-#ifdef SYS_flistxattr
-        case SYS_flistxattr:
-            *result = gkfs::hook::hook_flistxattr(reinterpret_cast<long>(arg0),
-                                                  reinterpret_cast<char*>(arg1),
-                                                  static_cast<size_t>(arg2));
-            break;
-#endif
-
-        case SYS_lgetxattr:
-            *result = gkfs::hook::hook_lgetxattr(
-                    reinterpret_cast<const char*>(arg0),
-                    reinterpret_cast<const char*>(arg1),
-                    reinterpret_cast<void*>(arg2), static_cast<size_t>(arg4));
-            break;
-
-        case SYS_fallocate:
-            *result = gkfs::hook::hook_fallocate(
-                    static_cast<int>(arg0), static_cast<int>(arg1),
-                    static_cast<off_t>(arg2), static_cast<off_t>(arg3));
-            break;
-
-        case SYS_fadvise64:
-            *result = gkfs::hook::hook_fadvise64(
-                    static_cast<int>(arg0), static_cast<off_t>(arg1),
-                    static_cast<off_t>(arg2), static_cast<int>(arg4));
             break;
 
         default:

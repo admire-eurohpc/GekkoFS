@@ -38,6 +38,8 @@ target_sources(
     handler/rpc_util.hpp
     malleability/malleable_manager.hpp
     malleability/rpc/forward_redistribution.hpp
+    stagingdata/flushback.hpp
+    stagingdata/initialize_hsm.hpp
 )
 
 if (GKFS_ENABLE_AGIOS)

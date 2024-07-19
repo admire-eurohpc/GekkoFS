@@ -113,6 +113,22 @@ target_sources(path_util
     ${INCLUDE_DIR}/common/path_util.hpp
 )
 
+# Add staging sources
+add_library(staging STATIC)
+set_property(TARGET staging PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_sources(staging
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/staging/hsm_extension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/staging/hsmrequest.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/staging/stagelist.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/staging/transfer.cpp
+    PUBLIC
+    ${INCLUDE_DIR}/common/staging/hsm_extension.hpp
+    ${INCLUDE_DIR}/common/staging/hsmrequest.hpp
+    ${INCLUDE_DIR}/common/staging/stagelist.hpp
+    ${INCLUDE_DIR}/common/staging/transfer.hpp
+)
+
 if (GKFS_ENABLE_CLIENT_METRICS)
     add_library(msgpack_util STATIC)
     set_property(TARGET msgpack_util PROPERTY POSITION_INDEPENDENT_CODE ON)

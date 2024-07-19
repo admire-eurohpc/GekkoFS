@@ -49,6 +49,7 @@
 #include <daemon/util.hpp>
 #include <daemon/malleability/malleable_manager.hpp>
 #include <CLI/CLI.hpp>
+#include <daemon/stagingdata/intialize_hsm.hpp>
 
 #ifdef GKFS_ENABLE_AGIOS
 #include <daemon/scheduler/agios.hpp>
@@ -557,6 +558,8 @@ init_environment() {
     GKFS_DATA->spdlogger()->debug("{}() MalleableManager running.", __func__);
 
     GKFS_DATA->spdlogger()->info("Startup successful. Daemon is ready.");
+    //setup HSM enviroment and register copytool and starts caching files
+    hsmenv::setup();
 }
 
 #ifdef GKFS_ENABLE_AGIOS
@@ -590,6 +593,9 @@ agios_initialize() {
 void
 destroy_enviroment() {
     std::error_code ecode;
+    //lease hsm enviroment and unregister copytool
+    stageout::flushback();
+    hsmenv::shutdown();
     GKFS_DATA->spdlogger()->debug("{}() Freeing I/O executions streams",
                                   __func__);
     for(unsigned int i = 0; i < RPC_DATA->io_streams().size(); i++) {

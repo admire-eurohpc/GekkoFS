@@ -78,6 +78,9 @@ target_sources(
     rpc/forward_metadata_proxy.cpp
     rpc/forward_malleability.cpp
     syscalls/detail/syscall_info.c syscalls/util.S
+    removed_path.cpp
+    direct_created.cpp
+    black_list.cpp
 )
 
 target_compile_definitions(gkfs_user_lib PUBLIC BYPASS_SYSCALL)

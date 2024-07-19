@@ -31,6 +31,7 @@ to I/O, which reduces interferences and improves performance.
   - [Server-side statistics via Prometheus](#server-side-statistics-via-prometheus)
   - [GekkoFS proxy](#gekkofs-proxy)
   - [File system expansion](#file-system-expansion)
+  - [Lustre hierarchical storage management (HSM) integration](#luster-hierarchical-storage-management-hsm-integration)
 - [Miscellaneous](#miscellaneous)
   - [External functions](#external-functions)
   - [Data placement](#data-placement)
@@ -450,6 +451,133 @@ srun: sending Ctrl-C to StepId=282378.1
 * [gkfs] Stopping daemon with pid 16761
 srun: sending Ctrl-C to StepId=282378.2
 * [gkfs] Shutdown time: 1.032 seconds
+```
+
+## Lustre hierarchical storage management (HSM) integration
+HSM is part of Lustre, which can manage the transferred data on Lustre. With an HSM integration, it can transparently
+transfer data between Lustre and GekkoFS. When a job starts, it receives a config file from the user and starts to
+transfer files from Lustre to GekkoFS. When the job is done or another process from Lustre tries to access a transferred
+file from Lustre, it flushes back the data to Lustre to maintain consistency. It can also let the user run a separate
+job with shared data on two different filesystems, like Lustre as a backend filesystem and GekkoFS as a burst buffer
+cache.
+
+Checkout branch `lustre-hsm-integration` first.
+
+For running, it is necessary to run GekkoFS daemons with administrative permissions. It sends a request to HSM API and
+without that it cannot process the request. It is also necessary to start Cargo (data stager) prior to run GekkoFS.
+
+#### Dependencies
+
+- Transfer tool: Cargo
+- Lustre API library. Using the API requires super user permissions
+- Lustre version: 2.13.0+
+
+#### Lustre API
+
+Working with these functions are necessary for working copy manager with Lustre HSM (with sudo permissions):
+
+```c++
+llapi_hsm_copytool_unregister()
+llapi_hsm_unregister_event_fifo()
+llapi_hsm_register_event_fifo()
+llapi_hsm_copytool_register()
+```
+
+These functions from Lustre API are also used for managing files on Lustre side (also with sudo permissions):
+
+```c++
+llapi_search_fsname()
+//Recieves notification from Lustre HSM
+llapi_hsm_copytool_recv()
+//Notifies HSM Lustre about the progress of file transfer
+llapi_hsm_action_progress()
+//Notifies HSM Lustre about the beginning of file transfer 
+llapi_hsm_action_begin()
+//Notifies HSM Lustre about the completion of file transfer
+llapi_hsm_action_end()
+//Recieves file descriptor from HSM 
+llapi_hsm_action_get_fd()
+//Convert fid to path
+llapi_fid2path()
+//send HSM request
+llapi_hsm_request() 
+```
+
+#### Installing Cargo
+
+1. Use the scripts on the script directory to install the Cargo dependencies first
+2. Install Cargo:
+
+```bash
+cmake \
+-DCMAKE_PREFIX_PATH:STRING="$CMAKE_PREFIX_PATH" \
+-DCMAKE_INSTALL_PREFIX:STRING="$INSTALL_PATH" \
+-DCARGO_TRANSPORT_LIBRARY:STRING=libfabric \
+-DCARGO_BUILD_TESTS:BOOL=ON \
+..
+```
+
+#### Running Cargo
+
+Run the Cargo on the selected address:
+
+```bash
+${INSTALL_DIR}/bin/cargo -l ofi+tcp://127.0.0.1:52000
+```
+
+This command runs cargo on the nodes but GekkoFS needs to have this address to dispatch transfer requests to cargo
+Update the /etc/config.conf file with the same address
+
+```txt
+ofi+tcp://127.0.0.1:52000
+```
+
+#### The user cache preference for HSM hsm_extension
+
+The user can edit the existing file `path.conf` in the `etc` directory to add the preferred file and directory addresses
+for caching purposes. It is necessary to edit this file before running the GekkoFS daemon.
+
+```txt
+\lustre_root
+\gekko_root
+\lustre_root\file1
+\lustre_root\dir1
+```
+
+#### Interception library
+
+Lustre HSM integration receives a system call and, based on that, dispatches the system call between Lustre and GekkoFS.
+It is necessary to load the interception library before running anything else.
+
+```bash
+    export LIBGKFS_HOSTS_FILE=<hostfile_path>
+```
+
+#### Staging library
+
+The staging library provides essential functions for managing transfer operations and controlling connections with the
+HSM. This library is integrated into the building process alongside the daemon and interception library. The daemon and
+interception layer utilize this library for prefetching, flushing data, and updating data status on the HSM.
+
+#### Running the GekkoFS daemon
+
+The HSM extension is integrated into the GekkoFS daemon. Users only need to run one daemon on each node. This daemon
+runs the copy manager, which is responsible for receiving and sending requests to Lustre HSM and is packaged alongside
+the GekkoFS binary. This integrated daemon is tested with sockets and verbs.
+**This command requires administrative permissions to run.**
+
+```bash
+  mpirun -np <N> <install_path>/bin/gkfs_daemon -r <fs_data_path> -m <pseudo_gkfs_mount_dir_path>\
+   -H <hostsfile_path> -P <ofi+sockets\ofi+verbs>
+
+```
+
+#### Running application
+
+For running any application, it is essential to pass the hostsfile and interception library to application.
+
+```bash
+  mpirun -np <N> -x LIBGKFS_HOSTS_FILE="$LIBGKFS_HOSTS_FILE" -x LD_PRELOAD="$LIBGKFS_INTERCEPT" "$APP_BIN"
 ```
 
 # Miscellaneous

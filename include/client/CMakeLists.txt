@@ -43,6 +43,9 @@ target_sources(
     preload_context.hpp
     preload_util.hpp
     cache.hpp
+    direct_created.hpp
+    find_path.hpp
+    removed_path.hpp
     rpc/rpc_types.hpp
     rpc/forward_management.hpp
     rpc/forward_metadata.hpp
@@ -70,6 +73,9 @@ target_sources(
     preload_context.hpp
     preload_util.hpp
     cache.hpp
+    direct_created.hpp
+    find_path.hpp
+    removed_path.hpp
     rpc/rpc_types.hpp
     rpc/forward_management.hpp
     rpc/forward_metadata.hpp
