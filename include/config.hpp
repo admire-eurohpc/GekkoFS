@@ -56,7 +56,7 @@ constexpr bool clear_dentry_cache_on_close = true;
 // Instead, the size is updated every `write_size_flush_threshold` writes per
 // file. fsync/close flushes the size to the server immediately.
 constexpr bool use_write_size_cache = false;
-constexpr auto write_size_flush_threshold = 100;
+constexpr auto write_size_flush_threshold = 1000;
 } // namespace cache
 
 namespace client_metrics {
