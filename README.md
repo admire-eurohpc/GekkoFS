@@ -4,6 +4,11 @@
 [![pipeline status](https://storage.bsc.es/gitlab/hpc/gekkofs/badges/master/pipeline.svg)](https://storage.bsc.es/gitlab/hpc/gekkofs/commits/master)
 [![coverage report](https://storage.bsc.es/gitlab/hpc/gekkofs/badges/master/coverage.svg)](https://storage.bsc.es/gitlab/hpc/gekkofs/-/commits/master)
 
+| :warning: WARNING :warning:                                                                                                                                                                                                                                                   |
+|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| *This repository is only used for the purpose of publishing GekkoFS v0.9.3. Please refer to the [official SSEC GitLab<sup>1</sup>](https://storage.bsc.es/gitlab/hpc/gekkofs) to report any issues, contribute PR or just to find the latest development version of GekkoFS.* |
+| <sup>1</sup>Information on how to get an SSEC collaborator account can be found [here](https://storage.bsc.es/helpdesk/).                                                                                                                                                     |
+
 GekkoFS is a file system capable of aggregating the local I/O capacity and performance of each compute node
 in a HPC cluster to produce a high-performance storage space that can be accessed in a distributed manner.
 This storage space allows HPC applications and simulations to run in isolation from each other with regards
