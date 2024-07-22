@@ -9,10 +9,42 @@ in a HPC cluster to produce a high-performance storage space that can be accesse
 This storage space allows HPC applications and simulations to run in isolation from each other with regards
 to I/O, which reduces interferences and improves performance.
 
+# Table of contents
+
+- [Dependencies](#dependencies)
+  - [Debian/Ubuntu](#debianubuntu)
+  - [CentOS/Red Hat](#centosred-hat)
+- [Step-by-step installation](#step-by-step-installation)
+- [Run GekkoFS](#run-gekkofs)
+  - [The GekkoFS hostsfile](#the-gekkofs-hostsfile)
+  - [The GekkoFS daemon](#the-gekkofs-daemon)
+    - [Manual startup and shut down](#manual-startup-and-shut-down)
+    - [GekkoFS daemon orchestration via the gkfs script (recommended)](#gekkofs-daemon-orchestration-via-the-gkfs-script-recommended)
+  - [The GekkoFS client library](#the-gekkofs-client-library)
+    - [Interposition library via system call interception](#interposition-library-via-system-call-interception)
+    - [User library via linking against the application](#user-library-via-linking-against-the-application)
+  - [Logging](#logging)
+- [Advanced and experimental features](#advanced-and-experimental-features)
+  - [Rename](#rename)
+  - [Replication](#replication)
+  - [Client-side metrics via MessagePack and ZeroMQ](#client-side-metrics-via-messagepack-and-zeromq)
+  - [Server-side statistics via Prometheus](#server-side-statistics-via-prometheus)
+  - [GekkoFS proxy](#gekkofs-proxy)
+  - [File system expansion](#file-system-expansion)
+- [Miscellaneous](#miscellaneous)
+  - [External functions](#external-functions)
+  - [Data placement](#data-placement)
+    - [Simple Hash (Default)](#simple-hash-default)
+    - [Guided Distributor](#guided-distributor)
+  - [Metadata Backends](#metadata-backends)
+  - [CMake options](#cmake-options)
+  - [Environment variables](#environment-variables)
+- [Acknowledgment](#acknowledgment)
+
 # Dependencies
 
-- \>gcc-8 (including g++) for C++11 support
-- General build tools: Git, Curl, CMake >3.6 (>3.11 for GekkoFS testing), Autoconf, Automake
+- \>gcc-12 (including g++) for C++17 support
+- General build tools: Git, Curl, CMake >3.13, Autoconf, Automake
 - Miscellaneous: Libtool, Libconfig
 
 ### Debian/Ubuntu
@@ -57,14 +89,12 @@ GekkoFS is now available at:
 - GekkoFS daemon (server): `<install_path>/bin/gkfs_daemon`
 - GekkoFS client interception library: `<install_path>/lib64/libgkfs_intercept.so`
 
-## Use Spack to install GekkoFS (alternative)
+## Spack for installing GekkoFS (alternative)
 
 The Spack tool can be used to easily install GekkoFS and its dependencies. Refer to the
 following [README](scripts/spack/README.md) for details.
 
 # Run GekkoFS
-
-## General
 
 On each node a daemon (`gkfs_daemon` binary) has to be started. Other tools can be used to execute
 the binary on many nodes, e.g., `srun`, `mpiexec/mpirun`, `pdsh`, or `pssh`.
@@ -89,7 +119,11 @@ GPFS or Lustre.
 
 *Note: NFS is not strongly consistent and cannot be used for the hosts file!*
 
-## GekkoFS daemon start and shut down
+## The GekkoFS daemon
+
+The GekkoFS daemon is the server component of GekkoFS. It is responsible for managing the file system data and metadata. There are two options to run the daemons on one or several nodes: (1) manually by executing the `gkfs_daemon` binary directly or (2) by using the `gkfs` script (recommended).
+
+### Manual startup and shut down
 
 tl;dr example: `<install_path>/bin/gkfs_daemon -r <fs_data_path> -m <pseudo_gkfs_mount_dir_path> -H <hostsfile_path>`
 
@@ -137,29 +171,7 @@ are part of the same file system, use the same `rootdir` with different `rootdir
 
 Shut it down by gracefully killing the process (SIGTERM).
 
-## Use the GekkoFS client library
-
-tl;dr example:
-
-```bash
-export LIBGKFS_ HOSTS_FILE=<hostfile_path>
-LD_PRELOAD=<install_path>/lib64/libgkfs_intercept.so cp ~/some_input_data <pseudo_gkfs_mount_dir_path>/some_input_data
-LD_PRELOAD=<install_path>/lib64/libgkfs_intercept.so md5sum ~/some_input_data <pseudo_gkfs_mount_dir_path>/some_input_data
-```
-
-Clients read the hostsfile to determine which daemons are part of the GekkoFS instance. Because the client is an
-interposition library that is loaded within the context of the application, this information is passed via the
-environment variable `LIBGKFS_HOSTS_FILE` pointing to the hostsfile path. The client library itself is loaded for each
-application process via the `LD_PRELOAD` environment variable intercepting file system related calls. If they are
-within (or hierarchically under) the GekkoFS mount directory they are processed in the library, otherwise they are
-passed to the kernel.
-
-Note, if `LD_PRELOAD` is not pointing to the library and, hence the client is not loaded, the mounting directory appears
-to be empty.
-
-For MPI application, the `LD_PRELOAD` variable can be passed with the `-x` argument for `mpirun/mpiexec`.
-
-## Run GekkoFS daemons on multiple nodes
+### GekkoFS daemon orchestration via the `gkfs` script (recommended)
 
 The `scripts/run/gkfs` script can be used to simplify starting the GekkoFS daemon on one or multiple nodes. To start
 GekkoFS on multiple nodes, a Slurm environment that can execute `srun` is required. Users can further
@@ -198,7 +210,39 @@ usage: gkfs [-h/--help] [-r/--rootdir <path>] [-m/--mountdir <path>] [-a/--args 
             -v, --verbose           Increase verbosity
 ```
 
-### Logging
+## The GekkoFS client library
+
+### Interposition library via system call interception
+
+tl;dr example:
+
+```bash
+export LIBGKFS_ HOSTS_FILE=<hostfile_path>
+LD_PRELOAD=<install_path>/lib64/libgkfs_intercept.so cp ~/some_input_data <pseudo_gkfs_mount_dir_path>/some_input_data
+LD_PRELOAD=<install_path>/lib64/libgkfs_intercept.so md5sum ~/some_input_data <pseudo_gkfs_mount_dir_path>/some_input_data
+```
+
+Clients read the hostsfile to determine which daemons are part of the GekkoFS instance. Because the client is an
+interposition library that is loaded within the context of the application, this information is passed via the
+environment variable `LIBGKFS_HOSTS_FILE` pointing to the hostsfile path. The client library itself is loaded for each
+application process via the `LD_PRELOAD` environment variable intercepting file system related calls. If they are
+within (or hierarchically under) the GekkoFS mount directory they are processed in the library, otherwise they are
+passed to the kernel.
+
+Note, if `LD_PRELOAD` is not pointing to the library and, hence the client is not loaded, the mounting directory appears
+to be empty.
+
+For MPI application, the `LD_PRELOAD` variable can be passed with the `-x` argument for `mpirun/mpiexec`.
+
+### User library via linking against the application
+
+GekkoFS offers a user library that can be linked against the application, which is built by default:
+`libgkfs_user_lib.so` shared library. The corresponding API and developer headers are available in
+`include/client/user_functions.hpp`. Please consult `examples/user_library` for details.
+
+In this case, `LD_PRELOAD` is not necessary. Nevertheless, `LIBGKFS_HOSTS_FILE` is still required.
+
+## Logging
 
 The following environment variables can be used to enable logging in the client library: `LIBGKFS_LOG=<module>`
 and `LIBGKFS_LOG_OUTPUT=<path/to/file>` to configure the output module and set the path to the log file of the client
@@ -244,6 +288,170 @@ For the daemon, the `GKFS_DAEMON_LOG_PATH=<path/to/file>` environment variable c
 log file, and the log module can be selected with the `GKFS_DAEMON_LOG_LEVEL={off,critical,err,warn,info,debug,trace}`
 environment variable.
 
+# Advanced and experimental features
+
+## Rename
+
+`-DGKFS_RENAME_SUPPORT` allows the application to rename files.
+This is an experimental feature, and some scenarios may not work properly.
+Support for fstat in renamed files is included.
+
+This is disabled by default.
+
+## Replication
+
+The user can enable the data replication feature by setting the replication environment variable:
+`LIBGKFS_NUM_REPL=<num repl>`.
+The number of replicas should go from `0` to the `number of servers - 1`. The replication environment variable can be
+set up for each client independently.
+
+## Client-side metrics via MessagePack and ZeroMQ
+
+GekkoFS clients support capturing the I/O traces of each individual process and periodically exporting them to a given
+file or ZeroMQ sink via the TCP protocol.
+To use this feature, the corresponding ZeroMQ (`libzmq` and `cppzmq`) dependencies are required which can be found in
+the `default_zmq` dependency profile.
+In addition, GekkoFS must be compiled with client metrics enabled (disabled by default) via the CMake argument
+`-DGKFS_ENABLE_CLIENT_METRICS=ON`.
+
+Client metrics are individually enabled per GekkoFS client process via the following environment variables:
+
+- `LIBGKFS_ENABLE_METRICS=ON` enables capturing client-side metrics.
+- `LIBGKFS_METRICS_FLUSH_INTERVAL=10` sets the flush interval to 10 seconds (defaults to 5). All outstanding client
+  metrics are flushed when the process ends.
+- `LIBGKFS_METRICS_PATH=<path>` sets the path to flush client-metrics (defaults to `/tmp/gkfs_client_metrics`).
+- `LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555` enables flushing to a set ZeroMQ server. This option disables flushing to a
+  file.
+
+The ZeroMQ export can be tested via the `gkfs_clientmetrics2json` application which is built when enabling the CMake
+option `-DGKFS_BUILD_TOOLS=ON`:
+
+- Starting the ZeroMQ server: `gkfs_clientmetrics2json tcp://127.0.0.1:5555`
+- `gkfs_clientmetrics2json <path>` can also be used to unpack the Messagepack export from a file.
+  Examplarily output with the ZeroMQ sink enabled when running:
+  `LD_PRELOAD=libgkfs_intercept.so LIBGKFS_ENABLE_METRICS=ON LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555 gkfs cp testfile /tmp/gkfs_mountdir/testfile`:
+
+```bash
+~ $ gkfs_clientmetrics2json tcp://127.0.0.1:5555
+Binding to: tcp://127.0.0.1:5555
+Waiting for message...
+
+Received message with size 68
+Generated JSON:
+[extra]avg_thruput_mib: [221.93,175.87,266.81,135.69]
+end_t_micro: [8008,12396,16006,18454]
+flush_t: 18564
+hostname: "evie"
+io_type: "w"
+pid: 1259304
+req_size: [524288,524288,524288,229502]
+start_t_micro: [5755,9553,14132,16841]
+total_bytes: 1802366
+total_iops: 4
+```
+
+## Server-side statistics via Prometheus
+
+GekkoFS daemons are able to output general operations (`--enable-collection`) and data chunk
+statistics (`--enable-chunkstats`) to a specified output file via `--output-stats <FILE>`. Prometheus can also be used
+instead or in addition to the output file. It must be enabled at compile time via the CMake
+argument `-DGKFS_ENABLE_PROMETHEUS` and the daemon argument `--enable-prometheus`. The corresponding statistics are then
+pushed to the Prometheus instance.
+
+## GekkoFS proxy
+
+The GekkoFS proxy is an additional (alternative) component that runs on each client and acts as gateway between the
+client and daemons. It can improve network stability, e.g., for opa-psm2, and provides a basis for future asynchronous
+I/O as well as client caching techniques to control file system semantics.
+
+The `gkfs` script fully supports the GekkoFS proxy and an example can be found in `scripts/run`. When using the proxy
+manually additional arguments are required on the daemon side, i.e., which network interface and protocol should be
+used:
+
+```bash
+<daemon args> --proxy-listen eno1 --proxy-protocol ofi+sockets
+```
+
+The proxy is started thereafter:
+
+```bash
+./gkfs_proxy -H ./gkfs_hostfile --pid-path ./vef_gkfs_proxy.pid -p ofi+sockets
+```
+
+The shared hostfile was generated by the daemons whereas the pid_path is local to the machine and is
+detected by clients. The pid-path defaults to `/tmp/gkfs_proxy.pid`.
+
+Under default operation, clients detect automatically whether to use the proxy. If another proxy path is used, the
+environment variable `LIBGKFS_PROXY_PID_FILE` can be set for the clients.
+
+Alternatively, the `gkfs` automatically sets all required arguments:
+
+```bash
+scripts/run/gkfs -c scripts/run/gkfs.conf -f start --proxy
+* [gkfs] Starting GekkoFS daemons (1 nodes) ...
+* [gkfs] GekkoFS daemons running
+* [gkfs] Startup time: 2.013 seconds
+* [gkfs] Starting GekkoFS proxies (1 nodes) ...
+* [gkfs] GekkoFS proxies running
+* [gkfs] Startup time: 5.002 seconds
+Press 'q' to exit
+```
+
+Please consult `include/config.hpp` for additional configuration options. Note, GekkoFS proxy does not support
+replication.
+
+## File system expansion
+
+GekkoFS supports extending the current daemon configuration to additional compute nodes. This includes redistribution of
+the existing data and metadata and therefore scales file system performance and capacity of existing data. Note,
+that it is the user's responsibility to not access the GekkoFS file system during redistribution. A corresponding
+feature that is transparent to the user is planned. Note also, if the GekkoFS proxy is used, they need to be manually
+restarted, after expansion.
+
+To enable this feature, the following CMake compilation flags are required to build the `gkfs_malleability` tool:
+`-DGKFS_BUILD_TOOLS=ON`. The `gkfs_malleability` tool is then available in the `build/tools` directory. Please consult
+`-h` for its arguments. While the tool can be used manually to expand the file system, the `scripts/run/gkfs` script
+should be used instead which invokes the `gkfs_malleability` tool.
+
+The only requirement for extending the file system is a hostfile containing the hostnames/IPs of the new nodes (one line
+per host). Example starting the file system. The `DAEMON_NODELIST` in the `gkfs.conf` is set to a hostfile containing
+the initial set of file system nodes.:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf start
+* [gkfs] Starting GekkoFS daemons (4 nodes) ...
+* [gkfs] GekkoFS daemons running
+* [gkfs] Startup time: 10.853 seconds
+```
+
+... Some computation ...
+
+Expanding the file system. Using `-e <hostfile>` to specify the new nodes. Redistribution is done automatically with a
+progress bar. When finished, the file system is ready to use in the new configuration:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf -e ~/hostfile_expand expand
+* [gkfs] Starting GekkoFS daemons (8 nodes) ...
+* [gkfs] GekkoFS daemons running
+* [gkfs] Startup time: 1.058 seconds
+Expansion process from 4 nodes to 12 nodes launched...
+* [gkfs] Expansion progress:
+[####################] 0/4 left
+* [gkfs] Redistribution process done. Finalizing ...
+* [gkfs] Expansion done.
+```
+
+Stop the file system:
+
+```bash
+~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf stop
+* [gkfs] Stopping daemon with pid 16462
+srun: sending Ctrl-C to StepId=282378.1
+* [gkfs] Stopping daemon with pid 16761
+srun: sending Ctrl-C to StepId=282378.2
+* [gkfs] Shutdown time: 1.032 seconds
+```
+
 # Miscellaneous
 
 ## External functions
@@ -252,7 +460,7 @@ GekkoFS allows to use external functions on your client code, via LD_PRELOAD.
 Source code needs to be compiled with -fPIC. We include a pfind io500 substitution,
 `examples/gfind/gfind.cpp` and a non-mpi version `examples/gfind/sfind.cpp`
 
-## Data distributors
+## Data placement
 
 The data distribution can be selected at compilation time, we have 2 distributors available:
 
@@ -305,171 +513,7 @@ with `-DGKFS_ENABLE_ROCKSDB:BOOL=OFF`.
 
 Once it is enabled, `--dbbackend` option will be functional.
 
-## Statistics
-
-GekkoFS daemons are able to output general operations (`--enable-collection`) and data chunk
-statistics (`--enable-chunkstats`) to a specified output file via `--output-stats <FILE>`. Prometheus can also be used
-instead or in addition to the output file. It must be enabled at compile time via the CMake
-argument `-DGKFS_ENABLE_PROMETHEUS` and the daemon argument `--enable-prometheus`. The corresponding statistics are then
-pushed to the Prometheus instance.
-
-## Advanced and experimental features
-
-### Rename
-
-`-DGKFS_RENAME_SUPPORT` allows the application to rename files.
-This is an experimental feature, and some scenarios may not work properly.
-Support for fstat in renamed files is included.
-
-This is disabled by default.
-
-### Replication
-
-The user can enable the data replication feature by setting the replication environment variable:
-`LIBGKFS_NUM_REPL=<num repl>`.
-The number of replicas should go from `0` to the `number of servers - 1`. The replication environment variable can be
-set up for each client independently.
-
-### Client metrics via MessagePack and ZeroMQ
-
-GekkoFS clients support capturing the I/O traces of each individual process and periodically exporting them to a given
-file or ZeroMQ sink via the TCP protocol.
-To use this feature, the corresponding ZeroMQ (`libzmq` and `cppzmq`) dependencies are required which can be found in
-the `default_zmq` dependency profile.
-In addition, GekkoFS must be compiled with client metrics enabled (disabled by default) via the CMake argument
-`-DGKFS_ENABLE_CLIENT_METRICS=ON`.
-
-Client metrics are individually enabled per GekkoFS client process via the following environment variables:
-
-- `LIBGKFS_ENABLE_METRICS=ON` enables capturing client-side metrics.
-- `LIBGKFS_METRICS_FLUSH_INTERVAL=10` sets the flush interval to 10 seconds (defaults to 5). All outstanding client
-  metrics are flushed when the process ends.
-- `LIBGKFS_METRICS_PATH=<path>` sets the path to flush client-metrics (defaults to `/tmp/gkfs_client_metrics`).
-- `LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555` enables flushing to a set ZeroMQ server. This option disables flushing to a
-  file.
-
-The ZeroMQ export can be tested via the `gkfs_clientmetrics2json` application which is built when enabling the CMake
-option `-DGKFS_BUILD_TOOLS=ON`:
-
-- Starting the ZeroMQ server: `gkfs_clientmetrics2json tcp://127.0.0.1:5555`
-- `gkfs_clientmetrics2json <path>` can also be used to unpack the Messagepack export from a file.
-  Examplarily output with the ZeroMQ sink enabled when running:
-  `LD_PRELOAD=libgkfs_intercept.so LIBGKFS_ENABLE_METRICS=ON LIBGKFS_METRICS_IP_PORT=127.0.0.1:5555 gkfs cp testfile /tmp/gkfs_mountdir/testfile`:
-
-```bash
-~ $ gkfs_clientmetrics2json tcp://127.0.0.1:5555
-Binding to: tcp://127.0.0.1:5555
-Waiting for message...
-
-Received message with size 68
-Generated JSON:
-[extra]avg_thruput_mib: [221.93,175.87,266.81,135.69]
-end_t_micro: [8008,12396,16006,18454]
-flush_t: 18564
-hostname: "evie"
-io_type: "w"
-pid: 1259304
-req_size: [524288,524288,524288,229502]
-start_t_micro: [5755,9553,14132,16841]
-total_bytes: 1802366
-total_iops: 4
-```
-
-### GekkoFS proxy
-
-The GekkoFS proxy is an additional (alternative) component that runs on each client and acts as gateway between the
-client and daemons. It can improve network stability, e.g., for opa-psm2, and provides a basis for future asynchronous
-I/O as well as client caching techniques to control file system semantics.
-
-The `gkfs` script fully supports the GekkoFS proxy and an example can be found in `scripts/run`. When using the proxy
-manually additional arguments are required on the daemon side, i.e., which network interface and protocol should be
-used:
-
-```bash
-<daemon args> --proxy-listen eno1 --proxy-protocol ofi+sockets
-```
-
-The proxy is started thereafter:
-
-```bash
-./gkfs_proxy -H ./gkfs_hostfile --pid-path ./vef_gkfs_proxy.pid -p ofi+sockets
-```
-
-The shared hostfile was generated by the daemons whereas the pid_path is local to the machine and is
-detected by clients. The pid-path defaults to `/tmp/gkfs_proxy.pid`.
-
-Under default operation, clients detect automatically whether to use the proxy. If another proxy path is used, the
-environment variable `LIBGKFS_PROXY_PID_FILE` can be set for the clients.
-
-Alternatively, the `gkfs` automatically sets all required arguments:
-
-```bash
-scripts/run/gkfs -c scripts/run/gkfs.conf -f start --proxy
-* [gkfs] Starting GekkoFS daemons (1 nodes) ...
-* [gkfs] GekkoFS daemons running
-* [gkfs] Startup time: 2.013 seconds
-* [gkfs] Starting GekkoFS proxies (1 nodes) ...
-* [gkfs] GekkoFS proxies running
-* [gkfs] Startup time: 5.002 seconds
-Press 'q' to exit
-```
-
-Please consult `include/config.hpp` for additional configuration options. Note, GekkoFS proxy does not support
-replication.
-
-### File system expansion
-
-GekkoFS supports extending the current daemon configuration to additional compute nodes. This includes redistribution of
-the existing data and metadata and therefore scales file system performance and capacity of existing data. Note,
-that it is the user's responsibility to not access the GekkoFS file system during redistribution. A corresponding
-feature that is transparent to the user is planned. Note also, if the GekkoFS proxy is used, they need to be manually
-restarted, after expansion.
-
-To enable this feature, the following CMake compilation flags are required to build the `gkfs_malleability` tool:
-`-DGKFS_BUILD_TOOLS=ON`. The `gkfs_malleability` tool is then available in the `build/tools` directory. Please consult
-`-h` for its arguments. While the tool can be used manually to expand the file system, the `scripts/run/gkfs` script
-should be used instead which invokes the `gkfs_malleability` tool.
-
-The only requirement for extending the file system is a hostfile containing the hostnames/IPs of the new nodes (one line
-per host). Example starting the file system. The `DAEMON_NODELIST` in the `gkfs.conf` is set to a hostfile containing
-the initial set of file system nodes.:
-
-```bash
-~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf start
-* [gkfs] Starting GekkoFS daemons (4 nodes) ...
-* [gkfs] GekkoFS daemons running
-* [gkfs] Startup time: 10.853 seconds
-```
-
-... Some computation ...
-
-Expanding the file system. Using `-e <hostfile>` to specify the new nodes. Redistribution is done automatically with a
-progress bar. When finished, the file system is ready to use in the new configuration:
-
-```bash
-~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf -e ~/hostfile_expand expand
-* [gkfs] Starting GekkoFS daemons (8 nodes) ...
-* [gkfs] GekkoFS daemons running
-* [gkfs] Startup time: 1.058 seconds
-Expansion process from 4 nodes to 12 nodes launched...
-* [gkfs] Expansion progress:
-[####################] 0/4 left
-* [gkfs] Redistribution process done. Finalizing ...
-* [gkfs] Expansion done.
-```
-
-Stop the file system:
-
-```bash
-~/gekkofs/scripts/run/gkfs -c ~/run/gkfs_verbs_expandtest.conf stop
-* [gkfs] Stopping daemon with pid 16462
-srun: sending Ctrl-C to StepId=282378.1
-* [gkfs] Stopping daemon with pid 16761
-srun: sending Ctrl-C to StepId=282378.2
-* [gkfs] Shutdown time: 1.032 seconds
-```
-
-## All CMake options
+## CMake options
 
 #### Core
 - `GKFS_BUILD_TOOLS` - Build tools (default: OFF)
@@ -495,7 +539,7 @@ srun: sending Ctrl-C to StepId=282378.2
 - `GKFS_ENABLE_ROCKSDB` - Enable RocksDB metadata backend (default: ON)
 - `GKFS_ENABLE_PARALLAX` - Enable Parallax metadata support (default: OFF)
 
-## All environment variables
+## Environment variables
 The GekkoFS daemon, client, and proxy support a number of environment variables to augment its functionality:
 
 ### Client
@@ -545,7 +589,7 @@ until the file is closed. The cache does not impact the consistency of the file 
 - `GKFS_PROXY_LOG_PATH` - Path to the log file of the proxy.
 - `GKFS_PROXY_LOG_LEVEL` - Log level of the proxy. Available levels are: `off`, `critical`, `err`, `warn`, `info`, `debug`, `trace`.
 
-## Acknowledgment
+# Acknowledgment
 
 This software was partially supported by the EC H2020 funded NEXTGenIO project (Project ID: 671951, www.nextgenio.eu).
 

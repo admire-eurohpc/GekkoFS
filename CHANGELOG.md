@@ -7,7 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 ### New
+### Changed
+### Removed
+### Fixed
 
+## [0.9.3] - 2024-07
+### New
 - Added a write size cache to the file system client to reduce potential metadata network bottlenecks during small I/O
   operations ([!193](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/193)).
   - The cache is experimental and thus disabled by default. Added the following environment variables.
@@ -62,9 +67,7 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
   - Modified write and reads to use a bitset instead of the traditional hash per chunk in the server.
   - Added reattemp support in get_fs_config to other servers, when the initial server fails.
 
-
 ### Changed
-
 - Updated GekkoFS dependencies migrating to
   margo-shim-hg ([!165](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/165)).
   - Improves RPC stability
@@ -74,10 +77,7 @@ replicas ([!166](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/141)
     use of syscall for following symlinks optional
     ([!183](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/183)).
 
-
-### Removed
 ### Fixed
-
 - An issue that updated the last modified time of a file during `stat` operations was
   fixed([!176](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/176)).
 - Fixed a dependency conflict within the pytest dependency marshmallow ([!197](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_request/197)).
