@@ -44,7 +44,7 @@ to I/O, which reduces interferences and improves performance.
 # Dependencies
 
 - \>gcc-12 (including g++) for C++17 support
-- General build tools: Git, Curl, CMake >3.6 (>3.11 for GekkoFS testing), Autoconf, Automake
+- General build tools: Git, Curl, CMake >3.13, Autoconf, Automake
 - Miscellaneous: Libtool, Libconfig
 
 ### Debian/Ubuntu
