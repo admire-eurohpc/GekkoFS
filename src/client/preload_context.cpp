@@ -433,6 +433,27 @@ PreloadContext::use_dentry_cache(bool use_dentry_cache) {
     use_dentry_cache_ = use_dentry_cache;
 }
 
+std::shared_ptr<gkfs::cache::file::WriteSizeCache>
+PreloadContext::write_size_cache() const {
+    return write_size_cache_;
+}
+
+void
+PreloadContext::write_size_cache(
+        std::shared_ptr<gkfs::cache::file::WriteSizeCache> write_size_cache) {
+    write_size_cache_ = write_size_cache;
+}
+
+bool
+PreloadContext::use_write_size_cache() const {
+    return use_write_size_cache_;
+}
+
+void
+PreloadContext::use_write_size_cache(bool use_write_size_cache) {
+    use_write_size_cache_ = use_write_size_cache;
+}
+
 void
 PreloadContext::enable_interception() {
     interception_enabled_ = true;

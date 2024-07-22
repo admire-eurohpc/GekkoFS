@@ -78,6 +78,18 @@ int
 metadata_to_stat(const std::string& path, const gkfs::metadata::Metadata& md,
                  struct stat& attr);
 
+/**
+ * @brief Updates write size on the metadata daemon
+ * @param path
+ * @param count
+ * @param offset
+ * @param is_append
+ * @return <err, return_offset>
+ */
+std::pair<int, off64_t>
+update_file_size(const std::string& path, size_t count, off64_t offset,
+                 bool is_append);
+
 void
 load_hosts();
 

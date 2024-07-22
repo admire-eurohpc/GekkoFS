@@ -158,6 +158,9 @@ int
 gkfs_rmdir(const std::string& path);
 
 int
+gkfs_fsync(unsigned int fd);
+
+int
 gkfs_close(unsigned int fd);
 
 std::vector<std::string>

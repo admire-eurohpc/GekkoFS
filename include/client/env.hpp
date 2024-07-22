@@ -60,7 +60,12 @@ static constexpr auto METRICS_IP_PORT = ADD_PREFIX("METRICS_IP_PORT");
 
 static constexpr auto NUM_REPL = ADD_PREFIX("NUM_REPL");
 static constexpr auto PROXY_PID_FILE = ADD_PREFIX("PROXY_PID_FILE");
-static constexpr auto DENTRY_CACHE = ADD_PREFIX("DENTRY_CACHE");
+namespace cache {
+static constexpr auto DENTRY = ADD_PREFIX("DENTRY_CACHE");
+static constexpr auto WRITE_SIZE = ADD_PREFIX("WRITE_SIZE_CACHE");
+static constexpr auto WRITE_SIZE_THRESHOLD =
+        ADD_PREFIX("WRITE_SIZE_CACHE_THRESHOLD");
+} // namespace cache
 
 } // namespace gkfs::env
 

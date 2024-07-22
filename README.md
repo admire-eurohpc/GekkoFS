@@ -517,8 +517,24 @@ Client-metrics require the CMake argument `-DGKFS_ENABLE_CLIENT_METRICS=ON` (see
 - `LIBGKFS_PROXY_PID_FILE` - Path to the proxy pid file (when using the GekkoFS proxy).
 - `LIBGKFS_NUM_REPL` - Number of replicas for data.
 #### Caching
-- `LIBGKFS_DENTRY_CACHE` - Enable caching directory entries until closing the directory (default: OFF). 
-Improves performance for `ls -l` type operations. Further compile-time settings available at `include/config.hpp`.
+##### Dentry cache
+Improves performance for `ls -l` type operations by caching file metadata for subsequent `stat()` operations during
+`readdir()`. Dependening on the size of the directory, this can avoid a signficant number of stat RPCs.
+- `LIBGKFS_DENTRY_CACHE` - Enable caching directory entries until closing the directory (default: OFF).
+  Further compile-time settings available at `include/config.hpp`.
+
+##### Write size cache
+During write operations, the client must update the file size on the responsible metadata daemon. The write size cache
+can reduce the metadata load on the daemon and reduce the number of RPCs during write operations, especially for many
+small I/O operations.
+
+Note that this cache may impact file size consistency in which stat operations may not reflect the actual file size
+until the file is closed. The cache does not impact the consistency of the file data itself.
+
+- `LIBGKFS_WRITE_SIZE_CACHE` - Enable caching the write size of files (default: OFF).
+- `LIBGKFS_WRITE_SIZE_CACHE_THRESHOLD` - Set the number of write operations after which the file size is synchronized
+  with the corresponding daemon (default: 1000). The file size is further synchronized when the file is `close()`d or
+  when `fsync()` is called.
 
 ### Daemon
 #### Logging

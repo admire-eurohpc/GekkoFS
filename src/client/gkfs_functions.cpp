@@ -124,6 +124,7 @@ check_parent_dir(const std::string& path) {
 #endif // GKFS_CREATE_CHECK_PARENTS
     return 0;
 }
+
 } // namespace
 
 namespace gkfs::syscall {
@@ -921,44 +922,57 @@ gkfs_dup2(const int oldfd, const int newfd) {
 ssize_t
 gkfs_do_write(gkfs::filemap::OpenFile& file, const char* buf, size_t count,
               off64_t offset, bool update_pos) {
+
     if(file.type() != gkfs::filemap::FileType::regular) {
         assert(file.type() == gkfs::filemap::FileType::directory);
         LOG(WARNING, "Cannot write to directory");
         errno = EISDIR;
         return -1;
     }
+    int err;
     auto path = make_unique<string>(file.path());
     auto is_append = file.get_flag(gkfs::filemap::OpenFile_flags::append);
     auto write_size = 0;
     auto num_replicas = CTX->get_replicas();
-
-    pair<int, long> ret_offset;
-    if(gkfs::config::proxy::fwd_update_size && CTX->use_proxy()) {
-        ret_offset = gkfs::rpc::forward_update_metadentry_size_proxy(
-                *path, count, offset, is_append);
+    LOG(DEBUG, "{}() path: '{}', count: '{}', offset: '{}', is_append: '{}'",
+        __func__, *path, count, offset, is_append);
+    if(CTX->use_write_size_cache() && !is_append) {
+        auto [size_update_cnt, cached_size] =
+                CTX->write_size_cache()->record(*path, offset + count);
+        if(size_update_cnt > CTX->write_size_cache()->flush_threshold()) {
+            err = CTX->write_size_cache()->flush(*path, false).first;
+            if(err) {
+                LOG(ERROR,
+                    "update_metadentry_size() during cache flush failed with err '{}'",
+                    err);
+                errno = err;
+                return -1;
+            }
+        }
     } else {
-        ret_offset = gkfs::rpc::forward_update_metadentry_size(
-                *path, count, offset, is_append, num_replicas);
-    }
-    auto err = ret_offset.first;
-    if(err) {
-        LOG(ERROR, "update_metadentry_size() failed with err '{}'", err);
-        errno = err;
-        return -1;
-    }
-    if(is_append) {
-        // When append is set the EOF is set to the offset
-        // forward_update_metadentry_size returns. This is because it is an
-        // atomic operation on the server and reserves the space for this append
-        if(ret_offset.second == -1) {
-            LOG(ERROR,
-                "update_metadentry_size() received -1 as starting offset. "
-                "This occurs when the staring offset could not be extracted "
-                "from RocksDB's merge operations. Inform GekkoFS devs.");
-            errno = EIO;
+        auto ret_offset =
+                gkfs::utils::update_file_size(*path, count, offset, is_append);
+        err = ret_offset.first;
+        if(err) {
+            LOG(ERROR, "update_metadentry_size() failed with err '{}'", err);
+            errno = err;
             return -1;
         }
-        offset = ret_offset.second;
+        if(is_append) {
+            // When append is set the EOF is set to the offset
+            // forward_update_metadentry_size returns. This is because it is an
+            // atomic operation on the server and reserves the space for this
+            // append
+            if(ret_offset.second == -1) {
+                LOG(ERROR,
+                    "update_metadentry_size() received -1 as starting offset. "
+                    "This occurs when the staring offset could not be extracted "
+                    "from RocksDB's merge operations. Inform GekkoFS devs.");
+                errno = EIO;
+                return -1;
+            }
+            offset = ret_offset.second;
+        }
     }
 
     pair<int, long> ret_write;
@@ -1571,6 +1585,27 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
     return written;
 }
 
+int
+gkfs_fsync(unsigned int fd) {
+    auto file = CTX->file_map()->get(fd);
+    if(!file) {
+        errno = 0;
+        return 0;
+    }
+    // flush write size cache to be server consistent
+    if(CTX->use_write_size_cache()) {
+        auto err = CTX->write_size_cache()->flush(file->path(), true).first;
+        if(err) {
+            LOG(ERROR, "{}() write_size_cache() failed with err '{}'", __func__,
+                err);
+            errno = err;
+            return -1;
+        }
+    }
+    errno = 0;
+    return 0;
+}
+
 /**
  * @brief Closes an fd. To be used externally
  *
@@ -1579,7 +1614,18 @@ gkfs_getdents64(unsigned int fd, struct linux_dirent64* dirp,
  */
 int
 gkfs_close(unsigned int fd) {
-    if(CTX->file_map()->exist(fd)) {
+    auto file = CTX->file_map()->get(fd);
+    if(file) {
+        // flush write size cache to be server consistent
+        if(CTX->use_write_size_cache()) {
+            auto err = CTX->write_size_cache()->flush(file->path(), true).first;
+            if(err) {
+                LOG(ERROR, "{}() write_size_cache() failed with err '{}'",
+                    __func__, err);
+                errno = err;
+                return -1;
+            }
+        }
         if(CTX->use_dentry_cache() &&
            gkfs::config::cache::clear_dentry_cache_on_close) {
             // clear cache for directory

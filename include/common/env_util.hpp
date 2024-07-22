@@ -36,6 +36,9 @@ namespace gkfs::env {
 std::string
 get_var(const std::string& name, const std::string& default_value = "");
 
+int
+get_var(const std::string& name, int default_value);
+
 bool
 var_is_set(const std::string& name);
 

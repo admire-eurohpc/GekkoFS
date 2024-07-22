@@ -59,6 +59,9 @@ namespace cache {
 namespace dir {
 class DentryCache;
 }
+namespace file {
+class WriteSizeCache;
+}
 } // namespace cache
 
 namespace preload {
@@ -98,6 +101,9 @@ private:
     std::shared_ptr<FsConfig> fs_conf_;
     std::shared_ptr<gkfs::cache::dir::DentryCache> dentry_cache_;
     bool use_dentry_cache_{false};
+    std::shared_ptr<gkfs::cache::file::WriteSizeCache> write_size_cache_;
+    bool use_write_size_cache_{false};
+
 
     std::string cwd_;
     std::vector<std::string> mountdir_components_;
@@ -249,6 +255,18 @@ public:
     void
     use_dentry_cache(bool use_dentry_cache);
 
+    std::shared_ptr<gkfs::cache::file::WriteSizeCache>
+    write_size_cache() const;
+
+    void
+    write_size_cache(std::shared_ptr<gkfs::cache::file::WriteSizeCache>
+                             write_size_cache);
+
+    bool
+    use_write_size_cache() const;
+
+    void
+    use_write_size_cache(bool use_dentry_cache);
 
     void
     enable_interception();

@@ -959,14 +959,11 @@ hook_fstatfs(unsigned int fd, struct statfs* buf) {
  * application needs the capabilities*/
 int
 hook_fsync(unsigned int fd) {
-
     LOG(DEBUG, "{}() called with fd: {}", __func__, fd);
 
     if(CTX->file_map()->exist(fd)) {
-        errno = 0;
-        return 0;
+        return with_errno(gkfs::syscall::gkfs_fsync(fd));
     }
-
     return syscall_no_intercept_wrapper(SYS_fsync, fd);
 }
 

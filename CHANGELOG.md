@@ -8,9 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### New
 
+- Added a write size cache to the file system client to reduce potential metadata network bottlenecks during small I/O
+  operations ([!193](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/193)).
+  - The cache is experimental and thus disabled by default. Added the following environment variables.
+  - `LIBGKFS_WRITE_SIZE_CACHE` - Enable caching the write size of files (default: OFF).
+  - `LIBGKFS_WRITE_SIZE_CACHE_THRESHOLD` - Set the number of write operations after which the file size is synchronized
+    with the corresponding daemon (default: 1000). The file size is further synchronized when the file is `close()`d or
+    when `fsync()` is called.
 - Added a directory cache for the file system client to improve `ls -l` type operations by avoiding consecutive stat calls
   ([!194](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/194)).
-  - The cache is experimental and thus disabled by default and can be enabled with the env variable `LIBGKFS_DISABLE_DIR_CACHE` set to `ON`.
+  - The cache is experimental and thus disabled by default. Added the following environment variables.
+  - `LIBGKFS_DENTRY_CACHE` - Enable caching directory entries until closing the directory (default: OFF).
+      Further compile-time settings available at `include/config.hpp`.
 - Added file system expansion support ([!196](https://storage.bsc.es/gitlab/hpc/gekkofs/-/merge_requests/196)).
   - Added the tool `gkfs_malleability` to steer start, status, and finalize requests for expansion operations.
   - `-DGKFS_BUILD_TOOLS=ON` must be set for CMake to build the tool.

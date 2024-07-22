@@ -126,4 +126,60 @@ DentryCache::clear() {
 
 } // namespace dir
 
+namespace file {
+
+std::pair<size_t, size_t>
+WriteSizeCache::record(std::string path, size_t size) {
+    std::lock_guard<std::mutex> const lock(mtx_);
+    auto& pair = size_cache.try_emplace(std::move(path), std::make_pair(0, 0))
+                         .first->second;
+    pair.first++;
+    if(pair.second < size) {
+        pair.second = size;
+    }
+    return pair;
+}
+
+std::pair<size_t, size_t>
+WriteSizeCache::reset(const std::string& path, bool evict) {
+    std::lock_guard<std::mutex> const lock(mtx_);
+    auto it = size_cache.find(path);
+    if(it == size_cache.end()) {
+        return {};
+    }
+    auto entry = it->second;
+    if(evict) {
+        // remove entry from cache and discard cached size
+        size_cache.erase(it);
+    } else {
+        // reset counter and keep cached size
+        it->second.first = 0;
+    }
+    return entry;
+}
+
+std::pair<int, off64_t>
+WriteSizeCache::flush(const std::string& path, bool evict) {
+    // mutex is set in reset(). No need to lock here
+    auto [latest_entry_cnt, latest_entry_size] = reset(path, false);
+    // no new updates in cache, don't return size
+    if(latest_entry_cnt == 0) {
+        return {};
+    }
+    LOG(DEBUG,
+        "WriteSizeCache::{}() Flushing and updating size for path '{}' size '{}' on the server. Evict: {}",
+        __func__, path, latest_entry_size, evict);
+    return gkfs::utils::update_file_size(path, latest_entry_size, 0, false);
+}
+size_t
+WriteSizeCache::flush_threshold() const {
+    return flush_threshold_;
+}
+void
+WriteSizeCache::flush_threshold(size_t flush_threshold) {
+    flush_threshold_ = flush_threshold;
+}
+
+} // namespace file
+
 } // namespace gkfs::cache

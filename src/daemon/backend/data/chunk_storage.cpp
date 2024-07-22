@@ -131,7 +131,10 @@ ChunkStorage::destroy_chunk_space(const string& file_path) const {
         auto err_str = fmt::format(
                 "{}() Failed to remove chunk directory. Path: '{}', Error: '{}'",
                 __func__, chunk_dir, e.what());
-        throw ChunkStorageException(e.code().value(), err_str);
+        if(e.code().value() != ENOENT) {
+            throw ChunkStorageException(e.code().value(), err_str);
+        }
+        //        throw ChunkStorageException(e.code().value(), err_str);
     }
 }
 
