@@ -28,173 +28,173 @@
 
 function(_get_feature_summary _output _property)
 
-  set(_currentFeatureText "")
-  get_property(_features GLOBAL PROPERTY ${_property})
+    set(_currentFeatureText "")
+    get_property(_features GLOBAL PROPERTY ${_property})
 
-  if(_features)
-    list(REMOVE_DUPLICATES _features)
-  endif()
+    if (_features)
+        list(REMOVE_DUPLICATES _features)
+    endif ()
 
-  foreach(_f ${_features})
-    string(APPEND _currentFeatureText "\n-- * ${_f}")
-    get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_DESCRIPTION)
-    if(_info)
-      string(APPEND _currentFeatureText ": ${_info}")
-    else()
-      get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_HELP_TEXT)
-      string(APPEND _currentFeatureText ": ${_info}")
-    endif()
-    get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_DEPENDS)
-    if(_info)
-      string(APPEND _currentFeatureText " [${${_info}}]")
-    endif()
-    get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_EXTRA_INFO)
-    if(_info)
-      string(APPEND _currentFeatureText "\n--   ${_info}")
-    endif()
+    foreach (_f ${_features})
+        string(APPEND _currentFeatureText "\n-- * ${_f}")
+        get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_DESCRIPTION)
+        if (_info)
+            string(APPEND _currentFeatureText ": ${_info}")
+        else ()
+            get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_HELP_TEXT)
+            string(APPEND _currentFeatureText ": ${_info}")
+        endif ()
+        get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_DEPENDS)
+        if (_info)
+            string(APPEND _currentFeatureText " [${${_info}}]")
+        endif ()
+        get_property(_info GLOBAL PROPERTY _CMAKE_${_f}_EXTRA_INFO)
+        if (_info)
+            string(APPEND _currentFeatureText "\n--   ${_info}")
+        endif ()
 
-  endforeach()
+    endforeach ()
 
-  set(${_output}
-      "${_currentFeatureText}"
-      PARENT_SCOPE
-  )
+    set(${_output}
+        "${_currentFeatureText}"
+        PARENT_SCOPE
+    )
 
 endfunction()
 
 function(_add_feature_info _name _depends _help)
-  set(_enabled 1)
-  foreach(_d ${_depends})
-    string(REGEX REPLACE " +" ";" _d "${_d}")
-    if(${_d})
+    set(_enabled 1)
+    foreach (_d ${_depends})
+        string(REGEX REPLACE " +" ";" _d "${_d}")
+        if (${_d})
 
-    else()
-      set(_enabled 0)
-      break()
-    endif()
-  endforeach()
-  if(${_enabled})
-    set_property(GLOBAL APPEND PROPERTY GKFS_ENABLED_FEATURES "${_name}")
-  else()
-    set_property(GLOBAL APPEND PROPERTY GKFS_DISABLED_FEATURES "${_name}")
-  endif()
+        else ()
+            set(_enabled 0)
+            break()
+        endif ()
+    endforeach ()
+    if (${_enabled})
+        set_property(GLOBAL APPEND PROPERTY GKFS_ENABLED_FEATURES "${_name}")
+    else ()
+        set_property(GLOBAL APPEND PROPERTY GKFS_DISABLED_FEATURES "${_name}")
+    endif ()
 
-  set_property(GLOBAL PROPERTY _CMAKE_${_name}_DEPENDS ${_depends})
-  set_property(GLOBAL PROPERTY _CMAKE_${_name}_HELP_TEXT "${_help}")
+    set_property(GLOBAL PROPERTY _CMAKE_${_name}_DEPENDS ${_depends})
+    set_property(GLOBAL PROPERTY _CMAKE_${_name}_HELP_TEXT "${_help}")
 
-  if(ARGC GREATER_EQUAL 4)
-    set_property(GLOBAL PROPERTY _CMAKE_${_name}_DESCRIPTION "${ARGV3}")
-    if(ARGC EQUAL 5)
-      set_property(GLOBAL PROPERTY _CMAKE_${_name}_EXTRA_INFO "${ARGV4}")
-    endif()
-  endif()
+    if (ARGC GREATER_EQUAL 4)
+        set_property(GLOBAL PROPERTY _CMAKE_${_name}_DESCRIPTION "${ARGV3}")
+        if (ARGC EQUAL 5)
+            set_property(GLOBAL PROPERTY _CMAKE_${_name}_EXTRA_INFO "${ARGV4}")
+        endif ()
+    endif ()
 endfunction()
 
 function(gkfs_feature_summary)
 
-  set(OPTIONS)
-  set(SINGLE_VALUE DESCRIPTION)
-  set(MULTI_VALUE)
+    set(OPTIONS)
+    set(SINGLE_VALUE DESCRIPTION)
+    set(MULTI_VALUE)
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(
-      FATAL_ERROR
-        "Unknown keywords given to gkfs_feature_summary(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  if(NOT ARGS_DESCRIPTION)
-    message(
-      FATAL_ERROR
-        "Missing mandatory keyword DESCRIPTION for gkfs_feature_summary()"
-    )
-  endif()
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(
+            FATAL_ERROR
+            "Unknown keywords given to gkfs_feature_summary(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+        )
+    endif ()
 
-  list(APPEND _what GKFS_ENABLED_FEATURES GKFS_DISABLED_FEATURES)
+    if (NOT ARGS_DESCRIPTION)
+        message(
+            FATAL_ERROR
+            "Missing mandatory keyword DESCRIPTION for gkfs_feature_summary()"
+        )
+    endif ()
 
-  set(_text "\n-- ")
-  string(APPEND _text "\n-- ====================================")
-  string(APPEND _text "\n-- ${ARGS_DESCRIPTION}")
-  string(APPEND _text "\n-- ====================================")
-  foreach(_w ${_what})
-    set(_tmp)
-    _get_feature_summary(_tmp ${_w})
+    list(APPEND _what GKFS_ENABLED_FEATURES GKFS_DISABLED_FEATURES)
 
-    if(_tmp)
-      if(_text)
-        string(APPEND _text "\n-- ${_tmp}")
-      endif()
-    endif()
-  endforeach()
+    set(_text "\n-- ")
+    string(APPEND _text "\n-- ====================================")
+    string(APPEND _text "\n-- ${ARGS_DESCRIPTION}")
+    string(APPEND _text "\n-- ====================================")
+    foreach (_w ${_what})
+        set(_tmp)
+        _get_feature_summary(_tmp ${_w})
 
-  string(APPEND _text "\n-- ")
+        if (_tmp)
+            if (_text)
+                string(APPEND _text "\n-- ${_tmp}")
+            endif ()
+        endif ()
+    endforeach ()
 
-  message(STATUS "${_text}")
+    string(APPEND _text "\n-- ")
+
+    message(STATUS "${_text}")
 endfunction()
 
 function(gkfs_define_option varName)
 
-  set(OPTIONS)
-  set(SINGLE_VALUE HELP_TEXT DEFAULT_VALUE FEATURE_NAME DESCRIPTION EXTRA_INFO)
-  set(MULTI_VALUE)
+    set(OPTIONS)
+    set(SINGLE_VALUE HELP_TEXT DEFAULT_VALUE FEATURE_NAME DESCRIPTION EXTRA_INFO)
+    set(MULTI_VALUE)
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(
-      FATAL_ERROR
-        "Unknown keywords given to gkfs_define_option(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  if(NOT ARGS_HELP_TEXT)
-    message(
-      FATAL_ERROR "Missing mandatory keyword HELP_TEXT for gkfs_define_option()"
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(
+            FATAL_ERROR
+            "Unknown keywords given to gkfs_define_option(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+        )
+    endif ()
+
+    if (NOT ARGS_HELP_TEXT)
+        message(
+            FATAL_ERROR "Missing mandatory keyword HELP_TEXT for gkfs_define_option()"
+        )
+    endif ()
+
+    if (NOT ARGS_FEATURE_NAME)
+        set(ARGS_FEATURE_NAME ${varName})
+    endif ()
+
+    _add_feature_info(
+        ${ARGS_FEATURE_NAME} ${varName} ${ARGS_HELP_TEXT} ${ARGS_DESCRIPTION}
+        ${ARGS_EXTRA_INFO}
     )
-  endif()
 
-  if(NOT ARGS_FEATURE_NAME)
-    set(ARGS_FEATURE_NAME ${varName})
-  endif()
-
-  _add_feature_info(
-    ${ARGS_FEATURE_NAME} ${varName} ${ARGS_HELP_TEXT} ${ARGS_DESCRIPTION}
-    ${ARGS_EXTRA_INFO}
-  )
-
-  option(${varName} ${ARGS_HELP_TEXT} ${ARGS_DEFAULT_VALUE})
+    option(${varName} ${ARGS_HELP_TEXT} ${ARGS_DEFAULT_VALUE})
 
 endfunction()
 
 function(gkfs_define_variable varName value type docstring)
 
-  set(OPTIONS ADVANCED)
-  set(SINGLE_VALUE)
-  set(MULTI_VALUE)
+    set(OPTIONS ADVANCED)
+    set(SINGLE_VALUE)
+    set(MULTI_VALUE)
 
-  cmake_parse_arguments(
-    ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
-  )
-
-  if(ARGS_UNPARSED_ARGUMENTS)
-    message(
-      FATAL_ERROR
-      "Unknown keywords given to gkfs_define_variable(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+    cmake_parse_arguments(
+        ARGS "${OPTIONS}" "${SINGLE_VALUE}" "${MULTI_VALUE}" ${ARGN}
     )
-  endif()
 
-  set(${varName} ${value} CACHE ${type} ${docstring})
-  _add_feature_info(${varName} ${varName} ${docstring})
+    if (ARGS_UNPARSED_ARGUMENTS)
+        message(
+            FATAL_ERROR
+            "Unknown keywords given to gkfs_define_variable(): \"${ARGS_UNPARSED_ARGUMENTS}\""
+        )
+    endif ()
 
-  if(ARGS_ADVANCED)
-    mark_as_advanced(varName)
-  endif()
+    set(${varName} ${value} CACHE ${type} ${docstring})
+    _add_feature_info(${varName} ${varName} ${docstring})
+
+    if (ARGS_ADVANCED)
+        mark_as_advanced(varName)
+    endif ()
 
 endfunction()
 
@@ -205,11 +205,11 @@ endfunction()
 
 # build documentation
 gkfs_define_option(
-  GKFS_BUILD_DOCUMENTATION
-  HELP_TEXT "Build documentation"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Generate documentation based on Sphinx+Doxygen"
-  FEATURE_NAME "DOCS"
+    GKFS_BUILD_DOCUMENTATION
+    HELP_TEXT "Build documentation"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Generate documentation based on Sphinx+Doxygen"
+    FEATURE_NAME "DOCS"
 )
 
 # build tests
@@ -222,9 +222,9 @@ gkfs_define_option(
 
 # build tests
 gkfs_define_option(
-  GKFS_BUILD_TESTS
-  HELP_TEXT "Build ${PROJECT_NAME} self tests"
-  DEFAULT_VALUE OFF
+    GKFS_BUILD_TESTS
+    HELP_TEXT "Build ${PROJECT_NAME} self tests"
+    DEFAULT_VALUE OFF
 )
 
 # build tools
@@ -237,9 +237,9 @@ gkfs_define_option(
 
 # use old resolve function
 gkfs_define_option(
-  GKFS_USE_LEGACY_PATH_RESOLVE
-  HELP_TEXT "Use the old implementation of the resolve function"
-  DEFAULT_VALUE OFF
+    GKFS_USE_LEGACY_PATH_RESOLVE
+    HELP_TEXT "Use the old implementation of the resolve function"
+    DEFAULT_VALUE OFF
 )
 
 cmake_dependent_option(GKFS_INSTALL_TESTS "Install GekkoFS self tests" OFF "GKFS_BUILD_TESTS" OFF)
@@ -251,34 +251,34 @@ cmake_dependent_option(GKFS_INSTALL_TESTS "Install GekkoFS self tests" OFF "GKFS
 
 ## check before create
 gkfs_define_option(
-  GKFS_CREATE_CHECK_PARENTS
-  HELP_TEXT "Enable checking parent directory for existence before creating children"
-  DEFAULT_VALUE ON
-  DESCRIPTION "Verify that a parent directory exists before creating new files or directories"
+    GKFS_CREATE_CHECK_PARENTS
+    HELP_TEXT "Enable checking parent directory for existence before creating children"
+    DEFAULT_VALUE ON
+    DESCRIPTION "Verify that a parent directory exists before creating new files or directories"
 )
 
 ## symbolic link support
 gkfs_define_option(
-  GKFS_SYMLINK_SUPPORT
-  HELP_TEXT "Enable support for symlinks"
-  DEFAULT_VALUE ON
-  DESCRIPTION "Enable support for symbolic links in paths"
+    GKFS_SYMLINK_SUPPORT
+    HELP_TEXT "Enable support for symlinks"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Enable support for symbolic links in paths"
 )
 
 ## rename support
 gkfs_define_option(
-  GKFS_RENAME_SUPPORT
-  HELP_TEXT "Enable support for rename"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Compile with support for rename ops (experimental)"
+    GKFS_RENAME_SUPPORT
+    HELP_TEXT "Enable support for rename"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Compile with support for rename ops (experimental)"
 )
 
 ## external link support
 gkfs_define_option(
-  GKFS_FOLLOW_EXTERNAL_SYMLINKS
-  HELP_TEXT "Enable support for following external links for resolving the path"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Compile with lstat usage in path resolve"
+    GKFS_FOLLOW_EXTERNAL_SYMLINKS
+    HELP_TEXT "Enable support for following external links for resolving the path"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Compile with lstat usage in path resolve"
 )
 
 
@@ -288,55 +288,55 @@ gkfs_define_option(
 
 ## Maximum number of internal file descriptors reserved for GekkoFS
 gkfs_define_variable(GKFS_MAX_INTERNAL_FDS 256
-  STRING "Number of file descriptors reserved for internal use" ADVANCED
+    STRING "Number of file descriptors reserved for internal use" ADVANCED
 )
 
 ## Maximum number of open file descriptors for GekkoFS
 execute_process(COMMAND getconf OPEN_MAX
-  OUTPUT_VARIABLE _GETCONF_MAX_FDS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
+    OUTPUT_VARIABLE _GETCONF_MAX_FDS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
 if (NOT _GETCONF_MAX_FDS)
-  set(_GETCONF_MAX_FDS=512)
+    set(_GETCONF_MAX_FDS=512)
 endif ()
 
 gkfs_define_variable(
-  GKFS_MAX_OPEN_FDS
-  ${_GETCONF_MAX_FDS}
-  STRING
-  "Maximum number of open file descriptors supported"
-  ADVANCED)
+    GKFS_MAX_OPEN_FDS
+    ${_GETCONF_MAX_FDS}
+    STRING
+    "Maximum number of open file descriptors supported"
+    ADVANCED)
 
 ## RocksDB support
 gkfs_define_option(
-  GKFS_ENABLE_ROCKSDB
-  HELP_TEXT "Enable RocksDB metadata backend"
-  DEFAULT_VALUE ON
-  DESCRIPTION "Use RocksDB key-value store for the metadata backend"
+    GKFS_ENABLE_ROCKSDB
+    HELP_TEXT "Enable RocksDB metadata backend"
+    DEFAULT_VALUE ON
+    DESCRIPTION "Use RocksDB key-value store for the metadata backend"
 )
 
 ## Parallax support
 gkfs_define_option(
-  GKFS_ENABLE_PARALLAX
-  HELP_TEXT "Enable Parallax support"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Support using the Parallax key-value store in the metadata backend"
+    GKFS_ENABLE_PARALLAX
+    HELP_TEXT "Enable Parallax support"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Support using the Parallax key-value store in the metadata backend"
 )
 
 ## Guided distribution
 gkfs_define_variable(
-  GKFS_USE_GUIDED_DISTRIBUTION_PATH
-  "/tmp/guided.txt"
-  STRING
-  "File Path for guided distributor"
+    GKFS_USE_GUIDED_DISTRIBUTION_PATH
+    "/tmp/guided.txt"
+    STRING
+    "File Path for guided distributor"
 )
 
 gkfs_define_option(
-  GKFS_USE_GUIDED_DISTRIBUTION
-  HELP_TEXT "Use guided data distributor"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Use a guided data distribution instead of GekkoFS' wide striping"
-  EXTRA_INFO "Guided data distributor input file path: ${GKFS_USE_GUIDED_DISTRIBUTION_PATH}"
+    GKFS_USE_GUIDED_DISTRIBUTION
+    HELP_TEXT "Use guided data distributor"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Use a guided data distribution instead of GekkoFS' wide striping"
+    EXTRA_INFO "Guided data distributor input file path: ${GKFS_USE_GUIDED_DISTRIBUTION_PATH}"
 )
 
 
@@ -346,24 +346,24 @@ gkfs_define_option(
 
 ## Client logging support
 gkfs_define_option(
-  GKFS_ENABLE_CLIENT_LOG HELP_TEXT "Enable logging messages in clients"
-  DEFAULT_VALUE ON
+    GKFS_ENABLE_CLIENT_LOG HELP_TEXT "Enable logging messages in clients"
+    DEFAULT_VALUE ON
 )
 
 gkfs_define_variable(
-  GKFS_CLIENT_LOG_MESSAGE_SIZE
-  1024
-  STRING
-  "Maximum size of a log message in the client library"
-  ADVANCED
+    GKFS_CLIENT_LOG_MESSAGE_SIZE
+    1024
+    STRING
+    "Maximum size of a log message in the client library"
+    ADVANCED
 )
 
 ## Prometheus tracing support
 gkfs_define_option(
-  GKFS_ENABLE_PROMETHEUS
-  HELP_TEXT "Enable Prometheus Push"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "Enable the collection of stats using Prometheus"
+    GKFS_ENABLE_PROMETHEUS
+    HELP_TEXT "Enable Prometheus Push"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "Enable the collection of stats using Prometheus"
 )
 
 
@@ -373,10 +373,10 @@ gkfs_define_option(
 
 ## Scheduling in I/O forwarding mode
 gkfs_define_option(
-  GKFS_ENABLE_AGIOS
-  HELP_TEXT "Enable AGIOS scheduling library"
-  DEFAULT_VALUE OFF
-  DESCRIPTION "If GKFS_ENABLE_FORWARDING is ON, use AGIOS for scheduling I/Os"
+    GKFS_ENABLE_AGIOS
+    HELP_TEXT "Enable AGIOS scheduling library"
+    DEFAULT_VALUE OFF
+    DESCRIPTION "If GKFS_ENABLE_FORWARDING is ON, use AGIOS for scheduling I/Os"
 )
 
 ################################################################################

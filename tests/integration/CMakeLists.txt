@@ -32,44 +32,48 @@ add_subdirectory(harness)
 # Create daemon factories from template, depending of the databases
 unset(DBS)
 if (GKFS_ENABLE_ROCKSDB)
-    set (DBS "'gkfs_daemon_rocksdb'")
-endif()
+    set(DBS "'gkfs_daemon_rocksdb'")
+endif ()
 if (GKFS_ENABLE_PARALLAX)
     if (DBS)
-        set (DBS "${DBS},'gkfs_daemon_parallaxdb'")
-    else()
-        set (DBS "'gkfs_daemon_parallaxdb'")
-    endif()
-endif()
+        set(DBS "${DBS},'gkfs_daemon_parallaxdb'")
+    else ()
+        set(DBS "'gkfs_daemon_parallaxdb'")
+    endif ()
+endif ()
 
 if (GKFS_ENABLE_PARALLAX AND GKFS_ENABLE_ROCKSDB)
-    set (DBS "'gkfs_daemon_rocksdb','gkfs_daemon_parallaxdb'")
-endif()
+    set(DBS "'gkfs_daemon_rocksdb','gkfs_daemon_parallaxdb'")
+endif ()
 
 # We enable rocksdb by default
 if (NOT DBS)
-        set (DBS "'gkfs_daemon_rocksdb'")
-endif()
+    set(DBS "'gkfs_daemon_rocksdb'")
+endif ()
 
-FIND_PATH(BUILD_PATH CMakeLists.txt . )
+FIND_PATH(BUILD_PATH CMakeLists.txt .)
 FILE(READ ${BUILD_PATH}/conftest.template CONF_TEST_FILE)
-STRING(REGEX REPLACE "'gkfs_daemon_rocksdb'" "${DBS}" MOD_CONF_TEST_FILE "${CONF_TEST_FILE}" )
+STRING(REGEX REPLACE "'gkfs_daemon_rocksdb'" "${DBS}" MOD_CONF_TEST_FILE "${CONF_TEST_FILE}")
 FILE(WRITE ${BUILD_PATH}/conftest.py "${MOD_CONF_TEST_FILE}")
 
 gkfs_enable_python_testing(
     BINARY_DIRECTORIES ${CMAKE_BINARY_DIR}/src/daemon/
-                       ${CMAKE_BINARY_DIR}/src/client/
-                       ${CMAKE_BINARY_DIR}/tests/integration/harness/
-                       ${CMAKE_BINARY_DIR}/examples/gfind/
+    ${CMAKE_BINARY_DIR}/src/client/
+    ${CMAKE_BINARY_DIR}/tests/integration/harness/
+    ${CMAKE_BINARY_DIR}/examples/gfind/
     LIBRARY_PREFIX_DIRECTORIES ${CMAKE_PREFIX_PATH}
 )
 
 # define CTest tests for functional test groups
+set(DIRECTORY_TESTS "directories/test_directories.py;directories/test_pathresolution.py")
+if (GKFS_FOLLOW_EXTERNAL_SYMLINKS)
+    set(DIRECTORY_TESTS "${DIRECTORY_TESTS}" ";directories/test_external_symlink.py")
+endif ()
 gkfs_add_python_test(
     NAME test_directories
     PYTHON_VERSION 3.6
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
-    SOURCE directories/
+    SOURCE ${DIRECTORY_TESTS}
 )
 
 if (GLIBC_HAS_STATX)
@@ -79,7 +83,7 @@ if (GLIBC_HAS_STATX)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
         SOURCE status/test_status.py
     )
-endif()
+endif ()
 
 gkfs_add_python_test(
     NAME test_operations
@@ -89,13 +93,13 @@ gkfs_add_python_test(
 )
 
 if (GLIBC_HAS_STATX)
-gkfs_add_python_test(
-    NAME test_lseek
-    PYTHON_VERSION 3.6
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
-    SOURCE position/test_lseek.py
-)
-endif()
+    gkfs_add_python_test(
+        NAME test_lseek
+        PYTHON_VERSION 3.6
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
+        SOURCE position/test_lseek.py
+    )
+endif ()
 
 gkfs_add_python_test(
     NAME test_shell
@@ -105,12 +109,12 @@ gkfs_add_python_test(
 )
 
 if (GKFS_TESTS_FORWARDING)
-gkfs_add_python_test(
-    NAME forwarding
-    PYTHON_VERSION 3.6
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
-    SOURCE forwarding/
-)
+    gkfs_add_python_test(
+        NAME forwarding
+        PYTHON_VERSION 3.6
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
+        SOURCE forwarding/
+    )
 endif ()
 
 gkfs_add_python_test(
@@ -128,111 +132,111 @@ gkfs_add_python_test(
 )
 
 if (GKFS_RENAME_SUPPORT)
-gkfs_add_python_test(
-    NAME test_rename
-    PYTHON_VERSION 3.6
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
-    SOURCE rename/
-)
-endif()
-
-if(GKFS_INSTALL_TESTS)
-    install(DIRECTORY harness
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
-        FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
-            PATTERN "gkfs.io" EXCLUDE
+    gkfs_add_python_test(
+        NAME test_rename
+        PYTHON_VERSION 3.6
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/integration
+        SOURCE rename/
     )
+endif ()
 
-    if(GKFS_SYMLINK_SUPPORT)
-        install(DIRECTORY directories
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
-            FILES_MATCHING
-                REGEX ".*\\.py"
-                PATTERN "__pycache__" EXCLUDE
-                PATTERN ".pytest_cache" EXCLUDE
-        )
-    else()
-        install(DIRECTORY directories
+if (GKFS_INSTALL_TESTS)
+    install(DIRECTORY harness
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
         REGEX ".*\\.py"
         PATTERN "__pycache__" EXCLUDE
         PATTERN ".pytest_cache" EXCLUDE
-        PATTERN "test_symlink.py" EXCLUDE
-
+        PATTERN "gkfs.io" EXCLUDE
     )
-   endif()
+
+    if (GKFS_FOLLOW_EXTERNAL_SYMLINKS)
+        install(DIRECTORY directories
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
+            FILES_MATCHING
+            REGEX ".*\\.py"
+            PATTERN "__pycache__" EXCLUDE
+            PATTERN ".pytest_cache" EXCLUDE
+        )
+    else ()
+        install(DIRECTORY directories
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
+            FILES_MATCHING
+            REGEX ".*\\.py"
+            PATTERN "__pycache__" EXCLUDE
+            PATTERN ".pytest_cache" EXCLUDE
+            PATTERN "test_external_symlink.py" EXCLUDE
+
+        )
+    endif ()
 
     install(DIRECTORY status
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
+        REGEX ".*\\.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".pytest_cache" EXCLUDE
     )
 
     install(DIRECTORY operations
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
+        REGEX ".*\\.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".pytest_cache" EXCLUDE
     )
 
     install(DIRECTORY position
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
+        REGEX ".*\\.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".pytest_cache" EXCLUDE
     )
 
     install(DIRECTORY data
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
-    )
-
-    install(DIRECTORY syscalls
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
-    FILES_MATCHING
         REGEX ".*\\.py"
         PATTERN "__pycache__" EXCLUDE
         PATTERN ".pytest_cache" EXCLUDE
-)
+    )
+
+    install(DIRECTORY syscalls
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
+        FILES_MATCHING
+        REGEX ".*\\.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".pytest_cache" EXCLUDE
+    )
 
     install(DIRECTORY shell
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         FILES_MATCHING
-            REGEX ".*\\.py"
-            PATTERN "__pycache__" EXCLUDE
-            PATTERN ".pytest_cache" EXCLUDE
+        REGEX ".*\\.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".pytest_cache" EXCLUDE
     )
     if (GKFS_TESTS_FORWARDING)
-    install(DIRECTORY forwarding
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
-        FILES_MATCHING
+        install(DIRECTORY forwarding
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
+            FILES_MATCHING
             REGEX ".*\\.py"
             PATTERN "__pycache__" EXCLUDE
             PATTERN ".pytest_cache" EXCLUDE
-    )
+        )
     endif ()
 
     if (GKFS_RENAME_SUPPORT)
-    install(DIRECTORY rename
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
-        FILES_MATCHING
+        install(DIRECTORY rename
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
+            FILES_MATCHING
             REGEX ".*\\.py"
             PATTERN "__pycache__" EXCLUDE
             PATTERN ".pytest_cache" EXCLUDE
-    )
-    endif()
-endif()
+        )
+    endif ()
+endif ()
 
 
 

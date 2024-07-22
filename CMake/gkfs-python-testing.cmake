@@ -34,45 +34,45 @@ function(gkfs_enable_python_testing)
 
     cmake_parse_arguments(PYTEST "${OPTION}" "${SINGLE}" "${MULTI}" ${ARGN})
 
-    if(PYTEST_UNPARSED_ARGUMENTS)
+    if (PYTEST_UNPARSED_ARGUMENTS)
         message(WARNING "Unparsed arguments in gkfs_enable_python_testing: This often indicates typos!")
-    endif()
+    endif ()
 
-    if(PYTEST_BINARY_DIRECTORIES)
+    if (PYTEST_BINARY_DIRECTORIES)
         set(GKFS_PYTEST_BINARY_DIRECTORIES ${PYTEST_BINARY_DIRECTORIES} PARENT_SCOPE)
-    endif()
+    endif ()
 
-    if(PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+    if (PYTEST_LIBRARY_PREFIX_DIRECTORIES)
         set(GKFS_PYTEST_LIBRARY_PREFIX_DIRECTORIES ${PYTEST_LIBRARY_PREFIX_DIRECTORIES} PARENT_SCOPE)
-    endif()
+    endif ()
 
     set(PYTEST_BINDIR_ARGS, "")
-    if(PYTEST_BINARY_DIRECTORIES)
-        foreach(dir IN LISTS PYTEST_BINARY_DIRECTORIES)
+    if (PYTEST_BINARY_DIRECTORIES)
+        foreach (dir IN LISTS PYTEST_BINARY_DIRECTORIES)
             list(APPEND PYTEST_BINDIR_ARGS "--bin-dir=${dir}")
-        endforeach()
-    endif()
+        endforeach ()
+    endif ()
 
     set(PYTEST_LIBDIR_ARGS, "")
-    if(PYTEST_LIBRARY_PREFIX_DIRECTORIES)
-        foreach(dir IN LISTS PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+    if (PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+        foreach (dir IN LISTS PYTEST_LIBRARY_PREFIX_DIRECTORIES)
 
-            if(NOT IS_ABSOLUTE ${dir})
+            if (NOT IS_ABSOLUTE ${dir})
                 set(dir ${CMAKE_BINARY_DIR}/${dir})
-            endif()
+            endif ()
 
             file(TO_CMAKE_PATH "${dir}/lib" libdir)
             file(TO_CMAKE_PATH "${dir}/lib64" lib64dir)
 
-            if(EXISTS ${libdir})
+            if (EXISTS ${libdir})
                 list(APPEND PYTEST_LIBDIR_ARGS "--lib-dir=${libdir}")
-            endif()
+            endif ()
 
-            if(EXISTS ${lib64dir})
+            if (EXISTS ${lib64dir})
                 list(APPEND PYTEST_LIBDIR_ARGS "--lib-dir=${lib64dir}")
-            endif()
-        endforeach()
-    endif()
+            endif ()
+        endforeach ()
+    endif ()
 
     # convert path lists to space separated arguments
     string(REPLACE ";" " " PYTEST_BINDIR_ARGS "${PYTEST_BINDIR_ARGS}")
@@ -82,7 +82,7 @@ function(gkfs_enable_python_testing)
     configure_file(conftest.py.in conftest.py @ONLY)
     configure_file(harness/cli.py harness/cli.py COPYONLY)
 
-    if(GKFS_INSTALL_TESTS)
+    if (GKFS_INSTALL_TESTS)
         configure_file(pytest.install.ini.in pytest.install.ini @ONLY)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pytest.install.ini
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
@@ -93,9 +93,9 @@ function(gkfs_enable_python_testing)
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/integration
         )
 
-        if(NOT PYTEST_VIRTUALENV)
+        if (NOT PYTEST_VIRTUALENV)
             set(PYTEST_VIRTUALENV ${CMAKE_INSTALL_FULL_DATAROOTDIR}/gkfs/tests/integration/pytest-venv)
-        endif()
+        endif ()
 
         # Python's virtual environments are not relocatable, we need to
         # recreate the virtualenv at the appropriate install location
@@ -105,9 +105,9 @@ function(gkfs_enable_python_testing)
             REQUIRED
             COMPONENTS Interpreter)
 
-        if(NOT Python3_FOUND)
+        if (NOT Python3_FOUND)
             message(FATAL_ERROR "Unable to find Python 3")
-        endif()
+        endif ()
 
         install(
             CODE "message(\"Install pytest virtual environment...\")"
@@ -147,7 +147,7 @@ function(gkfs_enable_python_testing)
                     message(FATAL_ERROR \"Installation of pytest dependencies failed. Check 'cmake_install_stdout.log' and 'cmake_install_stderr.log' for details\")
                   endif()"
         )
-    endif()
+    endif ()
 
     # enable testing
     set(GKFS_PYTHON_TESTING_ENABLED ON PARENT_SCOPE)
@@ -156,9 +156,9 @@ endfunction()
 
 function(gkfs_add_python_test)
     # ignore call if testing is not enabled
-    if(NOT CMAKE_TESTING_ENABLED OR NOT GKFS_PYTHON_TESTING_ENABLED)
+    if (NOT CMAKE_TESTING_ENABLED OR NOT GKFS_PYTHON_TESTING_ENABLED)
         return()
-    endif()
+    endif ()
 
     # Parse arguments
     set(OPTION)
@@ -167,68 +167,68 @@ function(gkfs_add_python_test)
 
     cmake_parse_arguments(PYTEST "${OPTION}" "${SINGLE}" "${MULTI}" ${ARGN})
 
-    if(PYTEST_UNPARSED_ARGUMENTS)
+    if (PYTEST_UNPARSED_ARGUMENTS)
         message(WARNING "Unparsed arguments in gkfs_add_python_test: This often indicates typos!")
-    endif()
+    endif ()
 
-    if(NOT PYTEST_NAME)
+    if (NOT PYTEST_NAME)
         message(FATAL_ERROR "gkfs_add_python_test requires a NAME argument")
-    endif()
+    endif ()
 
     # set default values for arguments not provided
-    if(NOT PYTEST_PYTHON_VERSION)
+    if (NOT PYTEST_PYTHON_VERSION)
         set(PYTEST_PYTHON_VERSION 3.0)
-    endif()
+    endif ()
 
-    if(NOT PYTEST_WORKING_DIRECTORY)
+    if (NOT PYTEST_WORKING_DIRECTORY)
         set(PYTEST_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    endif()
+    endif ()
 
-    if(NOT PYTEST_VIRTUALENV)
+    if (NOT PYTEST_VIRTUALENV)
         set(PYTEST_VIRTUALENV ${CMAKE_CURRENT_BINARY_DIR}/pytest-venv)
-    endif()
+    endif ()
 
     # if the test doesn't provide a list of binary or library prefix
     # directories, use the one set on gkfs_enable_python_testing()
-    if(NOT PYTEST_BINARY_DIRECTORIES)
+    if (NOT PYTEST_BINARY_DIRECTORIES)
         set(PYTEST_BINARY_DIRECTORIES ${GKFS_PYTEST_BINARY_DIRECTORIES})
-    endif()
+    endif ()
 
-    if(NOT PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+    if (NOT PYTEST_LIBRARY_PREFIX_DIRECTORIES)
         set(PYTEST_LIBRARY_PREFIX_DIRECTORIES ${GKFS_PYTEST_LIBRARY_PREFIX_DIRECTORIES})
-    endif()
+    endif ()
 
     set(PYTEST_COMMAND_ARGS, "")
-    if(PYTEST_BINARY_DIRECTORIES)
-        foreach(dir IN LISTS PYTEST_BINARY_DIRECTORIES)
+    if (PYTEST_BINARY_DIRECTORIES)
+        foreach (dir IN LISTS PYTEST_BINARY_DIRECTORIES)
             list(APPEND PYTEST_COMMAND_ARGS "--bin-dir=${dir}")
-        endforeach()
-    endif()
+        endforeach ()
+    endif ()
 
-    if(PYTEST_LIBRARY_PREFIX_DIRECTORIES)
-        foreach(dir IN LISTS PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+    if (PYTEST_LIBRARY_PREFIX_DIRECTORIES)
+        foreach (dir IN LISTS PYTEST_LIBRARY_PREFIX_DIRECTORIES)
 
-            if(NOT IS_ABSOLUTE ${dir})
+            if (NOT IS_ABSOLUTE ${dir})
                 set(dir ${CMAKE_BINARY_DIR}/${dir})
-            endif()
+            endif ()
 
             file(TO_CMAKE_PATH "${dir}/lib" libdir)
             file(TO_CMAKE_PATH "${dir}/lib64" lib64dir)
 
-            if(EXISTS "${dir}/lib")
+            if (EXISTS "${dir}/lib")
                 list(APPEND PYTEST_COMMAND_ARGS "--lib-dir=${libdir}")
-            endif()
+            endif ()
 
-            if(EXISTS "${dir}/lib64")
+            if (EXISTS "${dir}/lib64")
                 list(APPEND PYTEST_COMMAND_ARGS "--lib-dir=${lib64dir}")
-            endif()
-        endforeach()
-    endif()
+            endif ()
+        endforeach ()
+    endif ()
 
     # Extend the given virtualenv to be a full path.
-    if(NOT IS_ABSOLUTE ${PYTEST_VIRTUALENV})
+    if (NOT IS_ABSOLUTE ${PYTEST_VIRTUALENV})
         set(PYTEST_VIRTUALENV ${CMAKE_BINARY_DIR}/${PYTEST_VIRTUALENV})
-    endif()
+    endif ()
 
     # find an appropriate python interpreter
     find_package(Python3
@@ -250,7 +250,7 @@ function(gkfs_add_python_test)
         COMMAND ${PYTEST_VIRTUALENV_PIP} install -r requirements.txt --upgrade -q
     )
 
-    if(NOT TARGET venv)
+    if (NOT TARGET venv)
         # ensure that the virtual environment is created by the build process
         # (this is required because we can't add dependencies between
         # "test targets" and "normal targets"
@@ -258,14 +258,14 @@ function(gkfs_add_python_test)
             ALL
             DEPENDS ${PYTEST_VIRTUALENV}
             DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/requirements.txt)
-    endif()
+    endif ()
 
     add_test(NAME ${PYTEST_NAME}
-             COMMAND ${PYTEST_VIRTUALENV_INTERPRETER}
-                    -m pytest -v -s
-                    ${PYTEST_COMMAND_ARGS}
-                    ${PYTEST_SOURCE}
-             WORKING_DIRECTORY ${PYTEST_WORKING_DIRECTORY})
+        COMMAND ${PYTEST_VIRTUALENV_INTERPRETER}
+        -m pytest -v -s
+        ${PYTEST_COMMAND_ARGS}
+        ${PYTEST_SOURCE}
+        WORKING_DIRECTORY ${PYTEST_WORKING_DIRECTORY})
 
     # instruct Python to not create __pycache__ directories,
     # otherwise they will pollute ${PYTEST_WORKING_DIRECTORY} which

@@ -35,7 +35,7 @@ FetchContent_Declare(catch2
     GIT_TAG 216713a4066b79d9803d374f261ccb30c0fb451f # v2.13.8
     GIT_SHALLOW ON
     GIT_PROGRESS ON
-    )
+)
 
 FetchContent_GetProperties(catch2)
 
@@ -55,7 +55,7 @@ add_library(catch2_main STATIC)
 target_sources(catch2_main PRIVATE catch_main.cpp)
 target_link_libraries(catch2_main
     Catch2::Catch2
-    )
+)
 
 # define executables for tests and make them depend on the convenience
 # library (and Catch2 transitively) and fmt
@@ -66,9 +66,9 @@ target_sources(tests
     ${CMAKE_CURRENT_LIST_DIR}/test_path.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test_helpers.cpp)
 
-if(GKFS_TESTS_GUIDED_DISTRIBUTION)
+if (GKFS_TESTS_GUIDED_DISTRIBUTION)
     target_sources(tests PRIVATE ${CMAKE_CURRENT_LIST_DIR}/test_guided_distributor.cpp)
-endif()
+endif ()
 
 target_link_libraries(tests
     PRIVATE
@@ -78,7 +78,7 @@ target_link_libraries(tests
     arithmetic
     distributor
     gkfs_user_lib
-    )
+)
 
 # Catch2's contrib folder includes some helper functions
 # to auto-discover Catch tests and register them in CTest
@@ -86,10 +86,10 @@ set(CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/contrib" ${CMAKE_MODULE_PATH})
 include(Catch)
 catch_discover_tests(tests
     PROPERTIES LABELS "unit::all"
-    )
+)
 
 if (GKFS_INSTALL_TESTS)
     install(TARGETS tests
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gkfs/tests/unit
-        )
+    )
 endif ()

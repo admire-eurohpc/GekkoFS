@@ -27,9 +27,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later                                    #
 ################################################################################
 find_path(
-  AIO_INCLUDE_DIR
-  NAMES aio.h
-  PATH_SUFFIXES include
+    AIO_INCLUDE_DIR
+    NAMES aio.h
+    PATH_SUFFIXES include
 )
 
 find_library(AIO_LIBRARY NAMES rt)
@@ -37,22 +37,22 @@ find_library(AIO_LIBRARY NAMES rt)
 mark_as_advanced(AIO_INCLUDE_DIR AIO_LIBRARY)
 
 find_package_handle_standard_args(
-  AIO
-  FOUND_VAR AIO_FOUND
-  REQUIRED_VARS AIO_INCLUDE_DIR AIO_LIBRARY
+    AIO
+    FOUND_VAR AIO_FOUND
+    REQUIRED_VARS AIO_INCLUDE_DIR AIO_LIBRARY
 )
 
-if(AIO_FOUND AND NOT TARGET AIO::AIO)
-  add_library(AIO::AIO UNKNOWN IMPORTED)
-  if(AIO_INCLUDE_DIR)
-    set_target_properties(
-      AIO::AIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${AIO_INCLUDE_DIR}"
-    )
-  endif()
+if (AIO_FOUND AND NOT TARGET AIO::AIO)
+    add_library(AIO::AIO UNKNOWN IMPORTED)
+    if (AIO_INCLUDE_DIR)
+        set_target_properties(
+            AIO::AIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${AIO_INCLUDE_DIR}"
+        )
+    endif ()
 
-  set_target_properties(
-    AIO::AIO PROPERTIES IMPORTED_LOCATION "${AIO_LIBRARY}"
-    IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-  )
-endif()
+    set_target_properties(
+        AIO::AIO PROPERTIES IMPORTED_LOCATION "${AIO_LIBRARY}"
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+    )
+endif ()
 
