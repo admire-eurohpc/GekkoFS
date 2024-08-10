@@ -1,0 +1,179 @@
+* WACOMM++ GKFS
+** Application settings
+We set the particles in the =source.json= to 250000 (Torino) or 1250000 (Mogon).
+
+
+** How to run
+The job runs via executing the =job.sh= script on the first note of a slurm job.
+Different parameters like the file system to use can be adjusted within the *parameter* section of the =job.sh= script.
+
+
+1. Build and install GekkoFS following the official instructions.
+2. Build Wacomm++ following the official instructions.
+3. Adjust hardcoded paths within =job.sh= to your environment.
+3. Adjust the parameters =PARAM_x= within =job.sh= to your liking.
+   within =job.sh to your environment.
+4. ssh into the first note of your reservation and execute the =job.sh= script.
+
+For convenience, a single job running =job.sh can be scheduled via =shedule_and_observe_single_job.sh=.
+Multiple jobs with permuting parameters can be configured and executed via =shedule_jobs.sh=.
+
+** Sample Results
+Parse results:
+#+begin_src bash
+grep real output/result.* | awk -F '_' '{print $4" "$5}' | sed "s/.txt:real//g" | sed "s/NUMNODES-//g" | sed "s/TARGETFS-//g" | column -t
+#+end_src
+*** MOGON
+Lustre, NO client application taskset, 5x particles
+#+begin_src
+1   PFS   1m54.852s
+2   PFS   1m20.003s
+4   PFS   1m0.185s
+8   PFS   0m47.614s
+16  PFS   0m43.270s
+#+end_src
+
+Gekkofs sockets, NO client application taskset, 5x particles
+#+begin_src
+1   GKFS  1m59.784s
+2   GKFS  1m16.765s
+4   GKFS  0m55.927s
+8   GKFS  0m44.836s
+16  GKFS  0m37.741s
+#+end_src
+
+_______________
+
+Lustre, 0-63 client application taskset, 5x particles
+#+begin_src
+1   PFS   2m0.031s
+2   PFS   1m29.499s
+4   PFS   1m2.287s
+8   PFS   0m48.500s
+16  PFS   0m43.145s
+#+end_src
+
+Gekkofs verbs, 0-63 client application taskset, 5x particles
+#+begin_src
+1   GKFS  0m23.204s
+2   GKFS  0m20.395s
+4   GKFS  0m18.474s
+8   GKFS  0m17.655s
+16  GKFS  0m17.582s
+#+end_src
+
+Gekkofs proxy, 0-63 client application taskset, 5x particles
+#+begin_src
+1   GKFS  2m4.300s
+2   GKFS  1m25.360s
+4   GKFS  0m57.824s
+8   GKFS  0m44.780s
+16  GKFS  0m37.713s
+#+end_src
+
+Gekkofs sockets, 0-63 client application taskset, 5x particles
+#+begin_src
+1   GKFS  2m6.155s
+2   GKFS  1m25.509s
+4   GKFS  0m58.461s
+8   GKFS  0m44.155s
+16  GKFS  0m37.497s
+#+end_src
+
+_______________
+
+Lustre, 0-63 client application taskset, 50x particles
+#+begin_src
+1   PFS   18m45.482s
+2   PFS   11m45.520s
+4   PFS   7m22.332s
+8   PFS   5m10.978s
+16  PFS   4m7.712s
+1   PFS   18m51.045s
+2   PFS   11m57.238s
+4   PFS   7m28.656s
+8   PFS   5m11.861s
+16  PFS   4m5.885s
+#+end_src
+
+Gekkofs verbs, 0-63 client application taskset, 50x particles
+#+begin_src
+1   GKFS  1m53.124s
+2   GKFS  1m56.790s
+4   GKFS  1m37.907s
+8   GKFS  1m27.688s
+16  GKFS  1m25.476s
+#+end_src
+
+Gekkofs proxy, 0-63 client application taskset, 50x particles
+#+begin_src
+1   GKFS  19m52.101s
+2   GKFS  12m6.822s
+4   GKFS  7m19.546s
+8   GKFS  5m5.092s
+16  GKFS  3m54.455s
+#+end_src
+
+Gekkofs sockets, 0-63 client application taskset, 50x particles
+#+begin_src
+1   GKFS  19m42.245s
+2   GKFS  11m42.952s
+4   GKFS  7m23.233s
+8   GKFS  5m1.487s
+16  GKFS  3m59.898s
+#+end_src
+
+*** Torino
+Gekkofs sockets, no client application taskset, 1x particles
+#+begin_src
+1   PFS   11m51.998s
+1   PFS   11m45.739s
+2   PFS   8m43.749s
+4   PFS   5m7.884s
+8   PFS   3m8.795s
+16  PFS   2m8.268s
+32  PFS   2m4.172s
+1   GKFS  12m5.260s
+2   GKFS  9m6.774s
+1   GKFS  11m56.758s
+2   GKFS  8m55.410s
+4   GKFS  6m25.933s
+8   GKFS  3m32.914s
+16  GKFS  2m44.487s
+32  GKFS  2m29.987s
+1   PFS   11m48.313s
+2   PFS   8m40.151s
+4   PFS   5m10.422s
+#+end_src
+** Wacomm setup notes
+
+Build Wacomm++:
+1. Add ~--without-zstd~ to curl in CMakeLists.txt.
+#+begin_src bash
+cd wacomplusplus
+mkdir build
+cd build
+cmake -DUSE_OMP=ON -DUSE_MPI=ON -DUSE_EMPI=OFF -DUSE_CUDA=OFF -DDEBUG=OFF ..
+make
+#+end_src
+
+** Torino setup notes
+
+Setup spack:
+#+begin_src bash
+source /beegfs/opt/spack/share/spack/setup-env.sh
+spack load gcc@10.4.0 cmake autoconf@2.69%gcc@9.4.0 arch=linux-ubuntu20.04-broadwell automake@1.16.1%gcc@9.4.0 arch=linux-ubuntu20.04-broadwell libtool@2.4.6%gcc@9.4.0 arch=linux-ubuntu20.04-broadwell
+#+end_src
+
+Build GekkoFS:
+#+begin_src
+Add library paths, for example:
+export LD_LIBRARY_PATH=/opt/libfabric:/beegfs/home/frschimm/wacommpp_gkfs/gekkofs_deps/install/lib:/beegfs/home/frschimm/wacommpp_gkfs/gekkofs_deps/install/lib64:${LD_LIBRARY_PATH}
+
+Remove libfabric from mercury:
+-> gekkofs/scripts/profiles/0.9.3/default.specs
+
+Change gekkofs/scripts/profiles/0.9.3/install/mercury.install:
+set USE_OFI="-DNA_USE_OFI:BOOL=ON -DNA_USE_UCX:BOOL=OFF"
+set -DCMAKE_PREFIX_PATH=/opt/libfabric
+#+end_src

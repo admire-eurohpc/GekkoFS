@@ -1,0 +1,14 @@
+* VPICIO - GekkoFS benchmarks
+
+** How to run
+The job runs via executing the =job.sh= script on the first note of a slurm job.
+Different parameters like the file system to use can be adjusted within the *parameter* section of the =job.sh= script.
+
+
+1. Build and install GekkoFS following the official instructions.
+2. Setup vpicio.
+3. Adjust hardcoded paths within =job.sh= to your environment.
+4. Adjust the experiment parameters within =job.sh= to your liking.
+5. ssh into the first note of your reservation and execute the =job.sh= script.
+
+For convenience, a single job running =job.sh= can be scheduled via =shedule_and_observe_single_job.sh=.

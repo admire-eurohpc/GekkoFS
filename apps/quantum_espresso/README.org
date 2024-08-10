@@ -1,0 +1,27 @@
+* Quantum Espresso - GekkoFS benchmarks
+
+** How to run
+The job runs via executing the =job.sh= script on the first note of a slurm job.
+Different parameters like the file system to use can be adjusted within the *parameter* section of the =job.sh= script.
+
+
+1. Build and install GekkoFS following the official instructions.
+2. Build Quantum Espresso following the official instructions.
+3. Adjust Quantum Espresso's =environment_variables= file:
+
+   #+begin_src
+-TMP_DIR=$PREFIX/tempdir
++TMP_DIR=$QUES_TMP_DIR
+
+-PARA_PREFIX=" "
++PARA_PREFIX="$QUES_MPI_CMD"
+
+-PARA_IMAGE_PREFIX="mpirun -np 4"
++PARA_IMAGE_PREFIX="mpirun -np $(( NODE_NUMBER*16*2 ))"
+   #+end_src
+
+4. Adjust hardcoded paths within =job.sh= to your environment.
+5. Adjust the experiment parameters within =job.sh= to your liking.
+6. ssh into the first note of your reservation and execute the =job.sh= script.
+
+For convenience, a single job running =job.sh= can be scheduled via =shedule_and_observe_single_job.sh=.
