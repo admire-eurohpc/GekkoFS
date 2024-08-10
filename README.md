@@ -44,6 +44,7 @@ to I/O, which reduces interferences and improves performance.
   - [Metadata Backends](#metadata-backends)
   - [CMake options](#cmake-options)
   - [Environment variables](#environment-variables)
+  - [HPC application examples](#hpc-application-examples)
 - [Acknowledgment](#acknowledgment)
 
 # Dependencies
@@ -593,6 +594,9 @@ until the file is closed. The cache does not impact the consistency of the file 
 #### Logging
 - `GKFS_PROXY_LOG_PATH` - Path to the log file of the proxy.
 - `GKFS_PROXY_LOG_LEVEL` - Log level of the proxy. Available levels are: `off`, `critical`, `err`, `warn`, `info`, `debug`, `trace`.
+
+## HPC application examples
+HPC applicatione examples are available in the `apps/` directory with corresponding documentation.
 
 # Acknowledgment
 
